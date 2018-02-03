@@ -4,6 +4,9 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -13,6 +16,8 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.bouncycastle.util.encoders.Base64;
 import org.jose4j.base64url.Base64Url;
 import org.jose4j.lang.HashUtil;
@@ -33,9 +38,9 @@ public class CryptographyService {
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    private static final String KEY_GENERATION_ALGORITHM = "RSA";
-    private static final String SIGNATURE_ALGORITHM = "SHA256WithRSAEncryption";
-    private static final String PROVIDER_NAME = BouncyCastleProvider.PROVIDER_NAME;
+    public static final String KEY_GENERATION_ALGORITHM = "RSA";
+    public static final String SIGNATURE_ALGORITHM = "SHA256WithRSAEncryption";
+    public static final String PROVIDER_NAME = BouncyCastleProvider.PROVIDER_NAME;
     private static final int KEY_SIZE = 2048;
 
     public int getKeySize() {
@@ -92,12 +97,20 @@ public class CryptographyService {
     }
 
 
-    public static KeyPair generateKeyPair() throws GeneralSecurityException {
+    public KeyPair generateKeyPair() throws GeneralSecurityException {
         KeyPairGenerator generator = KeyPairGenerator.getInstance(KEY_GENERATION_ALGORITHM, PROVIDER_NAME);
         generator.initialize(KEY_SIZE, new SecureRandom());
         return generator.generateKeyPair();
     }
 
+    public PKCS10CertificationRequest createCertificateRequest(KeyPair keyPair, String name) throws OperatorCreationException {
+        X500Name subject = new X500NameBuilder(BCStyle.INSTANCE)
+                .addRDN(BCStyle.CN, name)
+                .build();
+        return new JcaPKCS10CertificationRequestBuilder(subject, keyPair.getPublic())
+                .build(new JcaContentSignerBuilder(SIGNATURE_ALGORITHM).setProvider(PROVIDER_NAME).build(keyPair.getPrivate()));
+
+    }
 
     public String getSignature(byte[] chequeBytes, String algorithm, PrivateKey privateKey) {
         try {
