@@ -1,5 +1,6 @@
 package in.yagnyam.digana.authentication;
 
+import in.yagnyam.digana.utils.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Rule;
 import org.junit.Test;
@@ -43,6 +44,19 @@ public class AuthenticationTokenTest {
                 .build();
     }
 
+
+    @Test
+    public void testConstruction_NoExpiration() {
+        exception.expect(NullPointerException.class);
+        AuthenticationToken.builder()
+                .keyId("Kid")
+                .audience("To")
+                .issuer("From")
+                .subject("Subject")
+                .build();
+    }
+
+
     @Test
     public void testConstruction() {
         AuthenticationToken.builder()
@@ -50,6 +64,7 @@ public class AuthenticationTokenTest {
                 .audience("To")
                 .issuer("From")
                 .subject("Subject")
+                .expirationTime(DateUtils.afterYears(1))
                 .build();
     }
 }

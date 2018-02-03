@@ -1,14 +1,16 @@
 package in.yagnyam.digana.registration;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
 @Getter
 @ToString
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@JsonInclude(JsonInclude.Include.NON_NULL)
 @EqualsAndHashCode(of = "requestNumber", callSuper = false)
-public class RegistrationRequest {
+public class CustomerRegistrationRequest {
 
     @NonNull
     private String requestNumber;
@@ -18,6 +20,8 @@ public class RegistrationRequest {
 
     @NonNull
     private String certificationRequestEncoded;
+
+    private String certificateName;
 
     private String gcmToken;
 

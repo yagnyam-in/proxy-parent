@@ -45,7 +45,6 @@ public class AuthenticationTokenService {
             throws JoseException {
 
         JwtClaims claims = convertTokenToClaims(token);
-        claims.setExpirationTimeMinutesInTheFuture(60);
 
         JsonWebSignature jws = new JsonWebSignature();
         jws.setPayload(claims.toJson());
@@ -88,15 +87,15 @@ public class AuthenticationTokenService {
         claims.setAudience(token.getAudiences());
         claims.setGeneratedJwtId(); // a unique identifier for the token
         claims.setIssuedAtToNow(); // when the token was issued/created (now)
-        claims.setNotBeforeMinutesInThePast(
-                2); // time before which the token is not yet valid (2 minutes ago)
-        claims.setSubject(token.getSubject()); // the subject/principal is whom the token is about
+        // time before which the token is not yet valid (2 minutes ago)
+        claims.setNotBeforeMinutesInThePast(2);
+        claims.setSubject(token.getSubject());
+        claims.setExpirationTime(NumericDate.fromMilliseconds(token.getExpirationTime().getTime()));
         token.getStringAttributes().forEach(claims::setStringClaim);
         token.getStringListAttributes().forEach(claims::setStringListClaim);
-        token
-                .getDateAttributes()
-                .forEach(
-                        (k, v) -> claims.setNumericDateClaim(k, NumericDate.fromMilliseconds(v.getTime())));
+        token.getDateAttributes().forEach((k, v) ->
+                claims.setNumericDateClaim(k, NumericDate.fromMilliseconds(v.getTime()))
+        );
         return claims;
     }
 
@@ -109,8 +108,7 @@ public class AuthenticationTokenService {
     private JwtConsumer buildJwtConsumer(@NonNull String expectedAudience) {
 
         // And set up the allowed/expected algorithms
-        AlgorithmConstraints algorithmConstraints =
-                new AlgorithmConstraints(
+        AlgorithmConstraints algorithmConstraints = new AlgorithmConstraints(
                         AlgorithmConstraints.ConstraintType.WHITELIST,
                         AlgorithmIdentifiers.RSA_USING_SHA256,
                         AlgorithmIdentifiers.RSA_USING_SHA384);
@@ -138,36 +136,26 @@ public class AuthenticationTokenService {
         String keyId = extractKeyId(jwtContext);
         JwtClaims claims = jwtContext.getJwtClaims();
 
-        AuthenticationToken.AuthenticationTokenBuilder tokenBuilder =
-                AuthenticationToken.builder()
-                        .keyId(keyId)
-                        .subject(claims.getSubject())
-                        .audiences(claims.getAudience())
-                        .issuer(claims.getIssuer());
+        AuthenticationToken.AuthenticationTokenBuilder tokenBuilder = AuthenticationToken.builder()
+                .keyId(keyId)
+                .subject(claims.getSubject())
+                .audiences(claims.getAudience())
+                .issuer(claims.getIssuer())
+                .expirationTime(new Date(claims.getExpirationTime().getValueInMillis()));
 
-        claims.getClaimNames().forEach(
-                Errors.rethrow()
-                        .wrap(
-                                claimName -> {
-                                    if (claims.isClaimValueString(claimName))
-                                        tokenBuilder.stringAttribute(
-                                                claimName, claims.getStringClaimValue(claimName));
-                                    else if (claims.isClaimValueStringList(claimName))
-                                        tokenBuilder.stringListAttribute(
-                                                claimName, claims.getStringListClaimValue(claimName));
-                                    else if (claims.isClaimValueOfType(claimName, NumericDate.class))
-                                        tokenBuilder.dateAttribute(
-                                                claimName,
-                                                new Date(
-                                                        claims.getNumericDateClaimValue(claimName).getValueInMillis()));
-                                }));
+        claims.getClaimNames().forEach(Errors.rethrow().wrap(claimName -> {
+            if (claims.isClaimValueString(claimName))
+                tokenBuilder.stringAttribute(claimName, claims.getStringClaimValue(claimName));
+            else if (claims.isClaimValueStringList(claimName))
+                tokenBuilder.stringListAttribute(claimName, claims.getStringListClaimValue(claimName));
+            else if (claims.isClaimValueOfType(claimName, NumericDate.class))
+                tokenBuilder.dateAttribute(claimName, new Date(claims.getNumericDateClaimValue(claimName).getValueInMillis()));
+        }));
         return tokenBuilder.build();
     }
 
     private String extractKeyId(@NonNull JwtContext jwtContext) throws InvalidJwtException {
-        return jwtContext
-                .getJoseObjects()
-                .stream()
+        return jwtContext.getJoseObjects().stream()
                 .filter(s -> s instanceof JsonWebSignature)
                 .map(s -> (JsonWebSignature) s)
                 .findFirst()
@@ -175,8 +163,7 @@ public class AuthenticationTokenService {
                 .orElseThrow(() -> invalidJwtException(ErrorCodes.MISCELLANEOUS, KEY_ID + " is missing", jwtContext));
     }
 
-    private InvalidJwtException invalidJwtException(
-            int errorCode, String errorMessage, JwtContext jwtContext) {
+    private InvalidJwtException invalidJwtException(int errorCode, String errorMessage, JwtContext jwtContext) {
         return new InvalidJwtException(
                 errorMessage,
                 Collections.singletonList(new ErrorCodeValidator.Error(errorCode, errorMessage)),

@@ -91,7 +91,7 @@ public class CryptographyService {
 
 
     private static X509CertificateHolder buildCertificate(X509v3CertificateBuilder certificateBuilder, PrivateKey signedWithPrivateKey)
-            throws OperatorCreationException, GeneralSecurityException {
+            throws OperatorCreationException {
         ContentSigner signer = new JcaContentSignerBuilder(SIGNATURE_ALGORITHM).setProvider(PROVIDER_NAME).build(signedWithPrivateKey);
         return certificateBuilder.build(signer);
     }
@@ -103,10 +103,14 @@ public class CryptographyService {
         return generator.generateKeyPair();
     }
 
-    public PKCS10CertificationRequest createCertificateRequest(KeyPair keyPair, String name) throws OperatorCreationException {
-        X500Name subject = new X500NameBuilder(BCStyle.INSTANCE)
-                .addRDN(BCStyle.CN, name)
+    public X500Name getSubjectForId(String id) {
+        return new X500NameBuilder(BCStyle.INSTANCE)
+                .addRDN(BCStyle.CN, id)
                 .build();
+    }
+
+    public PKCS10CertificationRequest createCertificateRequest(KeyPair keyPair, String id) throws OperatorCreationException {
+        X500Name subject = getSubjectForId(id);
         return new JcaPKCS10CertificationRequestBuilder(subject, keyPair.getPublic())
                 .build(new JcaContentSignerBuilder(SIGNATURE_ALGORITHM).setProvider(PROVIDER_NAME).build(keyPair.getPrivate()));
 

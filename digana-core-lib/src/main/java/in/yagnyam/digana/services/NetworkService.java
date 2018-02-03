@@ -1,17 +1,13 @@
 package in.yagnyam.digana.services;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.http.GenericUrl;
-import com.google.api.client.http.HttpRequestFactory;
-import com.google.api.client.http.HttpResponse;
-import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.*;
 import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.common.net.MediaType;
 import lombok.NonNull;
-import lombok.Singular;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -23,31 +19,68 @@ public class NetworkService {
 
     private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 
-    private final HttpRequestFactory httpRequestFactory;
+    private final Map<String, String> defaultHeaders;
+    private final int connectionTimeout;
+    private final int readTimeout;
 
-    private NetworkService(@NonNull Map<String, String> headers,
+    private NetworkService(@NonNull Map<String, String> defaultHeaders,
                            int connectionTimeout, int readTimeout) {
-        this.httpRequestFactory = HTTP_TRANSPORT.createRequestFactory(request -> {
-            headers.forEach((h, v) -> request.getHeaders().set(h, v));
-            request.setConnectTimeout(connectionTimeout);
-            request.setReadTimeout(readTimeout);
-        });
+        this.defaultHeaders = defaultHeaders;
+        this.connectionTimeout = connectionTimeout;
+        this.readTimeout = readTimeout;
     }
 
-    public InputStream get(String url) throws IOException {
-        HttpResponse response = httpRequestFactory.buildGetRequest(new GenericUrl(url)).execute();
-        // TODO: Is this too broad ??
-        if (response.isSuccessStatusCode()) {
-            return response.getContent();
-        } else {
-            log.error("Request " + url + " failed with status " + response.getStatusMessage());
-            throw new IOException("Request " + url + " failed with status " + response.getStatusMessage());
-        }
+    public String get(String url) throws IOException {
+        HttpResponse httpResponse = httpRequestFactory().buildGetRequest(new GenericUrl(url)).execute();
+        return extractResponse(url, httpResponse);
     }
 
     public <T> T getValue(String url, Class<T> resultClass) throws IOException {
         return new ObjectMapper().readValue(get(url), resultClass);
     }
+
+
+    public <I, O> O postValue(String url, Map<String, String> headers, I request, Class<O> resultClass) throws IOException {
+        log.debug("POST {} with {}", url, request);
+        byte[] requestBytes = new ObjectMapper().writeValueAsBytes(request);
+        HttpContent httpContent = new ByteArrayContent(MediaType.JSON_UTF_8.toString(), requestBytes);
+        HttpResponse httpResponse = httpRequestFactory(headers).buildPostRequest(new GenericUrl(url), httpContent).execute();
+        String response = extractResponse(url, httpResponse);
+        log.info("POST {} with {} => {}", url, request, response);
+        return new ObjectMapper().readValue(response, resultClass);
+    }
+
+    private String extractResponse(String url, HttpResponse httpResponse) throws IOException {
+        // TODO: Is this too broad ??
+        if (httpResponse.isSuccessStatusCode()) {
+            String response = httpResponse.parseAsString();
+            log.debug("{} => {}", url, response);
+            return response;
+        } else {
+            log.error("Request " + url + " failed with status " + httpResponse.getStatusMessage());
+            throw new IOException("Request " + url + " failed with status " + httpResponse.getStatusMessage());
+        }
+    }
+
+    private HttpRequestFactory httpRequestFactory() {
+        return HTTP_TRANSPORT.createRequestFactory(request -> {
+            defaultHeaders.forEach((h, v) -> request.getHeaders().set(h, v));
+            request.setConnectTimeout(connectionTimeout);
+            request.setReadTimeout(readTimeout);
+        });
+    }
+
+    private HttpRequestFactory httpRequestFactory(Map<String, String> additionalHeaders) {
+        return HTTP_TRANSPORT.createRequestFactory(request -> {
+            defaultHeaders.forEach((h, v) -> request.getHeaders().set(h, v));
+            additionalHeaders.forEach((h, v) -> request.getHeaders().set(h, v));
+            request.setConnectTimeout(connectionTimeout);
+            request.setReadTimeout(readTimeout);
+        });
+    }
+
+
+
 
     public static Builder builder() {
         return new Builder();

@@ -1,6 +1,7 @@
 package in.yagnyam.digana.authentication;
 
 import in.yagnyam.digana.TestUtils;
+import in.yagnyam.digana.utils.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.jose4j.keys.resolvers.VerificationKeyResolver;
 import org.jose4j.keys.resolvers.X509VerificationKeyResolver;
@@ -11,6 +12,7 @@ import org.junit.rules.ExpectedException;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -42,7 +44,13 @@ public class AuthenticationTokenServiceTest {
     public void testSignTokenAndParseToken_Simple() throws Exception {
         KeyPair keyPair = TestUtils.generateKeyPair();
         X509Certificate certificate = TestUtils.createCertificate(keyPair);
-        AuthenticationToken token = AuthenticationToken.builder().keyId(certificate.getSerialNumber().toString()).audience("To").issuer("From").subject("Sub").build();
+        AuthenticationToken token = AuthenticationToken.builder().
+                keyId(certificate.getSerialNumber().toString())
+                .audience("To")
+                .issuer("From")
+                .subject("Sub")
+                .expirationTime(DateUtils.afterYears(1))
+                .build();
         VerificationKeyResolver verificationKeyResolver = new X509VerificationKeyResolver(certificate);
         AuthenticationTokenService service = AuthenticationTokenService.builder().verificationKeyResolver(verificationKeyResolver).build();
         String jwt = service.signToken(token, keyPair.getPrivate(), certificate);
@@ -51,6 +59,7 @@ public class AuthenticationTokenServiceTest {
         assertEquals(token.getAudiences(), tokenParsed.getAudiences());
         assertEquals(token.getSubject(), tokenParsed.getSubject());
         assertEquals(token.getIssuer(), tokenParsed.getIssuer());
+        assertExpirationTimeEquals(token.getExpirationTime(), tokenParsed.getExpirationTime());
     }
 
 
@@ -65,6 +74,7 @@ public class AuthenticationTokenServiceTest {
                 .subject("Sub")
                 .stringAttribute("hello", "there")
                 .stringListAttribute("list", Collections.singletonList("one"))
+                .expirationTime(DateUtils.afterYears(1))
                 .build();
         VerificationKeyResolver verificationKeyResolver = new X509VerificationKeyResolver(certificate);
         AuthenticationTokenService service = AuthenticationTokenService.builder().verificationKeyResolver(verificationKeyResolver).build();
@@ -74,10 +84,14 @@ public class AuthenticationTokenServiceTest {
         assertEquals(token.getAudiences(), tokenParsed.getAudiences());
         assertEquals(token.getSubject(), tokenParsed.getSubject());
         assertEquals(token.getIssuer(), tokenParsed.getIssuer());
+        assertExpirationTimeEquals(token.getExpirationTime(), tokenParsed.getExpirationTime());
         assertEquals("there", tokenParsed.getStringAttributes().get("hello"));
         assertEquals(token.getStringListAttributes(), tokenParsed.getStringListAttributes());
     }
 
 
+    private static void assertExpirationTimeEquals(Date expected, Date actual) {
+        assertEquals(expected.getTime()/1000, actual.getTime()/1000);
+    }
 
 }

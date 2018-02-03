@@ -25,6 +25,12 @@ public class AuthenticationToken {
     @NonNull
     private final String subject;
 
+    @NonNull
+    /**
+     * Only till seconds. Milliseconds are ignored
+     */
+    private Date expirationTime;
+
     @Singular
     private Map<String, String> stringAttributes;
 

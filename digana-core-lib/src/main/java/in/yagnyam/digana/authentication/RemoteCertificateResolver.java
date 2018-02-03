@@ -3,8 +3,9 @@ package in.yagnyam.digana.authentication;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import in.yagnyam.digana.services.CryptographyService;
 import in.yagnyam.digana.services.NetworkService;
-import in.yagnyam.digana.utils.PemUtils;
+import in.yagnyam.digana.services.PemService;
 import lombok.extern.slf4j.Slf4j;
 
 import java.security.cert.X509Certificate;
@@ -28,7 +29,7 @@ public class RemoteCertificateResolver implements CertificateResolver {
         private long cacheTimeout = 1;
         private TimeUnit cacheTimeoutUnit = TimeUnit.HOURS;
         private NetworkService networkService = NetworkService.builder().build();
-
+        private PemService pemService = PemService.builder().cryptographyService(CryptographyService.instance()).build();
         private Builder() {
         }
 
@@ -53,20 +54,34 @@ public class RemoteCertificateResolver implements CertificateResolver {
             return this;
         }
 
+        public Builder pemService(PemService pemService) {
+            this.pemService = pemService;
+            return this;
+        }
+
         public RemoteCertificateResolver build() {
-            return new RemoteCertificateResolver(networkService, urlTemplate, cacheSize, cacheTimeout, cacheTimeoutUnit);
+            return new RemoteCertificateResolver(networkService,
+                    pemService,
+                    urlTemplate,
+                    cacheSize,
+                    cacheTimeout,
+                    cacheTimeoutUnit);
         }
     }
 
     private final LoadingCache<String, X509Certificate> certificateCache;
 
-    private RemoteCertificateResolver(NetworkService networkService, String urlTemplate,
-                                      int cacheSize, long cacheTimeout, TimeUnit cacheTimeoutUnit) {
+    private RemoteCertificateResolver(NetworkService networkService,
+                                      PemService pemService,
+                                      String urlTemplate,
+                                      int cacheSize,
+                                      long cacheTimeout,
+                                      TimeUnit cacheTimeoutUnit) {
 
         CacheLoader<String, X509Certificate> certificateLoader = new CacheLoader<String, X509Certificate>() {
             @Override
             public X509Certificate load(String serialNumber) throws Exception {
-                return PemUtils.decodeCertificate(networkService.get(MessageFormat.format(urlTemplate, serialNumber)));
+                return pemService.decodeCertificate(networkService.get(MessageFormat.format(urlTemplate, serialNumber)));
             }
         };
 

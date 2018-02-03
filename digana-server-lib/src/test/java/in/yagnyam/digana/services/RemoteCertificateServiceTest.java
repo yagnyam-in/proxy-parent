@@ -1,6 +1,7 @@
 package in.yagnyam.digana.services;
 
 import in.yagnyam.digana.model.Certificate;
+import in.yagnyam.digana.model.CertificateChain;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -10,11 +11,13 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +33,7 @@ public class RemoteCertificateServiceTest {
         CertificateService certificateService = RemoteCertificateService.builder()
                 .networkService(mock(NetworkService.class))
                 .pemService(mock(PemService.class))
+                .certificateDownloadUrlTemplate("dummy")
                 .build();
         thrown.expect(NullPointerException.class);
         certificateService.getCertificate(null);
@@ -43,6 +47,7 @@ public class RemoteCertificateServiceTest {
         CertificateService certificateService = RemoteCertificateService.builder()
                 .networkService(networkService)
                 .pemService(mock(PemService.class))
+                .certificateDownloadUrlTemplate("dummy")
                 .build();
         assertFalse(certificateService.getCertificate("1").isPresent());
     }
@@ -50,6 +55,7 @@ public class RemoteCertificateServiceTest {
     @Test
     public void testGetCertificate_InvalidCertificate() throws IOException, GeneralSecurityException {
         Certificate certificate = mock(Certificate.class);
+        when(certificate.getSerialNumber()).thenReturn("1");
         when(certificate.getCertificateEncoded()).thenReturn("Certificate");
 
         NetworkService networkService = mock(NetworkService.class);
@@ -61,6 +67,7 @@ public class RemoteCertificateServiceTest {
         CertificateService certificateService = RemoteCertificateService.builder()
                 .networkService(networkService)
                 .pemService(pemService)
+                .certificateDownloadUrlTemplate("dummy")
                 .build();
         assertFalse(certificateService.getCertificate("1").isPresent());
     }
@@ -69,17 +76,20 @@ public class RemoteCertificateServiceTest {
     @Test
     public void testGetCertificate_ValidCertificate() throws IOException, GeneralSecurityException {
         Certificate certificate = mock(Certificate.class);
+        when(certificate.getSerialNumber()).thenReturn("1");
         when(certificate.getCertificateEncoded()).thenReturn("Certificate");
 
         NetworkService networkService = mock(NetworkService.class);
-        when(networkService.getValue(anyString(), any())).thenReturn(certificate);
+        when(networkService.getValue(anyString(), any()))
+                .thenReturn(CertificateChain.builder().serialNumber("1").certificate(certificate).build());
 
         PemService pemService = mock(PemService.class);
-        when(pemService.decodeCertificate(anyString())).thenReturn(mock(X509Certificate.class));
+        when(pemService.decodeCertificate(eq("Certificate"))).thenReturn(mock(X509Certificate.class));
 
         CertificateService certificateService = RemoteCertificateService.builder()
                 .networkService(networkService)
                 .pemService(pemService)
+                .certificateDownloadUrlTemplate("dummy")
                 .build();
         assertTrue(certificateService.getCertificate("1").isPresent());
     }
