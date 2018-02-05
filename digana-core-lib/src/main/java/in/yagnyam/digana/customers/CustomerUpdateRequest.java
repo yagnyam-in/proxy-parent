@@ -28,4 +28,6 @@ public class CustomerUpdateRequest {
 
     private String bleUUID;
 
+    private Boolean syncWithContacts;
+
 }

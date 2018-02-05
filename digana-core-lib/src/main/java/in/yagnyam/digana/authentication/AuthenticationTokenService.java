@@ -70,7 +70,7 @@ public class AuthenticationTokenService {
             JwtContext jwtContext = buildJwtConsumer(expectedAudience).process(jwt);
             return Optional.of(jwtContextToAuthenticationToken(jwtContext));
         } catch (Exception e) {
-            log.info("Error extracting user information", e);
+            log.info("Error extracting Authentication Token", e);
             return Optional.empty();
         }
     }
