@@ -8,6 +8,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -39,12 +40,29 @@ public class NetworkService {
         return new ObjectMapper().readValue(get(url), resultClass);
     }
 
+    public <O> O postJsonString(String url, Map<String, String> headers, String request, Class<O> resultClass) throws IOException {
+        log.debug("POST {} with {}", url, request);
+        HttpContent httpContent = ByteArrayContent.fromString(MediaType.JSON_UTF_8.toString(), request);
+        HttpResponse httpResponse = httpRequestFactory(headers)
+                .buildPostRequest(new GenericUrl(url), httpContent)
+                .setLoggingEnabled(true)
+                .setSuppressUserAgentSuffix(true)
+                .execute();
+        String response = extractResponse(url, httpResponse);
+        log.info("POST {} with {} => {}", url, request, response);
+        return new ObjectMapper().readValue(response, resultClass);
+    }
+
 
     public <I, O> O postValue(String url, Map<String, String> headers, I request, Class<O> resultClass) throws IOException {
         log.debug("POST {} with {}", url, request);
         byte[] requestBytes = new ObjectMapper().writeValueAsBytes(request);
         HttpContent httpContent = new ByteArrayContent(MediaType.JSON_UTF_8.toString(), requestBytes);
-        HttpResponse httpResponse = httpRequestFactory(headers).buildPostRequest(new GenericUrl(url), httpContent).execute();
+        HttpResponse httpResponse = httpRequestFactory(headers)
+                .buildPostRequest(new GenericUrl(url), httpContent)
+                .setLoggingEnabled(true)
+                .setSuppressUserAgentSuffix(true)
+                .execute();
         String response = extractResponse(url, httpResponse);
         log.info("POST {} with {} => {}", url, request, response);
         return new ObjectMapper().readValue(response, resultClass);
@@ -72,8 +90,8 @@ public class NetworkService {
 
     private HttpRequestFactory httpRequestFactory(Map<String, String> additionalHeaders) {
         return HTTP_TRANSPORT.createRequestFactory(request -> {
-            defaultHeaders.forEach((h, v) -> request.getHeaders().set(h, v));
-            additionalHeaders.forEach((h, v) -> request.getHeaders().set(h, v));
+            defaultHeaders.forEach((h, v) -> request.getHeaders().set(h, Collections.singletonList(v)));
+            additionalHeaders.forEach((h, v) -> request.getHeaders().set(h, Collections.singletonList(v)));
             request.setConnectTimeout(connectionTimeout);
             request.setReadTimeout(readTimeout);
         });

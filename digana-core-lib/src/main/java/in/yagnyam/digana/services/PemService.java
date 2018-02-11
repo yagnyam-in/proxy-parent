@@ -53,8 +53,13 @@ public class PemService {
     }
 
     public String encodePublicKey(PublicKey publicKey) throws GeneralSecurityException, IOException {
-        return asPemString("RSA PUBLIC KEY", publicKey.getEncoded());
+        return encodePublicKey(publicKey, "RSA PUBLIC KEY");
     }
+
+    public String encodePublicKey(PublicKey publicKey, String name) throws GeneralSecurityException, IOException {
+        return asPemString(name, publicKey.getEncoded());
+    }
+
 
     public PrivateKey decodePrivateKey(String encodedKey) throws GeneralSecurityException, IOException {
         KeyFactory factory = KeyFactory.getInstance(cryptographyService.getKeyGenerationAlgorithm(), cryptographyService.getProviderName());

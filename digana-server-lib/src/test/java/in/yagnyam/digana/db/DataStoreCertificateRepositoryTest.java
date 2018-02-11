@@ -1,22 +1,14 @@
 package in.yagnyam.digana.db;
 
-import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
-import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.googlecode.objectify.Key;
-import com.googlecode.objectify.ObjectifyFactory;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.VoidWork;
-import com.googlecode.objectify.cache.AsyncCacheFilter;
 import in.yagnyam.digana.model.Certificate;
 import lombok.val;
-import org.junit.*;
-import org.junit.rules.ExpectedException;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.internal.matchers.Null;
 import org.mockito.runners.MockitoJUnitRunner;
-
-import java.io.Closeable;
-import java.io.IOException;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import static in.yagnyam.digana.TestUtils.sampleCertificate;
@@ -25,33 +17,13 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DataStoreCertificateRepositoryTest {
-
-    private final LocalServiceTestHelper helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
-    private Closeable session;
+public class DataStoreCertificateRepositoryTest extends RepositoryTestHelper {
 
     private DataStoreCertificateRepository certificateRepository = DataStoreCertificateRepository.builder().build();
 
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
-
     @BeforeClass
-    public static void setUpBeforeClass() {
-        ObjectifyService.setFactory(new ObjectifyFactory());
+    public static void registerCertificate() {
         ObjectifyService.register(Certificate.class);
-    }
-
-    @Before
-    public void setUp() {
-        this.helper.setUp();
-        this.session = ObjectifyService.begin();
-    }
-
-    @After
-    public void tearDown() throws IOException {
-        AsyncCacheFilter.complete();
-        this.session.close();
-        this.helper.tearDown();
     }
 
 
