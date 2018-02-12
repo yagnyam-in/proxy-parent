@@ -16,6 +16,9 @@ public class AccountAuthorizationRequest extends AbstractVerifiable {
     private String requestNumber;
 
     @NonNull
+    private String customerNumber;
+
+    @NonNull
     private String bankNumber;
 
     private String bankCustomerNumber;
@@ -39,6 +42,7 @@ public class AccountAuthorizationRequest extends AbstractVerifiable {
             String signatureOne,
             String signatureTwo,
             @NonNull String requestNumber,
+            @NonNull String customerNumber,
             @NonNull String bankNumber,
             String bankCustomerNumber,
             String bankAccountNumber,
@@ -55,6 +59,7 @@ public class AccountAuthorizationRequest extends AbstractVerifiable {
                 signatureOne,
                 signatureTwo);
         this.requestNumber = requestNumber;
+        this.customerNumber = customerNumber;
         this.bankNumber = bankNumber;
         this.bankCustomerNumber = bankCustomerNumber;
         this.bankAccountNumber = bankAccountNumber;

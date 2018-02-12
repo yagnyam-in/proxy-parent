@@ -12,6 +12,8 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.bc.BcX509ExtensionUtils;
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -142,5 +144,13 @@ public class CryptographyService {
         return Signature.getInstance(algorithm, PROVIDER_NAME);
     }
 
+    public String sha256Digest(String data) {
+        byte[] bytes = data.getBytes();
+        Digest d = new SHA256Digest();
+        d.update(bytes, 0, bytes.length);
+        byte[] result = new byte[d.getDigestSize()];
+        d.doFinal(result, 0);
+        return new String(Base64.encode(result));
+    }
 
 }
