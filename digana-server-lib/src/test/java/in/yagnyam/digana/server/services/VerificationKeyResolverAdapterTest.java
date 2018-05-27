@@ -1,6 +1,7 @@
 package in.yagnyam.digana.server.services;
 
-import in.yagnyam.digana.server.model.Certificate;
+import in.yagnyam.proxy.Certificate;
+import in.yagnyam.proxy.services.CertificateService;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.lang.UnresolvableKeyException;
 import org.junit.Test;
@@ -33,7 +34,7 @@ public class VerificationKeyResolverAdapterTest {
     @Test(expected = UnresolvableKeyException.class)
     public void testResolveKey_NoCertificate() throws UnresolvableKeyException {
         CertificateService certificateService = mock(CertificateService.class);
-        when(certificateService.getCertificate(eq("KID"))).thenReturn(Optional.empty());
+        when(certificateService.getCertificateBySerialNumber(eq("KID"))).thenReturn(Optional.empty());
 
         JsonWebSignature jws = mock(JsonWebSignature.class);
         when(jws.getKeyIdHeaderValue()).thenReturn("KID");
@@ -55,7 +56,7 @@ public class VerificationKeyResolverAdapterTest {
         when(certificate.getCertificate()).thenReturn(x509Certificate);
 
         CertificateService certificateService = mock(CertificateService.class);
-        when(certificateService.getCertificate(eq("KID"))).thenReturn(Optional.of(certificate));
+        when(certificateService.getCertificateBySerialNumber(eq("KID"))).thenReturn(Optional.of(certificate));
 
         JsonWebSignature jws = mock(JsonWebSignature.class);
         when(jws.getKeyIdHeaderValue()).thenReturn("KID");

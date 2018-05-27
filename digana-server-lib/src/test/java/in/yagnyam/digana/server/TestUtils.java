@@ -1,7 +1,10 @@
 package in.yagnyam.digana.server;
 
 import in.yagnyam.digana.server.model.Bank;
-import in.yagnyam.digana.server.model.Certificate;
+import in.yagnyam.digana.server.model.CertificateEntity;
+import in.yagnyam.proxy.Certificate;
+
+import java.util.Date;
 
 public final class TestUtils {
 
@@ -9,6 +12,11 @@ public final class TestUtils {
         return Certificate.builder()
                 .serialNumber(serialNumber)
                 .owner("OWNER")
+                .sha256Thumbprint("SHA256")
+                .validFrom(new Date())
+                .validTill(new Date())
+                .certificateEncoded("CERT")
+                .subject("SUB")
                 .build();
     }
 
@@ -17,6 +25,10 @@ public final class TestUtils {
                 .serialNumber("dummy")
                 .sha256Thumbprint(fingerPrint)
                 .owner("OWNER")
+                .validFrom(new Date())
+                .validTill(new Date())
+                .certificateEncoded("CERT")
+                .subject("SUB")
                 .build();
     }
 

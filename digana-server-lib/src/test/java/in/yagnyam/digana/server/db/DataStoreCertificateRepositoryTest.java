@@ -3,40 +3,55 @@ package in.yagnyam.digana.server.db;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.VoidWork;
-import in.yagnyam.digana.server.model.Certificate;
+import in.yagnyam.digana.server.model.CertificateEntity;
+import in.yagnyam.digana.services.PemService;
+import in.yagnyam.proxy.Certificate;
+import lombok.SneakyThrows;
 import lombok.val;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.security.cert.X509Certificate;
+
 import static com.googlecode.objectify.ObjectifyService.ofy;
 import static in.yagnyam.digana.server.TestUtils.sampleCertificate;
 import static in.yagnyam.digana.server.TestUtils.sampleCertificateForFingerPrint;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DataStoreCertificateRepositoryTest extends RepositoryTestHelper {
 
-    private DataStoreCertificateRepository certificateRepository = DataStoreCertificateRepository.builder().build();
+    private DataStoreCertificateRepository certificateRepository = certificateRepository();
+
+    @SneakyThrows
+    private DataStoreCertificateRepository certificateRepository() {
+        PemService pemService = mock(PemService.class);
+        when (pemService.decodeCertificate(anyString())).thenReturn(mock(X509Certificate.class));
+        return DataStoreCertificateRepository.builder().pemService(pemService).build();
+    }
 
     @BeforeClass
     public static void registerCertificate() {
-        ObjectifyService.register(Certificate.class);
+        ObjectifyService.register(CertificateEntity.class);
     }
 
 
     @Test
     public void testGetCertificate_InvalidArguments() {
         thrown.expect(NullPointerException.class);
-        certificateRepository.getCertificate(null);
+        certificateRepository.getCertificateBySerialNumber(null);
     }
 
 
     @Test
     public void testGetCertificate_NotExists() {
-        assertFalse(certificateRepository.getCertificate("1").isPresent());
+        assertFalse(certificateRepository.getCertificateBySerialNumber("1").isPresent());
     }
 
 
@@ -46,11 +61,11 @@ public class DataStoreCertificateRepositoryTest extends RepositoryTestHelper {
         ObjectifyService.run(new VoidWork() {
             @Override
             public void vrun() {
-                ofy().save().entity(certificate).now();
+                ofy().save().entity(DataStoreCertificateRepository.toEntity(certificate)).now();
             }
         });
-        assertTrue(certificateRepository.getCertificate("2").isPresent());
-        assertEquals(certificateRepository.getCertificate("2").get(), certificate);
+        assertTrue(certificateRepository.getCertificateBySerialNumber("2").isPresent());
+        assertEquals(certificateRepository.getCertificateBySerialNumber("2").get(), certificate);
     }
 
 
@@ -72,7 +87,7 @@ public class DataStoreCertificateRepositoryTest extends RepositoryTestHelper {
         ObjectifyService.run(new VoidWork() {
             @Override
             public void vrun() {
-                ofy().save().entity(certificate).now();
+                ofy().save().entity(DataStoreCertificateRepository.toEntity(certificate)).now();
             }
         });
         val results = certificateRepository.getCertificatesBySha256Thumbprint("123");
@@ -91,7 +106,8 @@ public class DataStoreCertificateRepositoryTest extends RepositoryTestHelper {
     public void testSaveCertificate() {
         Certificate certificate = sampleCertificate("3");
         certificateRepository.saveCertificate(certificate);
-        assertEquals(certificate, ObjectifyService.run(() -> ofy().load().key(Key.create(Certificate.class, "3")).now()));
+        CertificateEntity dbEntity = ObjectifyService.run(() -> ofy().load().key(Key.create(CertificateEntity.class, "3")).now());
+        assertEquals(certificate, certificateRepository.fromEntity(dbEntity));
     }
 
 

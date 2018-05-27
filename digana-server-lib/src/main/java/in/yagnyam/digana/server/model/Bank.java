@@ -13,7 +13,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-@EqualsAndHashCode(of = "bankNumber")
+@EqualsAndHashCode(of = "bankId")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Bank {
 

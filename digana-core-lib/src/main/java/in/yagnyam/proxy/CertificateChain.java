@@ -1,4 +1,4 @@
-package in.yagnyam.digana.server.model;
+package in.yagnyam.proxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
@@ -13,10 +13,7 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CertificateChain {
 
-    @NonNull
-    private String serialNumber;
-
     @Singular
-    private List<CertificateEntity> certificates;
+    private List<Certificate> certificates;
 
 }

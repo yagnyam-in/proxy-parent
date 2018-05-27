@@ -1,6 +1,7 @@
 package in.yagnyam.digana.server.services;
 
 import in.yagnyam.digana.utils.StringUtils;
+import in.yagnyam.proxy.services.CertificateService;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +32,7 @@ public class VerificationKeyResolverAdapter implements VerificationKeyResolver {
             log.info("Header " + KEY_ID + " not present in the JWS in " + jws);
             throw new IllegalArgumentException("Header " + KEY_ID + " not present in the JWS");
         }
-        return certificateService.getCertificate(serialNumber)
+        return certificateService.getCertificateBySerialNumber(serialNumber)
                 .orElseThrow(() -> new UnresolvableKeyException("Unable fetch the certificate " + serialNumber))
                 .getCertificate()
                 .getPublicKey();

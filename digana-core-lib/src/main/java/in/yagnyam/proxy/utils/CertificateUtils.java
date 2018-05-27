@@ -1,9 +1,7 @@
-package in.yagnyam.digana.server.utils;
+package in.yagnyam.proxy.utils;
 
-import in.yagnyam.digana.server.InternalServerErrorException;
-import in.yagnyam.digana.server.ServiceException;
-import in.yagnyam.digana.server.model.Certificate;
 import in.yagnyam.digana.services.PemService;
+import in.yagnyam.proxy.Certificate;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
@@ -17,9 +15,9 @@ public final class CertificateUtils {
      *
      * @param certificate Certificate to Enrich
      * @return Enriched Certificate
-     * @throws InternalServerErrorException if any errors while decoding certificate
+     * @throws IllegalArgumentException if any errors while decoding certificate
      */
-    public static Certificate enrichCertificate(Certificate certificate, PemService pemService) throws InternalServerErrorException {
+    public static Certificate enrichCertificate(Certificate certificate, PemService pemService) {
         log.debug("enrichCertificate({})", certificate);
         try {
             if (certificate.getCertificate() == null) {
@@ -28,7 +26,7 @@ public final class CertificateUtils {
             return certificate;
         } catch (GeneralSecurityException | IOException e) {
             log.error("Unable to encrich Certificate", e);
-            throw ServiceException.internalServerError("failed to parse certificate", e);
+            throw new IllegalArgumentException("invalid certificate", e);
         }
     }
 

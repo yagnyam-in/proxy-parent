@@ -1,15 +1,12 @@
 package in.yagnyam.digana.server.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
-import in.yagnyam.digana.utils.StringUtils;
+import in.yagnyam.proxy.Certificate;
 import lombok.*;
 
-import java.security.cert.X509Certificate;
 import java.util.Date;
 
 @Entity
@@ -19,7 +16,8 @@ import java.util.Date;
 @NoArgsConstructor
 @ToString
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Certificate {
+@EqualsAndHashCode(of = "serialNumber")
+public class CertificateEntity {
 
     public static final String OWNER = "owner";
 
@@ -44,19 +42,4 @@ public class Certificate {
 
     private String certificateEncoded;
 
-    @Ignore
-    @JsonIgnore
-    @Setter
-    private X509Certificate certificate;
-
-    @Override
-    public int hashCode() {
-        return StringUtils.hashCode(serialNumber);
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return (o instanceof Certificate)
-                && StringUtils.equals(((Certificate) o).serialNumber, serialNumber);
-    }
 }

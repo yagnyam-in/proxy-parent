@@ -30,4 +30,6 @@ public class CustomerUpdateRequest {
 
     private Boolean syncWithContacts;
 
+    private PreferredAccount preferredAccount;
+
 }

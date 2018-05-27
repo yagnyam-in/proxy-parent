@@ -13,12 +13,13 @@ import java.io.IOException;
  * Class to serialize {@link Cheque Cheque} version v1
  *
  * @author Yagnyam
- * @see {@link ChequeSigner ChequeSigner} {@link ChequeSignerFactory ChequeSignerFactory}
+ * @see ChequeSigner
+ * @see ChequeSignerFactory
  */
 @NoArgsConstructor(staticName = "create")
 public class ChequeSerializer_V1 implements ChequeSerializationWriter, ChequeSerializer {
 
-    public static final String VERSION = "V1";
+    static final String VERSION = "V1";
 
     @Override
     public String getVersion() {
@@ -137,7 +138,7 @@ public class ChequeSerializer_V1 implements ChequeSerializationWriter, ChequeSer
         serializationStream.writeString(transaction.getTransactionURL());
     }
 
-    protected void serializeVerifiable(SerializationStream serializationStream, Verifiable verifiable) throws IOException {
+    private void serializeVerifiable(SerializationStream serializationStream, Verifiable verifiable) throws IOException {
         serializationStream.writeVersion(verifiable.getVersion());
         serializationStream.writeString(verifiable.getVerificationCertificateSerial());
         serializationStream.writeString(verifiable.getVerificationCertificateFingerPrintAlgorithm());

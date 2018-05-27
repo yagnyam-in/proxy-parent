@@ -1,11 +1,13 @@
-package in.yagnyam.digana.server.services;
+package in.yagnyam.proxy.services;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import in.yagnyam.digana.server.model.Certificate;
+import in.yagnyam.proxy.Certificate;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -14,12 +16,19 @@ public class CacheBackedCertificateService implements CertificateService {
 
     private final CertificateService certificateService;
 
-    private final Cache<String, Certificate> certificateCache;
+    private final Cache<String, Certificate> certificateCacheBySerialNumber;
+
+    private final Cache<String, List<Certificate>> certificateCacheById;
 
     private CacheBackedCertificateService(CertificateService certificateService,
                                           long cacheSize, long cacheTimeout, TimeUnit cacheTimeoutUnit) {
         this.certificateService = certificateService;
-        this.certificateCache = CacheBuilder.newBuilder()
+        this.certificateCacheBySerialNumber = CacheBuilder.newBuilder()
+                .maximumSize(cacheSize)
+                .expireAfterWrite(cacheTimeout, cacheTimeoutUnit)
+                .build();
+
+        this.certificateCacheById = CacheBuilder.newBuilder()
                 .maximumSize(cacheSize)
                 .expireAfterWrite(cacheTimeout, cacheTimeoutUnit)
                 .build();
@@ -32,26 +41,46 @@ public class CacheBackedCertificateService implements CertificateService {
      * @return Certificate associated with given Serial Number
      */
     @Override
-    public Optional<Certificate> getCertificate(@NonNull String serialNumber) {
+    public Optional<Certificate> getCertificateBySerialNumber(@NonNull String serialNumber) {
         try {
             // Little ugly, but google Cache doesn't like null values
-            Certificate result = certificateCache.getIfPresent(serialNumber);
-            if (result == null) {
-                result = loadCertificateToCache(serialNumber);
+            Optional<Certificate> result = Optional.ofNullable(certificateCacheBySerialNumber.getIfPresent(serialNumber));
+            if (!result.isPresent()) {
+                result = certificateService.getCertificateBySerialNumber(serialNumber);
+                result.ifPresent((c) -> certificateCacheBySerialNumber.put(serialNumber, c));
             }
-            return Optional.ofNullable(result);
+            return result;
         } catch (Exception e) {
             log.error("Unable to fetch certificate for serial " + serialNumber, e);
             return Optional.empty();
         }
     }
 
-    // Manually inserting to Cache, we might be under utilizing Cache functionality
-    private Certificate loadCertificateToCache(String serialNumber) {
-        Optional<Certificate> result = certificateService.getCertificate(serialNumber);
-        result.ifPresent(c -> certificateCache.put(serialNumber, c));
-        return result.orElse(null);
+
+    /**
+     * Get Certificate for given Certificate Id
+     *
+     * @param certificateId Certificate Id
+     * @return Certificate associated with given Certificate Id
+     */
+    @Override
+    public List<Certificate> getCertificatesById(@NonNull String certificateId) {
+        try {
+            // Little ugly, but google Cache doesn't like null values
+            List<Certificate> result = certificateCacheById.getIfPresent(certificateId);
+            if (result == null || result.isEmpty()) {
+                result = certificateService.getCertificatesById(certificateId);
+                if (!result.isEmpty()) {
+                    certificateCacheById.put(certificateId, result);
+                }
+            }
+            return result;
+        } catch (Exception e) {
+            log.error("Unable to fetch certificate for id " + certificateId, e);
+            return Collections.emptyList();
+        }
     }
+
 
     public static Builder builder() {
         return new Builder();
