@@ -31,10 +31,12 @@ public class MessageSignerService {
         if (signatureAlgorithms.isEmpty()) {
             throw new IllegalStateException("At least one signature algorithm is required");
         }
+        // TODO: Check if signer is same as message.signer
         String payload = serializer.serialize(message);
         byte[] payloadBytes = payload.getBytes();
         SignedMessage.SignedMessageBuilder<T> builder = SignedMessage.<T>builder()
                 .message(message)
+                .type(message.getClass().getName())
                 .payload(payload);
         signatureAlgorithms.forEach((a) -> builder.signature(SignedMessage.Signature.of(a, cryptographyService.getSignature(payloadBytes, a, signer.getPrivateKey()))));
         return builder.build();

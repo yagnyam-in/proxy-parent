@@ -12,6 +12,15 @@ public class MessageSerializer {
     private final ObjectMapper objectMapper = new ObjectMapper() {{
     }};
 
+    public String serialize(SignedMessage message) throws IOException {
+        try {
+            return objectMapper.writeValueAsString(message);
+        } catch (JsonProcessingException e) {
+            log.error("Unable to serialize " + message, e);
+            throw new IOException(e);
+        }
+    }
+
     public String serialize(SignableMessage message) throws IOException {
         try {
             return objectMapper.writeValueAsString(message);

@@ -19,7 +19,6 @@ public class Proxy {
     @NonNull
     private String sha256Thumbprint;
 
-
     private String name;
 
     @NonNull

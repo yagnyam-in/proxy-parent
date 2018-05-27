@@ -7,7 +7,7 @@ import java.util.List;
 
 @Builder
 @Getter
-@ToString(of = {"type", "payload"})
+@ToString(of = {"type", "payload", "signatures"})
 public class SignedMessage<T extends SignableMessage> {
 
     @Getter
@@ -20,7 +20,6 @@ public class SignedMessage<T extends SignableMessage> {
         private String value;
     }
 
-    @NonNull
     @JsonIgnore
     private T message;
 
