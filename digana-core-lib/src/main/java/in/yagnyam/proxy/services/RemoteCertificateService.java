@@ -7,8 +7,10 @@ import in.yagnyam.proxy.CertificateChain;
 import in.yagnyam.proxy.utils.CertificateUtils;
 import lombok.Builder;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
+import java.net.URLEncoder;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
@@ -27,7 +29,6 @@ public class RemoteCertificateService implements CertificateService {
 
     @NonNull
     private final String certificateByIdUrlTemplate;
-
 
     @NonNull
     private final String certificateBySerialNumberUrlTemplate;
@@ -76,8 +77,9 @@ public class RemoteCertificateService implements CertificateService {
     }
 
 
+    @SneakyThrows
     private String certificateUrlById(String certificateId) {
-        return MessageFormat.format(certificateByIdUrlTemplate, certificateId);
+        return MessageFormat.format(certificateByIdUrlTemplate, URLEncoder.encode(certificateId, "UTF-8"));
     }
 
 }
