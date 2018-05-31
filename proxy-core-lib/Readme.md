@@ -1,7 +1,4 @@
-# Digana Core Library
+# Proxy Core Library
 
-Contains Objects required by all Digana Modules like Cheques and Cheque Operations.
+Contains Objects required by all Proxy Modules like authentication, messages, cetificates.....
 
-# Install Locally
-
-gradlew clean publishToMavenLocal
