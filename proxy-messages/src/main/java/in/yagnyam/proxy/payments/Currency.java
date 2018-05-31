@@ -1,6 +1,5 @@
 package in.yagnyam.proxy.payments;
 
-import in.yagnyam.digana.Amount;
 
 /**
  * <p>ISO Currency Codes</p>

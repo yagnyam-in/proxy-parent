@@ -16,7 +16,7 @@
             <name>Chenna Reddy</name>
             <email>chenna@alavala.in</email>
             <organization>Yagnyam LLP</organization>
-            <organizationUrl>https://yagnyam.in</organizationUrl>
+            <organizationUrl>http://yagnyam.in</organizationUrl>
         </developer>
     </developers>
 
@@ -68,6 +68,7 @@
 
     <modules>
         <module>digana-core-lib</module>
+        <module>proxy-messages</module>
         <module>digana-server-lib</module>
     </modules>
 
