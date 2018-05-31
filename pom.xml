@@ -3,13 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>in.yagnyam</groupId>
-    <artifactId>digana-parent</artifactId>
+    <artifactId>proxy-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <description>A shared configuration for Digana Projects</description>
-    <url>https://bitbucket.org/digana/digana-parent</url>
+    <url>https://bitbucket.org/yagnyam-proxy/proxy-parent</url>
 
     <developers>
         <developer>
@@ -21,9 +21,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:git@bitbucket.org:digana/bank-interface.git</connection>
-        <developerConnection>scm:git:git@bitbucket.org:digana/bank-interface.git</developerConnection>
-        <url>git@bitbucket.org:digana/bank-interface.git</url>
+        <connection>scm:git:git@bitbucket.org:yagnyam-proxy/proxy-parent.git</connection>
+        <developerConnection>scm:git:git@bitbucket.org:yagnyam-proxy/proxy-parent.git</developerConnection>
+        <url>git@bitbucket.org:yagnyam-proxy/proxy-parent.git</url>
         <tag>HEAD</tag>
     </scm>
 
@@ -67,9 +67,9 @@
     </prerequisites>
 
     <modules>
-        <module>digana-core-lib</module>
+        <module>proxy-core-lib</module>
         <module>proxy-messages</module>
-        <module>digana-server-lib</module>
+        <module>proxy-server-lib</module>
     </modules>
 
     <dependencyManagement>

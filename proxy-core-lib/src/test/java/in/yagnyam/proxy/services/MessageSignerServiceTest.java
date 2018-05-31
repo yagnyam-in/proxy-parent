@@ -28,7 +28,7 @@ public class MessageSignerServiceTest {
     }
 
     @SneakyThrows
-    PrivateKey samplePrivateKey() {
+    private PrivateKey samplePrivateKey() {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", BouncyCastleProvider.PROVIDER_NAME);
         generator.initialize(2048, new SecureRandom());
         return generator.generateKeyPair().getPrivate();

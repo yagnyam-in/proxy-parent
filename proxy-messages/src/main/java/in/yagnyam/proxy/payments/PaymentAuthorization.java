@@ -23,7 +23,7 @@ public class PaymentAuthorization implements SignableMessage, AddressableMessage
     private String paymentAuthorizationId;
 
     /**
-     * Payee is mandatory (No Anonymous Cheques are supported to prevent Fraud)
+     * Payee is mandatory (Anonymous Cheques are not supported to prevent Fraud)
      */
     @NonNull
     private String payeeId;
