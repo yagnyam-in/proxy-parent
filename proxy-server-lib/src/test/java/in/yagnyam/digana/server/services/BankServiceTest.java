@@ -10,7 +10,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 
-import static in.yagnyam.digana.server.TestUtils.sampleBank;
+import static in.yagnyam.proxy.server.TestUtils.sampleBank;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 

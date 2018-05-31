@@ -1,6 +1,6 @@
 package in.yagnyam.proxy.utils;
 
-import in.yagnyam.digana.services.PemService;
+import in.yagnyam.proxy.services.PemService;
 import in.yagnyam.proxy.Certificate;
 import lombok.extern.slf4j.Slf4j;
 

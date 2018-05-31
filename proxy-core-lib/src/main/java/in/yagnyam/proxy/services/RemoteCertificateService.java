@@ -1,7 +1,5 @@
 package in.yagnyam.proxy.services;
 
-import in.yagnyam.digana.services.NetworkService;
-import in.yagnyam.digana.services.PemService;
 import in.yagnyam.proxy.Certificate;
 import in.yagnyam.proxy.CertificateChain;
 import in.yagnyam.proxy.utils.CertificateUtils;

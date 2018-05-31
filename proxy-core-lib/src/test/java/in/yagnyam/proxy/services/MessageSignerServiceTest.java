@@ -1,6 +1,5 @@
 package in.yagnyam.proxy.services;
 
-import in.yagnyam.digana.services.CryptographyService;
 import in.yagnyam.proxy.Certificate;
 import in.yagnyam.proxy.MessageSerializer;
 import in.yagnyam.proxy.Proxy;

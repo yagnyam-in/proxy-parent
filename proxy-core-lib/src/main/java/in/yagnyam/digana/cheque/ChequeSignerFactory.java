@@ -1,6 +1,6 @@
 package in.yagnyam.digana.cheque;
 
-import in.yagnyam.digana.services.CryptographyService;
+import in.yagnyam.proxy.services.CryptographyService;
 
 import java.io.IOException;
 import java.security.PrivateKey;

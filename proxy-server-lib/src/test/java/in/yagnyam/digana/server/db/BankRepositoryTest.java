@@ -4,13 +4,14 @@ import com.googlecode.objectify.Key;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.VoidWork;
 import in.yagnyam.digana.server.model.Bank;
+import in.yagnyam.proxy.server.db.RepositoryTestHelper;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
-import static in.yagnyam.digana.server.TestUtils.sampleBank;
+import static in.yagnyam.proxy.server.TestUtils.sampleBank;
 import static org.junit.Assert.*;
 
 @RunWith(MockitoJUnitRunner.class)

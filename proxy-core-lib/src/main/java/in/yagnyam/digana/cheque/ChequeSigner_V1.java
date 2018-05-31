@@ -1,6 +1,6 @@
 package in.yagnyam.digana.cheque;
 
-import in.yagnyam.digana.services.CryptographyService;
+import in.yagnyam.proxy.services.CryptographyService;
 import lombok.Builder;
 import lombok.NonNull;
 

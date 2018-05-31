@@ -1,6 +1,6 @@
 package in.yagnyam.digana;
 
-import in.yagnyam.digana.utils.JsonUtils;
+import in.yagnyam.proxy.utils.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 
