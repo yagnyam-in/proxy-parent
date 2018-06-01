@@ -1,4 +1,4 @@
-package in.yagnyam.digana.registration;
+package in.yagnyam.proxy.messages.registration;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
@@ -28,8 +28,6 @@ public class CustomerRegistrationRequest {
     private String name;
 
     private String emailAddress;
-
-    private String postalAddress;
 
     private String phoneNumber;
 

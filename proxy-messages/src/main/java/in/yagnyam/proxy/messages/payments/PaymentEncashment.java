@@ -1,4 +1,4 @@
-package in.yagnyam.proxy.payments;
+package in.yagnyam.proxy.messages.payments;
 
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.SignableMessage;
@@ -19,8 +19,12 @@ public class PaymentEncashment implements SignableMessage, AddressableMessage {
 
     private Amount amount;
 
-    @NonNull
-    private AccountId receivingAccountId;
+    private ProxyAccountId receivingProxyAccountId;
+
+    /**
+     * Non proxy Account Number
+     */
+    private String accountNumber;
 
     @Override
     public String signer() {

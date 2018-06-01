@@ -1,4 +1,4 @@
-package in.yagnyam.proxy.payments;
+package in.yagnyam.proxy.messages.payments;
 
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.SignableMessage;
@@ -12,11 +12,11 @@ import java.util.Date;
 @Builder
 @Getter
 @ToString
-@EqualsAndHashCode(of = {"accountId", "customerId"})
+@EqualsAndHashCode(of = {"proxyAccountId", "customerId"})
 public class ProxyAccount implements SignableMessage, AddressableMessage {
 
     @NonNull
-    private AccountId accountId;
+    private ProxyAccountId proxyAccountId;
 
     @NonNull
     private String customerId;
@@ -35,7 +35,7 @@ public class ProxyAccount implements SignableMessage, AddressableMessage {
 
     @Override
     public String signer() {
-        return accountId.getBankId();
+        return proxyAccountId.getBankId();
     }
 
     @Override

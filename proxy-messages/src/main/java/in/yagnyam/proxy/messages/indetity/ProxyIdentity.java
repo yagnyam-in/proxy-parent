@@ -1,4 +1,4 @@
-package in.yagnyam.proxy.indetity;
+package in.yagnyam.proxy.messages.indetity;
 
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.SignableMessage;

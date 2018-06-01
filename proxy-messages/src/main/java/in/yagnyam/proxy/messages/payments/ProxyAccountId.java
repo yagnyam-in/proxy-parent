@@ -1,4 +1,4 @@
-package in.yagnyam.proxy.payments;
+package in.yagnyam.proxy.messages.payments;
 
 import lombok.*;
 
@@ -9,7 +9,7 @@ import lombok.*;
 @Data
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 @RequiredArgsConstructor(staticName = "of")
-public class AccountId {
+public class ProxyAccountId {
 
     @NonNull
     private String bankId;

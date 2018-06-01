@@ -1,4 +1,4 @@
-package in.yagnyam.digana.registration;
+package in.yagnyam.proxy.messages.registration;
 
 
 import lombok.extern.slf4j.Slf4j;

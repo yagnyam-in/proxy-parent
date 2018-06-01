@@ -1,4 +1,4 @@
-package in.yagnyam.proxy.payments;
+package in.yagnyam.proxy.messages.payments;
 
 
 /**

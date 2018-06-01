@@ -1,4 +1,4 @@
-package in.yagnyam.digana.registration;
+package in.yagnyam.proxy.messages.registration;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
