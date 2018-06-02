@@ -2,6 +2,7 @@ package in.yagnyam.proxy.services;
 
 import in.yagnyam.proxy.Certificate;
 import in.yagnyam.proxy.CertificateChain;
+import in.yagnyam.proxy.CertificateList;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -81,7 +82,7 @@ public class RemoteCertificateServiceTest {
 
         NetworkService networkService = mock(NetworkService.class);
         when(networkService.getValue(anyString(), any()))
-                .thenReturn(CertificateChain.builder().certificate(certificate).build());
+                .thenReturn(CertificateChain.builder().certificateSerial("1").certificate(certificate).build());
 
         PemService pemService = mock(PemService.class);
         when(pemService.decodeCertificate(eq("Certificate"))).thenReturn(mock(X509Certificate.class));
@@ -155,7 +156,7 @@ public class RemoteCertificateServiceTest {
 
         NetworkService networkService = mock(NetworkService.class);
         when(networkService.getValue(anyString(), any()))
-                .thenReturn(CertificateChain.builder().certificate(certificate).build());
+                .thenReturn(CertificateList.builder().certificate(certificate).build());
 
         PemService pemService = mock(PemService.class);
         when(pemService.decodeCertificate(eq("Certificate"))).thenReturn(mock(X509Certificate.class));

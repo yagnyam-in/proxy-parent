@@ -2,6 +2,7 @@ package in.yagnyam.proxy.services;
 
 import in.yagnyam.proxy.Certificate;
 import in.yagnyam.proxy.CertificateChain;
+import in.yagnyam.proxy.CertificateList;
 import in.yagnyam.proxy.utils.CertificateUtils;
 import lombok.Builder;
 import lombok.NonNull;
@@ -58,7 +59,7 @@ public class RemoteCertificateService implements CertificateService {
     public List<Certificate> getCertificatesById(@NonNull String certificateId) {
         String certificateUrl = certificateUrlById(certificateId);
         try {
-            return networkService.getValue(certificateUrl, CertificateChain.class)
+            return networkService.getValue(certificateUrl, CertificateList.class)
                     .getCertificates().stream()
                     .filter(c -> c.matchesId(certificateId))
                     .map(c -> CertificateUtils.enrichCertificate(c, pemService))

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @Getter
 @Builder
@@ -14,16 +13,17 @@ import java.util.Optional;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CertificateChain {
 
+    @NonNull
+    private String certificateSerial;
+
     @Singular
     private List<Certificate> certificates;
 
-    /**
-     * Return the Certificate matching given Id
-     * @param certificateId Certificate Id/Serial Number
-     * @return Matching certificate
-     */
-    public Optional<Certificate> getCertificate(String certificateId) {
-        return certificates.stream().filter(c -> c.matchesId(certificateId)).findFirst();
+    public Certificate getCertificate() {
+        return certificates.stream()
+                .filter(c -> c.getSerialNumber().equals(certificateSerial))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No Certificate found for serial " + certificateSerial));
     }
 
 }

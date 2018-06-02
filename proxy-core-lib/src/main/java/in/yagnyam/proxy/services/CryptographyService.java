@@ -111,6 +111,13 @@ public class CryptographyService {
                 .build();
     }
 
+    public X500Name getSubjectForIdAndOrganisation(String id, String organisation) {
+        return new X500NameBuilder(BCStyle.INSTANCE)
+                .addRDN(BCStyle.CN, id)
+                .addRDN(BCStyle.O, organisation)
+                .build();
+    }
+
     public PKCS10CertificationRequest createCertificateRequest(KeyPair keyPair, String id) throws OperatorCreationException {
         X500Name subject = getSubjectForId(id);
         return new JcaPKCS10CertificationRequestBuilder(subject, keyPair.getPublic())
