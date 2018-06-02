@@ -30,6 +30,6 @@ public class CustomerRegistrationRequestTest {
         } catch (NullPointerException e) {
             log.info("Caught", e);
         }
-        assertNotNull(CustomerRegistrationRequest.builder().requestId("rid").proxyId("pid").certificationRequestEncoded("CSR").build());
+        assertNotNull(CustomerRegistrationRequest.builder().requestId("rid").proxyId("pid").certificateRequestEncoded("CSR").build());
     }
 }

@@ -30,6 +30,6 @@ public class ProxyCreationRequest {
      * This is to prevent misusing un-protected endpoint to get new PID
      */
     @NonNull
-    private String certificationRequestEncoded;
+    private String certificateRequestEncoded;
 
 }

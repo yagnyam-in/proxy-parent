@@ -19,7 +19,7 @@ public class CustomerRegistrationRequest {
     private String proxyId;
 
     @NonNull
-    private String certificationRequestEncoded;
+    private String certificateRequestEncoded;
 
     private String certificateName;
 
