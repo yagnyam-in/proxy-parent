@@ -1,9 +1,11 @@
 package in.yagnyam.proxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @Getter
 @Builder
@@ -13,11 +15,20 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CertificateChain {
 
-    @NonNull
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String certificateSerial;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String certificateId;
 
     @Singular
     private List<Certificate> certificates;
+
+    /*
+    public Optional<Certificate> getCertificate(String certificateId) {
+        return certificates.stream().filter(c -> c.matchesId(certificateId)).findFirst();
+    }
+
 
     public Certificate getCertificate() {
         return certificates.stream()
@@ -25,5 +36,6 @@ public class CertificateChain {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No Certificate found for serial " + certificateSerial));
     }
+    */
 
 }

@@ -19,17 +19,17 @@ public class CustomerRegistrationRequestTest {
             log.info("Caught", e);
         }
         try {
-            CustomerRegistrationRequest.builder().requestNumber("RequestNumber").build();
+            CustomerRegistrationRequest.builder().requestId("rid").build();
             fail("CustomerRegistrationRequest must fail without customer number and CSR");
         } catch (NullPointerException e) {
             log.info("Caught", e);
         }
         try {
-            CustomerRegistrationRequest.builder().customerNumber("CustomerNumber").build();
+            CustomerRegistrationRequest.builder().proxyId("pid").build();
             fail("CustomerRegistrationRequest must fail without registration number and CSR");
         } catch (NullPointerException e) {
             log.info("Caught", e);
         }
-        assertNotNull(CustomerRegistrationRequest.builder().requestNumber("RequestNumber").customerNumber("CustomerNumber").certificationRequestEncoded("CSR").build());
+        assertNotNull(CustomerRegistrationRequest.builder().requestId("rid").proxyId("pid").certificationRequestEncoded("CSR").build());
     }
 }

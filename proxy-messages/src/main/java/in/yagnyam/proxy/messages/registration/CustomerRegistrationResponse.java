@@ -1,6 +1,7 @@
 package in.yagnyam.proxy.messages.registration;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import in.yagnyam.proxy.CertificateChain;
 import lombok.*;
 
 import java.util.Map;
@@ -10,7 +11,7 @@ import java.util.Map;
  */
 @Getter
 @ToString
-@EqualsAndHashCode(of = "requestNumber", callSuper = false)
+@EqualsAndHashCode(of = "requestId", callSuper = false)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -18,11 +19,14 @@ import java.util.Map;
 public class CustomerRegistrationResponse {
 
     @NonNull
-    private String requestNumber;
+    private String requestId;
+    
+    @NonNull
+    private String proxyId;
 
+    @NonNull
     private String certificateSerial;
 
-    @Singular
-    private Map<String, String> certificates;
-
+    @NonNull
+    private CertificateChain certificateChain;
 }

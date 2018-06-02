@@ -9,14 +9,14 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@EqualsAndHashCode(of = "requestNumber", callSuper = false)
+@EqualsAndHashCode(of = "requestId", callSuper = false)
 public class CustomerRegistrationRequest {
 
     @NonNull
-    private String requestNumber;
+    private String requestId;
 
     @NonNull
-    private String customerNumber;
+    private String proxyId;
 
     @NonNull
     private String certificationRequestEncoded;

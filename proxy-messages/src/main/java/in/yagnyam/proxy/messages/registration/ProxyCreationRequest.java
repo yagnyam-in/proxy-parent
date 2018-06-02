@@ -10,14 +10,14 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-@EqualsAndHashCode(of = "requestNumber")
+@EqualsAndHashCode(of = "requestId")
 public class ProxyCreationRequest {
 
     /**
-     * Unique Request Number. No two requests shall have same request number
+     * Unique Request Id. No two requests shall have same request number
      */
     @NonNull
-    private String requestNumber;
+    private String requestId;
 
     /**
      * Unique Proxy Id
@@ -26,7 +26,7 @@ public class ProxyCreationRequest {
     private String proxyId;
 
     /**
-     * Valid Certificate Request for Subject requestNumber.
+     * Valid Certificate Request for Subject requestId.
      * This is to prevent misusing un-protected endpoint to get new PID
      */
     @NonNull

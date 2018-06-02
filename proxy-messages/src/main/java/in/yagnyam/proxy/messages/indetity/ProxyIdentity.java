@@ -12,7 +12,7 @@ import java.util.Date;
 @Builder
 @Getter
 @ToString
-@EqualsAndHashCode(of = {"issuerId", "customerId"})
+@EqualsAndHashCode(of = {"id", "customerId"})
 public class ProxyIdentity implements SignableMessage, AddressableMessage {
 
     @NonNull

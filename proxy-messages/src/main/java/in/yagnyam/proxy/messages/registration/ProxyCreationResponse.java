@@ -13,7 +13,7 @@ import java.util.Map;
  */
 @Getter
 @ToString
-@EqualsAndHashCode(of = "requestNumber", callSuper = false)
+@EqualsAndHashCode(of = "requestId", callSuper = false)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -21,7 +21,7 @@ import java.util.Map;
 public class ProxyCreationResponse implements SignableMessage {
 
     @NonNull
-    private String requestNumber;
+    private String requestId;
 
     @NonNull
     private String proxyId;

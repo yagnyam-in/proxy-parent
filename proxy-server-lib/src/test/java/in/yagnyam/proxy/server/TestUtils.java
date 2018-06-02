@@ -2,7 +2,13 @@ package in.yagnyam.proxy.server;
 
 import in.yagnyam.digana.server.model.Bank;
 import in.yagnyam.proxy.Certificate;
+import in.yagnyam.proxy.server.model.PrivateKeyEntity;
+import in.yagnyam.proxy.services.CryptographyService;
 
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
 import java.util.Date;
 
 public final class TestUtils {
@@ -34,4 +40,19 @@ public final class TestUtils {
     public static Bank sampleBank(String id) {
         return Bank.builder().bankNumber(id).name("Sample").build();
     }
+
+    public static PrivateKeyEntity samplePrivateKeyEntity(String id) {
+        return PrivateKeyEntity.builder()
+                .id(id)
+                .email("email")
+                .phoneNumber("phone")
+                .build();
+    }
+
+    public static KeyPair generateKeyPair() throws GeneralSecurityException {
+        KeyPairGenerator generator = KeyPairGenerator.getInstance(CryptographyService.KEY_GENERATION_ALGORITHM);
+        generator.initialize(1024, new SecureRandom());
+        return generator.generateKeyPair();
+    }
+
 }

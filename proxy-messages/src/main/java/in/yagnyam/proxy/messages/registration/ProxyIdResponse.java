@@ -16,7 +16,7 @@ public class ProxyIdResponse {
      * Request Number
      */
     @NonNull
-    private String requestNumber;
+    private String requestId;
 
     /**
      * Unique Proxy Id
