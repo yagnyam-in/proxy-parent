@@ -2,6 +2,7 @@ package in.yagnyam.proxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 import java.security.cert.X509Certificate;
@@ -22,8 +23,6 @@ public class Certificate {
 
     @NonNull
     private String owner;
-
-    private String sha1Thumbprint;
 
     @NonNull
     private String sha256Thumbprint;
@@ -47,29 +46,44 @@ public class Certificate {
     private X509Certificate certificate;
 
     public String getId() {
+        return owner;
+    }
+
+    public String getUniqueId() {
         return owner + "#" + sha256Thumbprint;
     }
 
     public boolean matchesId(@NonNull String certificateId) {
-        if (owner.equals(owner(certificateId))) {
-            Optional<String> sha256 = sha256Thumbprint(certificateId);
+        if (owner.equals(extractOnlyId(certificateId))) {
+            Optional<String> sha256 = extractSha256Thumbprint(certificateId);
             return !sha256.isPresent() || sha256Thumbprint.equals(sha256.get());
         }
         return false;
     }
 
-    public static String owner(@NonNull String certificateId) {
-        return certificateId.split("#")[0];
+    public static String extractOnlyId(String certificateUniqueId) {
+        if (StringUtils.isEmpty(certificateUniqueId)) {
+            throw new IllegalArgumentException("Invalid certificate Id");
+        }
+        String[] tokens = certificateUniqueId.split("#");
+        if (tokens.length <= 2) {
+            return tokens[0];
+        } else {
+            throw new IllegalArgumentException("Invalid certificate Id" + certificateUniqueId);
+        }
     }
 
-    public static Optional<String> sha256Thumbprint(@NonNull String certificateId) {
-        String[] tokens = certificateId.split("#");
+    public static Optional<String> extractSha256Thumbprint(String certificateUniqueId) {
+        if (StringUtils.isEmpty(certificateUniqueId)) {
+            throw new IllegalArgumentException("Invalid certificate Id");
+        }
+        String[] tokens = certificateUniqueId.split("#");
         if (tokens.length < 2) {
             return Optional.empty();
         } else if (tokens.length == 2) {
             return Optional.of(tokens[1]);
         } else {
-            throw new IllegalArgumentException("Invalid Id" + certificateId);
+            throw new IllegalArgumentException("Invalid certificate Id" + certificateUniqueId);
         }
     }
 }

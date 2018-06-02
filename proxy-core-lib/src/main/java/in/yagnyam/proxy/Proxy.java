@@ -21,16 +21,23 @@ public class Proxy {
 
     private String name;
 
+    private String certificateSerialNumber;
+
     @NonNull
     private Certificate certificate;
 
     @JsonIgnore
     private PrivateKey privateKey;
 
+    public String getUniqueId() {
+        return id + "#" + sha256Thumbprint;
+    }
+
     public static Proxy of(Certificate certificate) {
         return builder()
                 .id(certificate.getId())
                 .sha256Thumbprint(certificate.getSha256Thumbprint())
+                .certificateSerialNumber(certificate.getSerialNumber())
                 .name(certificate.getOwner())
                 .certificate(certificate)
                 .build();

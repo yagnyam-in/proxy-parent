@@ -20,7 +20,7 @@ public class CacheBackedCertificateServiceTest {
         Certificate certificate = mock(Certificate.class);
         when (certificate.getSerialNumber()).thenReturn(serialNumber);
         when (certificate.getOwner()).thenReturn("dummy");
-        when (certificate.getId()).thenReturn("dummy");
+        when (certificate.getUniqueId()).thenReturn("dummy");
         return certificate;
     }
 
@@ -28,7 +28,7 @@ public class CacheBackedCertificateServiceTest {
         Certificate certificate = mock(Certificate.class);
         when (certificate.getSerialNumber()).thenReturn("dummy");
         when (certificate.getOwner()).thenReturn("dummy");
-        when (certificate.getId()).thenReturn(id);
+        when (certificate.getUniqueId()).thenReturn(id);
         return certificate;
     }
 

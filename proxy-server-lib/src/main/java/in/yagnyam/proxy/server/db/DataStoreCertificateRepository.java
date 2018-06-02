@@ -59,7 +59,7 @@ public class DataStoreCertificateRepository implements CertificateRepository {
      */
     @Override
     public List<Certificate> getCertificatesById(String certificateId) {
-        String owner = Certificate.owner(certificateId);
+        String owner = Certificate.extractOnlyId(certificateId);
         return ObjectifyService.run(() -> ofy().load()
                 .type(CertificateEntity.class)
                 .filter("owner", owner)
@@ -91,7 +91,6 @@ public class DataStoreCertificateRepository implements CertificateRepository {
         return CertificateEntity.builder()
                 .serialNumber(certificate.getSerialNumber())
                 .owner(certificate.getOwner())
-                .sha1Thumbprint(certificate.getSha1Thumbprint())
                 .sha256Thumbprint(certificate.getSha256Thumbprint())
                 .alias(certificate.getAlias())
                 .subject(certificate.getSubject())
@@ -106,7 +105,6 @@ public class DataStoreCertificateRepository implements CertificateRepository {
         Certificate certificate = Certificate.builder()
                 .serialNumber(certificateEntity.getSerialNumber())
                 .owner(certificateEntity.getOwner())
-                .sha1Thumbprint(certificateEntity.getSha1Thumbprint())
                 .sha256Thumbprint(certificateEntity.getSha256Thumbprint())
                 .alias(certificateEntity.getAlias())
                 .subject(certificateEntity.getSubject())

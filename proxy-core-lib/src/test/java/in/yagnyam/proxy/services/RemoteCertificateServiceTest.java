@@ -25,7 +25,6 @@ public class RemoteCertificateServiceTest {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
-
     @Test
     public void testGetCertificateBySerialNumber_InvalidArguments() {
         CertificateService certificateService = RemoteCertificateService.builder()

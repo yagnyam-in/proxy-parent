@@ -19,15 +19,11 @@ import java.util.Date;
 @EqualsAndHashCode(of = "serialNumber")
 public class CertificateEntity {
 
-    public static final String OWNER = "owner";
-
     @Id
     private String serialNumber;
 
     @Index
     private String owner;
-
-    private String sha1Thumbprint;
 
     @Index
     private String sha256Thumbprint;
