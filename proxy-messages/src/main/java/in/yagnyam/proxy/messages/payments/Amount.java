@@ -16,7 +16,7 @@ import lombok.*;
 public class Amount {
 
     @NonNull
-	private Currency currency;
+	private String currency;
 
 	private double value;
 }

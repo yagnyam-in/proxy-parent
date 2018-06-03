@@ -1,18 +1,38 @@
 package in.yagnyam.proxy.messages.payments;
 
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
- * <p>ISO Currency Codes</p>
- * 
+ * ISO Currency Codes
+ * TODO: Convert to an ENUM
+ *
  * @author Yagnyam
  * @see Amount
  */
-public final class Currency {
+public interface Currency {
 
-	public static final String INR = "INR";
-	public static final String EUR = "EUR";
-	public static final String USD = "USD";
-	public static final String GBP = "GBP";
-	public static final String AUD = "AUD";
-	public static final String JPY = "JPY";
+    String INR = "INR";
+    String EUR = "EUR";
+    String USD = "USD";
+    String GBP = "GBP";
+    String AUD = "AUD";
+    String JPY = "JPY";
+
+    /**
+     * Valid Currencies
+     */
+    Set<String> currenciesSupported = new HashSet<>(Arrays.asList(INR, EUR, USD, GBP, AUD, JPY));
+
+    /**
+     * Check if the given currency is valid
+     *
+     * @param currency Currency to check
+     * @return true if a valid currency
+     */
+    static boolean isValidCurrency(String currency) {
+        return currenciesSupported.contains(currency);
+    }
 }
