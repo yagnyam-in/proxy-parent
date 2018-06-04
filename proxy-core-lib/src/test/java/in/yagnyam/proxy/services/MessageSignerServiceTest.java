@@ -1,7 +1,6 @@
 package in.yagnyam.proxy.services;
 
 import in.yagnyam.proxy.Certificate;
-import in.yagnyam.proxy.MessageSerializer;
 import in.yagnyam.proxy.Proxy;
 import in.yagnyam.proxy.SignableMessage;
 import lombok.SneakyThrows;
@@ -45,7 +44,7 @@ public class MessageSignerServiceTest {
             }
         };
         MessageSignerService service = MessageSignerService.builder()
-                .serializer(new MessageSerializer())
+                .serializer(new MessageSerializerService())
                 .cryptographyService(CryptographyService.instance())
                 .signatureAlgorithm("SHA256WithRSAEncryption")
                 .build();

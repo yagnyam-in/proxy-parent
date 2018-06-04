@@ -25,7 +25,7 @@ public class MessageFactoryTest {
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    private MessageSerializer messageSerializer = new MessageSerializer();
+    private MessageSerializerService messageSerializerService = new MessageSerializerService();
 
     @ToString
     static class SimpleSignableMessage implements SignableMessage {
@@ -62,7 +62,7 @@ public class MessageFactoryTest {
     public void testVerifyAndBuildSignedMessage() throws IOException {
         Proxy proxy = sampleProxy();
         MessageSignerService service = MessageSignerService.builder()
-                .serializer(messageSerializer)
+                .serializer(messageSerializerService)
                 .cryptographyService(CryptographyService.instance())
                 .signatureAlgorithm("SHA256WithRSAEncryption")
                 .build();
@@ -70,11 +70,11 @@ public class MessageFactoryTest {
         SignedMessage<SimpleSignableMessage> signedMessage = service.sign(signableMessage, proxy);
 
         MessageFactory messageFactory = MessageFactory.builder()
-                .serializer(messageSerializer)
+                .serializer(messageSerializerService)
                 .cryptographyService(CryptographyService.instance())
                 .build();
 
-        messageFactory.verifyAndBuildSignedMessage(signedMessage);
+        messageFactory.verifySignedMessage(signedMessage);
     }
 
 
@@ -82,7 +82,7 @@ public class MessageFactoryTest {
     public void testVerifyAndBuildSignedMessage_InnerObject() throws IOException {
         Proxy proxy = sampleProxy();
         MessageSignerService service = MessageSignerService.builder()
-                .serializer(messageSerializer)
+                .serializer(messageSerializerService)
                 .cryptographyService(CryptographyService.instance())
                 .signatureAlgorithm("SHA256WithRSAEncryption")
                 .build();
@@ -93,10 +93,10 @@ public class MessageFactoryTest {
         ComplexSignableMessage complexMessage = new ComplexSignableMessage();
         complexMessage.internalObject = signedSimpleMessage;
         SignedMessage<ComplexSignableMessage> signedComplexMessage = service.sign(complexMessage, proxy);
-        String signedText = messageSerializer.serialize(signedComplexMessage);
+        String signedText = messageSerializerService.serialize(signedComplexMessage);
 
         MessageFactory messageFactory = MessageFactory.builder()
-                .serializer(messageSerializer)
+                .serializer(messageSerializerService)
                 .cryptographyService(CryptographyService.instance())
                 .build();
 

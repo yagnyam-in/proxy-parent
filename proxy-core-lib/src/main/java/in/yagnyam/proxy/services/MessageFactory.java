@@ -1,6 +1,5 @@
 package in.yagnyam.proxy.services;
 
-import in.yagnyam.proxy.MessageSerializer;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import lombok.Builder;
@@ -15,18 +14,18 @@ import java.lang.reflect.Field;
 public class MessageFactory {
 
     @NonNull
-    private MessageSerializer serializer;
+    private MessageSerializerService serializer;
 
     @NonNull
     private CryptographyService cryptographyService;
 
     public SignedMessage buildSignedMessage(String signedMessage) throws IOException {
         SignedMessage signedMessageObject = serializer.deserialize(signedMessage, SignedMessage.class);
-        return verifyAndBuildSignedMessage(signedMessageObject);
+        return verifySignedMessage(signedMessageObject);
     }
 
 
-    <T extends SignableMessage> SignedMessage<T> verifyAndBuildSignedMessage(SignedMessage<T> signedMessage) throws IOException {
+    public <T extends SignableMessage> SignedMessage<T> verifySignedMessage(SignedMessage<T> signedMessage) throws IOException {
         log.info("verifying signature for " + signedMessage);
         String underlyingMessageType = signedMessage.getType();
         try {
@@ -48,7 +47,7 @@ public class MessageFactory {
                 if (f.getType().isAssignableFrom(SignedMessage.class)) {
                     log.info("verifying field of type " + f.getType());
                     SignedMessage signedMessage = (SignedMessage) f.get(signableMessageObject);
-                    f.set(signableMessageObject, verifyAndBuildSignedMessage(signedMessage));
+                    f.set(signableMessageObject, verifySignedMessage(signedMessage));
                 }
             }
             return signableMessageObject;

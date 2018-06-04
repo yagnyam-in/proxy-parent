@@ -1,6 +1,7 @@
 package in.yagnyam.proxy;
 
 import in.yagnyam.proxy.services.CryptographyService;
+import in.yagnyam.proxy.services.MessageSerializerService;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Singular;
@@ -14,7 +15,7 @@ import java.util.List;
 public class MessageVerificationService {
 
     @NonNull
-    private MessageSerializer serializer;
+    private MessageSerializerService serializer;
 
     @NonNull
     private CryptographyService cryptographyService;

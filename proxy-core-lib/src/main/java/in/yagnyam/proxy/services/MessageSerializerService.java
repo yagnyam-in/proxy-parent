@@ -1,13 +1,17 @@
-package in.yagnyam.proxy;
+package in.yagnyam.proxy.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import in.yagnyam.proxy.SignableMessage;
+import in.yagnyam.proxy.SignedMessage;
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 
 @Slf4j
-public class MessageSerializer {
+@Builder
+public class MessageSerializerService {
 
     private final ObjectMapper objectMapper = new ObjectMapper() {{
     }};

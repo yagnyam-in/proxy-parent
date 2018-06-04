@@ -1,6 +1,5 @@
 package in.yagnyam.proxy.services;
 
-import in.yagnyam.proxy.MessageSerializer;
 import in.yagnyam.proxy.Proxy;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
@@ -17,7 +16,7 @@ import java.util.List;
 public class MessageSignerService {
 
     @NonNull
-    private MessageSerializer serializer;
+    private MessageSerializerService serializer;
 
     @NonNull
     private CryptographyService cryptographyService;
