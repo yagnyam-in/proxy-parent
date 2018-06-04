@@ -2,6 +2,7 @@ package in.yagnyam.proxy.messages.payments;
 
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.SignableMessage;
+import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
 import lombok.*;
 
@@ -14,7 +15,10 @@ import java.util.Date;
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"paymentAuthorizationId", "proxyAccount"})
-public class PaymentAuthorization implements SignableMessage, AddressableMessage {
+public class PaymentAuthorization implements SignableRequestMessage, AddressableMessage {
+
+    @NonNull
+    private String requestId;
 
     @NonNull
     private SignedMessage<ProxyAccount> proxyAccount;
@@ -51,5 +55,10 @@ public class PaymentAuthorization implements SignableMessage, AddressableMessage
     @Override
     public String address() {
         return payeeId;
+    }
+
+    @Override
+    public String requestId() {
+        return requestId;
     }
 }

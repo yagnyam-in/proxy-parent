@@ -2,6 +2,7 @@ package in.yagnyam.proxy.messages.registration;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import in.yagnyam.proxy.SignableMessage;
+import in.yagnyam.proxy.SignableRequestMessage;
 import lombok.*;
 
 /**
@@ -14,7 +15,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ProxyCustomerUpdateRequest implements SignableMessage {
+public class ProxyCustomerUpdateRequest implements SignableRequestMessage {
 
     @NonNull
     private String requestId;
@@ -35,5 +36,10 @@ public class ProxyCustomerUpdateRequest implements SignableMessage {
     @Override
     public String signer() {
         return proxyId;
+    }
+
+    @Override
+    public String requestId() {
+        return requestId;
     }
 }

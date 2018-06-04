@@ -1,5 +1,6 @@
 package in.yagnyam.proxy.messages.registration;
 
+import in.yagnyam.proxy.RequestMessage;
 import lombok.*;
 
 /**
@@ -11,7 +12,7 @@ import lombok.*;
 @AllArgsConstructor
 @ToString
 @EqualsAndHashCode(of = "requestId")
-public class ProxyCreationRequest {
+public class ProxyCreationRequest implements RequestMessage {
 
     /**
      * Unique Request Id. No two requests shall have same request number
@@ -32,4 +33,8 @@ public class ProxyCreationRequest {
     @NonNull
     private String certificateRequestEncoded;
 
+    @Override
+    public String requestId() {
+        return requestId;
+    }
 }

@@ -47,7 +47,7 @@ public class RequestRepository {
                     if (existing == null) {
                         ofy().save().entity(request).now();
                     } else {
-                        throw ServiceException.internalServerError("Duplicate Record Found");
+                        throw ServiceException.badRequest("Duplicate Record Found");
                     }
                 });
             }

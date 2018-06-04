@@ -3,6 +3,7 @@ package in.yagnyam.proxy.server.db;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.VoidWork;
+import in.yagnyam.proxy.server.BadRequestException;
 import in.yagnyam.proxy.server.InternalServerErrorException;
 import in.yagnyam.proxy.server.model.RequestEntity;
 import org.junit.BeforeClass;
@@ -68,7 +69,7 @@ public class RequestRepositoryTest extends RepositoryTestHelper {
 
     @Test
     public void testSaveRequest_DuplicateRequest() {
-        expectedException.expect(InternalServerErrorException.class);
+        expectedException.expect(BadRequestException.class);
         RequestEntity requestEntity = RequestEntity.builder().requestId("RID").requestType("RT").build();
         requestRepository.saveRequest(requestEntity);
         requestRepository.saveRequest(requestEntity);

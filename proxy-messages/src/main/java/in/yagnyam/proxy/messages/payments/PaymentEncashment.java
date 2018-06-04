@@ -2,6 +2,7 @@ package in.yagnyam.proxy.messages.payments;
 
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.SignableMessage;
+import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
 import lombok.*;
 
@@ -12,7 +13,10 @@ import lombok.*;
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"paymentAuthorization"})
-public class PaymentEncashment implements SignableMessage, AddressableMessage {
+public class PaymentEncashment implements SignableRequestMessage, AddressableMessage {
+
+    @NonNull
+    private String requestId;
 
     @NonNull
     private SignedMessage<PaymentAuthorization> paymentAuthorization;
@@ -36,4 +40,8 @@ public class PaymentEncashment implements SignableMessage, AddressableMessage {
         return paymentAuthorization.getMessage().getProxyAccount().signer();
     }
 
+    @Override
+    public String requestId() {
+        return requestId;
+    }
 }

@@ -13,7 +13,7 @@ import java.util.Optional;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString
+@ToString(exclude = "certificateEncoded")
 @EqualsAndHashCode(of = "serialNumber")
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Certificate {

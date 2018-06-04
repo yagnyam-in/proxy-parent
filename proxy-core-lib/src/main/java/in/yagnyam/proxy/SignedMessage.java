@@ -41,4 +41,5 @@ public class SignedMessage<T extends SignableMessage> {
         this.message = (T)message;
         return this;
     }
+
 }
