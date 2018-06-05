@@ -12,14 +12,14 @@ import java.util.Date;
 @Builder
 @Getter
 @ToString
-@EqualsAndHashCode(of = {"proxyAccountId", "customerId"})
+@EqualsAndHashCode(of = {"proxyAccountId", "proxyId"})
 public class ProxyAccount implements SignableMessage, AddressableMessage {
 
     @NonNull
     private ProxyAccountId proxyAccountId;
 
     @NonNull
-    private String customerId;
+    private String proxyId;
 
     @NonNull
     private Date creationDate;
@@ -40,6 +40,6 @@ public class ProxyAccount implements SignableMessage, AddressableMessage {
 
     @Override
     public String address() {
-        return customerId;
+        return proxyId;
     }
 }
