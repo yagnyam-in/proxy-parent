@@ -24,18 +24,12 @@ public class CertificateChain {
     @Singular
     private List<Certificate> certificates;
 
-    /*
-    public Optional<Certificate> getCertificate(String certificateId) {
+    public Optional<Certificate> getCertificateWithId() {
         return certificates.stream().filter(c -> c.matchesId(certificateId)).findFirst();
     }
 
-
-    public Certificate getCertificate() {
-        return certificates.stream()
-                .filter(c -> c.getSerialNumber().equals(certificateSerial))
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No Certificate found for serial " + certificateSerial));
+    public Optional<Certificate> getCertificateWithSerial() {
+        return certificates.stream().filter(c -> c.getSerialNumber().equals(certificateSerial)).findFirst();
     }
-    */
 
 }

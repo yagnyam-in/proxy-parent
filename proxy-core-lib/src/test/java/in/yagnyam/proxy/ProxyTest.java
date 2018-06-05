@@ -21,7 +21,7 @@ public class ProxyTest {
     }
 
     @Test
-    public void testO() {
+    public void testOf() {
         Certificate certificate = mock(Certificate.class);
         when (certificate.getId()).thenReturn("abc");
         when (certificate.getSha256Thumbprint()).thenReturn("123");

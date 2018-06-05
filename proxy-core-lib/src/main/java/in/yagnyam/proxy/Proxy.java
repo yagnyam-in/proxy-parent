@@ -1,10 +1,7 @@
 package in.yagnyam.proxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.ToString;
+import lombok.*;
 
 import java.security.PrivateKey;
 
@@ -27,6 +24,7 @@ public class Proxy {
     private Certificate certificate;
 
     @JsonIgnore
+    @Setter
     private PrivateKey privateKey;
 
     public String getUniqueId() {
@@ -34,12 +32,17 @@ public class Proxy {
     }
 
     public static Proxy of(Certificate certificate) {
+        return of(certificate, null);
+    }
+
+    public static Proxy of(Certificate certificate, PrivateKey privateKey) {
         return builder()
                 .id(certificate.getId())
                 .sha256Thumbprint(certificate.getSha256Thumbprint())
                 .certificateSerialNumber(certificate.getSerialNumber())
                 .name(certificate.getOwner())
                 .certificate(certificate)
+                .privateKey(privateKey)
                 .build();
     }
 }
