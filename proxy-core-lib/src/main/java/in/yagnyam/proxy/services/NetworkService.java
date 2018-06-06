@@ -54,6 +54,11 @@ public class NetworkService {
     }
 
 
+    public <I, O> O postValue(String url, I request, Class<O> resultClass) throws IOException {
+        return postValue(url, Collections.emptyMap(), request, resultClass);
+    }
+
+
     public <I, O> O postValue(String url, Map<String, String> headers, I request, Class<O> resultClass) throws IOException {
         log.debug("POST {} with {}", url, request);
         byte[] requestBytes = new ObjectMapper().writeValueAsBytes(request);
