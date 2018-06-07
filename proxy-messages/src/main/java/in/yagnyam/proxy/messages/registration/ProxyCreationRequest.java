@@ -10,7 +10,7 @@ import lombok.*;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
+@ToString(exclude = "certificateRequestEncoded")
 @EqualsAndHashCode(of = "requestId")
 public class ProxyCreationRequest implements RequestMessage {
 
