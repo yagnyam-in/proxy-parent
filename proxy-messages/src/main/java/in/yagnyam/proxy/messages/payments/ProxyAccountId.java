@@ -6,9 +6,11 @@ import lombok.*;
  * Account Number class to represent an Account
  */
 
-@Data
+@Getter
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
-@RequiredArgsConstructor(staticName = "of")
+@AllArgsConstructor
+@ToString
+@Builder
 public class ProxyAccountId {
 
     @NonNull
