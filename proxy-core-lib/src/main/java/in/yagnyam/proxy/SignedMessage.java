@@ -6,12 +6,15 @@ import lombok.*;
 import java.util.List;
 
 @Builder
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor
 @Getter
 @ToString(of = {"type", "payload", "signatures"})
 public class SignedMessage<T extends SignableMessage> {
 
     @Getter
     @ToString
+    @NoArgsConstructor(access = AccessLevel.PRIVATE)
     @AllArgsConstructor(staticName = "of")
     public static class Signature {
 
@@ -37,6 +40,7 @@ public class SignedMessage<T extends SignableMessage> {
         return message.signer();
     }
 
+    @JsonIgnore
     public SignedMessage<T> setMessage(SignableMessage message) {
         this.message = (T)message;
         return this;
