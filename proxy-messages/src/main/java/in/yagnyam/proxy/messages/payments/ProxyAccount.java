@@ -10,6 +10,8 @@ import java.util.Date;
  * Proxy Account
  */
 @Builder
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"proxyAccountId", "proxyId"})

@@ -12,6 +12,8 @@ import java.util.Date;
  * Payment Authorization
  */
 @Builder
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"paymentAuthorizationId", "proxyAccount"})

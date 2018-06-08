@@ -8,6 +8,8 @@ import lombok.*;
  * Bunq account authorization message
  */
 @Builder
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"requestId"})
