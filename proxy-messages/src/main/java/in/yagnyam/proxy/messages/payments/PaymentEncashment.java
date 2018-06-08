@@ -9,6 +9,8 @@ import lombok.*;
 /**
  * Payment Encashment
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @Getter
 @ToString
@@ -25,10 +27,14 @@ public class PaymentEncashment implements SignableRequestMessage, AddressableMes
 
     private ProxyAccountId receivingProxyAccountId;
 
+    private String bank;
+
     /**
      * Non proxy Account Number
      */
     private String accountNumber;
+
+    private String accountHolder;
 
     @Override
     public String signer() {
