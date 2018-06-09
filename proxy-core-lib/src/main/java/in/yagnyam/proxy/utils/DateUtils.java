@@ -16,4 +16,14 @@ public class DateUtils {
         return c.getTime();
     }
 
+    public static int age(Date dateOfBirth) {
+        Calendar today = Calendar.getInstance();
+
+        Calendar dob = Calendar.getInstance();
+        dob.setTime(dateOfBirth);
+
+        return today.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
+    }
+
+
 }

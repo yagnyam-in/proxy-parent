@@ -29,6 +29,8 @@ public class ProxyIdentity implements SignableMessage, AddressableMessage {
 
     private String name;
 
+    private String gender;
+
     private Integer age;
 
     private Boolean is18Plus;

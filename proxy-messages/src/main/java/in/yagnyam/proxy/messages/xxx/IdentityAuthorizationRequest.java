@@ -28,11 +28,13 @@ public class IdentityAuthorizationRequest implements SignableRequestMessage {
 
     private boolean revealName;
 
+    private boolean revealGender;
+
+    private boolean revealDateOfBirth;
+
     private boolean revealAge;
 
     private boolean revealIs18Plus;
-
-    private boolean revealDateOfBirth;
 
     @Override
     public String requestId() {
