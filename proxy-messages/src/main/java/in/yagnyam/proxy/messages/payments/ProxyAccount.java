@@ -10,7 +10,7 @@ import java.util.Date;
  * Proxy Account
  */
 @Builder
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString

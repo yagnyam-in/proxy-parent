@@ -12,7 +12,7 @@ import java.util.Date;
  * Payment Authorization
  */
 @Builder
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString

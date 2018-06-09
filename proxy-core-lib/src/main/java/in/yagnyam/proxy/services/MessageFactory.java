@@ -33,12 +33,14 @@ public class MessageFactory {
             SignableMessage underlyingMessage = buildSignableMessage(signedMessage.getPayload(), messageClass);
             return signedMessage.setMessage(underlyingMessage);
         } catch (ClassNotFoundException e) {
+            log.error("Unknown message type " + underlyingMessageType, e);
             throw new IllegalArgumentException("Unknown message type " + underlyingMessageType);
         }
     }
 
 
     private <T extends SignableMessage> T buildSignableMessage(String signableMessage, Class<T> messageClass) throws IOException {
+        log.info("buildSignableMessage({}, {})", signableMessage, messageClass);
         T signableMessageObject = serializer.deserialize(signableMessage, messageClass);
         Field[] fields = signableMessageObject.getClass().getDeclaredFields();
         try {
@@ -52,6 +54,7 @@ public class MessageFactory {
             }
             return signableMessageObject;
         } catch (IllegalAccessException e) {
+            log.error("Unknown message type " + messageClass, e);
             throw new IllegalArgumentException("Unknown message type " + messageClass.getSimpleName());
         }
     }

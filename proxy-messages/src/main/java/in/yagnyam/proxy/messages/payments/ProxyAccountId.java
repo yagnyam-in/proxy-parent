@@ -7,7 +7,7 @@ import lombok.*;
  */
 
 @Getter
-@NoArgsConstructor(access = AccessLevel.PACKAGE)
+@NoArgsConstructor
 @AllArgsConstructor
 @ToString
 @Builder

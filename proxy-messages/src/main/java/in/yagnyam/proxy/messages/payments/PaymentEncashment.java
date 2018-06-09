@@ -9,7 +9,7 @@ import lombok.*;
 /**
  * Payment Encashment
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @Getter
