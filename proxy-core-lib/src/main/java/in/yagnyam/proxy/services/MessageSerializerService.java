@@ -34,6 +34,15 @@ public class MessageSerializerService {
         }
     }
 
+    public String serialize(Object object) throws IOException {
+        try {
+            return objectMapper.writeValueAsString(object);
+        } catch (JsonProcessingException e) {
+            log.error("Unable to serialize " + object, e);
+            throw new IOException(e);
+        }
+    }
+
     public <T> T deserialize(String message, Class<T> tClass) throws IOException {
         try {
             return objectMapper.readValue(message, tClass);
