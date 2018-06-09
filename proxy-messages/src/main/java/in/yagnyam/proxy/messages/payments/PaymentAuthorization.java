@@ -23,7 +23,7 @@ public class PaymentAuthorization implements SignableRequestMessage, Addressable
     private String requestId;
 
     @NonNull
-    private SignedMessage<ProxyAccount> proxyAccount;
+    public SignedMessage<ProxyAccount> proxyAccount;
 
     @NonNull
     private String paymentAuthorizationId;

@@ -21,7 +21,7 @@ public class PaymentEncashment implements SignableRequestMessage, AddressableMes
     private String requestId;
 
     @NonNull
-    private SignedMessage<PaymentAuthorization> paymentAuthorization;
+    public SignedMessage<PaymentAuthorization> paymentAuthorization;
 
     private Amount amount;
 

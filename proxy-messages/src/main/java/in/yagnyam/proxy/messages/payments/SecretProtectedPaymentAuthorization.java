@@ -16,7 +16,7 @@ import java.util.Date;
 public class SecretProtectedPaymentAuthorization implements SignableMessage {
 
     @NonNull
-    private SignedMessage<ProxyAccount> proxyAccount;
+    public SignedMessage<ProxyAccount> proxyAccount;
 
     @NonNull
     private String paymentAuthorizationId;

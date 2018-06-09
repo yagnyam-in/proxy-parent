@@ -26,7 +26,7 @@ public class MessageFactory {
 
 
     public <T extends SignableMessage> SignedMessage<T> verifySignedMessage(SignedMessage<T> signedMessage) throws IOException {
-        log.info("verifying signature for " + signedMessage);
+        log.debug("verifying signature for " + signedMessage);
         String underlyingMessageType = signedMessage.getType();
         try {
             Class messageClass = Class.forName(underlyingMessageType);
@@ -40,14 +40,14 @@ public class MessageFactory {
 
 
     private <T extends SignableMessage> T buildSignableMessage(String signableMessage, Class<T> messageClass) throws IOException {
-        log.info("buildSignableMessage({}, {})", signableMessage, messageClass);
+        log.debug("buildSignableMessage({}, {})", signableMessage, messageClass);
         T signableMessageObject = serializer.deserialize(signableMessage, messageClass);
         Field[] fields = signableMessageObject.getClass().getDeclaredFields();
         try {
             // See if any signed message fields are there
             for (Field f : fields) {
                 if (f.getType().isAssignableFrom(SignedMessage.class)) {
-                    log.info("verifying field of type " + f.getType());
+                    log.debug("verifying field of type " + f.getType());
                     SignedMessage signedMessage = (SignedMessage) f.get(signableMessageObject);
                     f.set(signableMessageObject, verifySignedMessage(signedMessage));
                 }
