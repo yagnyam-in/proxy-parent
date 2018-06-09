@@ -51,7 +51,7 @@ public class PaymentAuthorization implements SignableRequestMessage, Addressable
 
     @Override
     public String signer() {
-        return proxyAccount.signer();
+        return proxyAccount.getMessage().getProxyId();
     }
 
     @Override

@@ -24,6 +24,16 @@ public class IdentityAuthorization implements SignableRequestMessage {
     @NonNull
     private String proxyId;
 
+    private boolean revealNationality;
+
+    private boolean revealName;
+
+    private boolean revealAge;
+
+    private boolean revealIs18Plus;
+
+    private boolean revealDateOfBirth;
+
     @Override
     public String requestId() {
         return requestId;
