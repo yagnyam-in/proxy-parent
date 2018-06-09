@@ -55,19 +55,27 @@ public class NetworkService {
 
 
     public <I, O> O postValue(String url, I request, Class<O> resultClass) throws IOException {
-        return postValue(url, Collections.emptyMap(), request, resultClass);
+        return postValueWithHeaders(url, Collections.emptyMap(), request, resultClass);
+    }
+
+    public <T> HttpResponse postValue(String url, T request) throws IOException {
+        return postValueWithHeaders(url, Collections.emptyMap(), request);
     }
 
 
-    public <I, O> O postValue(String url, Map<String, String> headers, I request, Class<O> resultClass) throws IOException {
+    public <T> HttpResponse postValueWithHeaders(String url, Map<String, String> headers, T request) throws IOException {
         log.debug("POST {} with {}", url, request);
         byte[] requestBytes = new ObjectMapper().writeValueAsBytes(request);
         HttpContent httpContent = new ByteArrayContent(MediaType.JSON_UTF_8.toString(), requestBytes);
-        HttpResponse httpResponse = httpRequestFactory(headers)
+        return httpRequestFactory(headers)
                 .buildPostRequest(new GenericUrl(url), httpContent)
                 .setLoggingEnabled(true)
                 .setSuppressUserAgentSuffix(true)
                 .execute();
+    }
+
+    public <I, O> O postValueWithHeaders(String url, Map<String, String> headers, I request, Class<O> resultClass) throws IOException {
+        HttpResponse httpResponse = postValueWithHeaders(url, headers, request);
         String response = extractResponse(url, httpResponse);
         log.info("POST {} with {} => {}", url, request, response);
         return new ObjectMapper().readValue(response, resultClass);
@@ -101,8 +109,6 @@ public class NetworkService {
             request.setReadTimeout(readTimeout);
         });
     }
-
-
 
 
     public static Builder builder() {
