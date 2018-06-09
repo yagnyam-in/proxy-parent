@@ -10,7 +10,7 @@ import lombok.*;
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"proxyIdentity", "requestId"})
-public class IdentityAuthorization  implements SignableRequestMessage {
+public class IdentityAuthorization implements SignableRequestMessage {
 
     @NonNull
     private String requestId;

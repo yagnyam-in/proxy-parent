@@ -13,7 +13,7 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EqualsAndHashCode(of = {"requestId"})
-public class IdentityAuthorization implements SignableRequestMessage {
+public class IdentityAuthorizationRequest implements SignableRequestMessage {
 
     @NonNull
     private String requestId;

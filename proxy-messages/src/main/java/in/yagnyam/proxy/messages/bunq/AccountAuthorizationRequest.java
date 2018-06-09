@@ -13,7 +13,7 @@ import lombok.*;
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"requestId"})
-public class AccountAuthorization implements SignableRequestMessage {
+public class AccountAuthorizationRequest implements SignableRequestMessage {
 
     @NonNull
     private String requestId;
