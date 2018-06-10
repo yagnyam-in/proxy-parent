@@ -18,6 +18,14 @@ public class IdentityAuthorization implements SignableRequestMessage {
     @NonNull
     public SignedMessage<ProxyIdentity> proxyIdentity;
 
+
+    private boolean consentToMail;
+
+    private boolean consentToRequestPayments;
+
+    private boolean consentToVoiceCall;
+
+
     @Override
     public String requestId() {
         return requestId;

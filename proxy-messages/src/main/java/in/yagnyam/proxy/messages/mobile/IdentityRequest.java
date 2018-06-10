@@ -20,4 +20,11 @@ public class IdentityRequest {
     private boolean revealIs18Plus;
 
     private boolean revealDateOfBirth;
+
+    private boolean consentToMail;
+
+    private boolean consentToRequestPayments;
+
+    private boolean consentToVoiceCall;
+
 }
