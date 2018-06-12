@@ -8,7 +8,7 @@
     <packaging>pom</packaging>
 
     <name>${project.groupId}:${project.artifactId}</name>
-    <description>A shared configuration for Digana Projects</description>
+    <description>A shared configuration for Proxy Projects</description>
     <url>https://bitbucket.org/yagnyam-proxy/proxy-parent</url>
 
     <developers>
@@ -41,7 +41,7 @@
 
         <maven-failsafe-plugin>2.20</maven-failsafe-plugin>
         <maven-surefire-plugin>2.20</maven-surefire-plugin>
-        <maven-checkstyle-plugin>2.17</maven-checkstyle-plugin>
+        <maven-checkstyle-plugin>3.0.0</maven-checkstyle-plugin>
         <maven-clean-plugin>3.0.0</maven-clean-plugin>
         <maven-deploy-plugin>2.8.2</maven-deploy-plugin>
         <maven-install-plugin>2.5.2</maven-install-plugin>
@@ -267,6 +267,7 @@
                             </execution>
                         </executions>
                     </plugin>
+
                 </plugins>
             </build>
         </profile>
@@ -337,22 +338,12 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <version>${maven-checkstyle-plugin}</version>
                 <configuration>
-                    <configLocation>google-checks.xml</configLocation>
                     <consoleOutput>true</consoleOutput>
                     <failOnViolation>false</failOnViolation>
                     <failsOnError>false</failsOnError>
                     <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                    <suppressionsLocation>suppressions.xml</suppressionsLocation>
+                    <!--suppressionsLocation>suppressions.xml</suppressionsLocation-->
                 </configuration>
-                <dependencies>
-                    <!-- Add a dependency to use bundled resources.
-                         See: http://stackoverflow.com/a/19690484/101923 -->
-                    <dependency>
-                        <groupId>com.google.cloud.samples</groupId>
-                        <artifactId>checkstyle-configuration</artifactId>
-                        <version>1.0.0</version>
-                    </dependency>
-                </dependencies>
                 <executions>
                     <execution>
                         <goals>

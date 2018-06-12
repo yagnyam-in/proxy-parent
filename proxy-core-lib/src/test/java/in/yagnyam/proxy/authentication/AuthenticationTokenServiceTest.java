@@ -1,6 +1,6 @@
 package in.yagnyam.proxy.authentication;
 
-import in.yagnyam.digana.TestUtils;
+import in.yagnyam.proxy.TestUtils;
 import in.yagnyam.proxy.utils.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.jose4j.keys.resolvers.VerificationKeyResolver;

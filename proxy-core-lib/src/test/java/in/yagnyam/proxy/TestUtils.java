@@ -1,6 +1,6 @@
-package in.yagnyam.digana;
+package in.yagnyam.proxy;
 
-import in.yagnyam.digana.utils.ChequeDateUtils;
+import in.yagnyam.proxy.utils.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -54,8 +54,8 @@ public class TestUtils {
 
   public static X509Certificate createCertificate(KeyPair keyPair)
       throws GeneralSecurityException, OperatorCreationException, IOException {
-    Date startDate = ChequeDateUtils.today();
-    Date expiryDate = ChequeDateUtils.daysAfterToday(10);
+    Date startDate = DateUtils.now();
+    Date expiryDate = DateUtils.afterYears(1);
     BigInteger serialNumber = BigInteger.ONE;
     X500Name subjectName = new X500Name("CN=Dummy");
     X509v3CertificateBuilder certificateBuilder =

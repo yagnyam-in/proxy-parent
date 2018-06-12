@@ -1,9 +1,8 @@
 package in.yagnyam.proxy.server;
 
 import com.googlecode.objectify.ObjectifyService;
-import in.yagnyam.proxy.server.IdGenerator;
 import in.yagnyam.proxy.server.db.RepositoryTestHelper;
-import in.yagnyam.digana.server.model.Bank;
+import in.yagnyam.proxy.server.model.RequestEntity;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,14 +18,14 @@ public class IdGeneratorTest extends RepositoryTestHelper {
 
     @BeforeClass
     public static void registerBank() {
-        ObjectifyService.register(Bank.class);
+        ObjectifyService.register(RequestEntity.class);
     }
 
     @Test
     public void testGetNextId() {
         Set<Long> allocated = new HashSet<>();
         for (int i=0; i<100; i++) {
-            long id = IdGenerator.instance().getNextId(Bank.class);
+            long id = IdGenerator.instance().getNextId(RequestEntity.class);
             assertFalse(allocated.contains(id));
             allocated.add(id);
         }
@@ -35,13 +34,13 @@ public class IdGeneratorTest extends RepositoryTestHelper {
 
     @Test(expected = IllegalArgumentException.class)
     public void testGetNextIds_InvalidInput() {
-        IdGenerator.instance().getNextIds(Bank.class, 0);
+        IdGenerator.instance().getNextIds(RequestEntity.class, 0);
     }
 
     @Test
     public void testGetNextIds() {
-        long id = IdGenerator.instance().getNextIds(Bank.class, 10);
-        long next = IdGenerator.instance().getNextId(Bank.class);
+        long id = IdGenerator.instance().getNextIds(RequestEntity.class, 10);
+        long next = IdGenerator.instance().getNextId(RequestEntity.class);
         assertTrue(next >= id + 10);
     }
 

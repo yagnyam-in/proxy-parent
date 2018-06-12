@@ -56,7 +56,7 @@ public class PemService {
         return encodePublicKey(publicKey, "RSA PUBLIC KEY");
     }
 
-    public String encodePublicKey(PublicKey publicKey, String name) throws GeneralSecurityException, IOException {
+    public String encodePublicKey(PublicKey publicKey, String name) throws IOException {
         return asPemString(name, publicKey.getEncoded());
     }
 
@@ -67,7 +67,7 @@ public class PemService {
         return factory.generatePrivate(privKeySpec);
     }
 
-    public String encodePrivateKey(PrivateKey privateKey) throws GeneralSecurityException, IOException {
+    public String encodePrivateKey(PrivateKey privateKey) throws IOException {
         return asPemString("RSA PRIVATE KEY", privateKey.getEncoded());
     }
 
@@ -81,15 +81,21 @@ public class PemService {
         return asPemString("CERTIFICATE", certificate.getEncoded());
     }
 
-    public String encodeCertificate(X509CertificateHolder certificateHolder) throws GeneralSecurityException, IOException {
+    public String encodeCertificate(X509CertificateHolder certificateHolder) throws IOException {
         return asPemString("CERTIFICATE", certificateHolder.getEncoded());
     }
 
-    public PKCS10CertificationRequest decodeCertificateRequest(String encodedCertificateRequest) throws GeneralSecurityException, IOException {
+    public PKCS10CertificationRequest decodeCertificateRequest(final String encodedCertificateRequest) throws IOException {
         return new PKCS10CertificationRequest(getPemContent(encodedCertificateRequest));
     }
 
-    public String encodeCertificateRequest(PKCS10CertificationRequest certificateRequest) throws GeneralSecurityException, IOException {
+    /**
+     * Returns Certificate Request as PEM encoded String
+     * @param certificateRequest Certificate Request
+     * @return PEM encoded string for Certificate Request
+     * @throws IOException Any error while encoding
+     */
+    public String encodeCertificateRequest(final PKCS10CertificationRequest certificateRequest) throws IOException {
         return asPemString("CERTIFICATE REQUEST", certificateRequest.getEncoded());
     }
 

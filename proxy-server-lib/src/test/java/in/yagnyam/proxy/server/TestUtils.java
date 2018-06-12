@@ -1,6 +1,5 @@
 package in.yagnyam.proxy.server;
 
-import in.yagnyam.digana.server.model.Bank;
 import in.yagnyam.proxy.Certificate;
 import in.yagnyam.proxy.server.model.PrivateKeyEntity;
 import in.yagnyam.proxy.services.CryptographyService;
@@ -35,10 +34,6 @@ public final class TestUtils {
                 .certificateEncoded("CERT")
                 .subject("SUB")
                 .build();
-    }
-
-    public static Bank sampleBank(String id) {
-        return Bank.builder().bankNumber(id).name("Sample").build();
     }
 
     public static PrivateKeyEntity samplePrivateKeyEntity(String id) {
