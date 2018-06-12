@@ -1,8 +1,11 @@
 package in.yagnyam.proxy.messages.payments;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 /**
@@ -14,6 +17,7 @@ import lombok.*;
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"requestId"})
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Payment implements SignableRequestMessage, AddressableMessage {
 
     @NonNull
@@ -22,6 +26,7 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
     @NonNull
     public SignedMessage<ProxyAccount> proxyAccount;
 
+    @NonNull
     private Amount amount;
 
     private ProxyAccountId receivingProxyAccountId;
@@ -31,6 +36,20 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
     @Override
     public String signer() {
         return proxyAccount.getMessage().getProxyId();
+    }
+
+    @Override
+    public String toReadableString() {
+        return null;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isValid() {
+        return StringUtils.isValid(requestId)
+                && proxyAccount != null && proxyAccount.isValid()
+                && (receivingProxyAccountId != null && receivingProxyAccountId.isValid()
+                || receivingNonProxyAccount != null && receivingNonProxyAccount.isValid());
     }
 
     @Override

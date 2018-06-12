@@ -1,5 +1,6 @@
 package in.yagnyam.proxy.services;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.*;
 import lombok.SneakyThrows;
 import lombok.ToString;
@@ -34,6 +35,17 @@ public class MessageFactoryTest {
         public String signer() {
             return "dummy";
         }
+
+        @Override
+        public String toReadableString() {
+            return "dummy";
+        }
+
+        @Override
+        @JsonIgnore
+        public boolean isValid() {
+            return true;
+        }
     }
 
 
@@ -43,6 +55,17 @@ public class MessageFactoryTest {
         @Override
         public String signer() {
             return "dummy";
+        }
+
+        @Override
+        public String toReadableString() {
+            return "dummy";
+        }
+
+        @Override
+        @JsonIgnore
+        public boolean isValid() {
+            return true;
         }
     }
 

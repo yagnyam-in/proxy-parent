@@ -40,10 +40,10 @@ public class PrivateKeyService {
 
     private PrivateKeyEntity enrichPrivateEntity(PrivateKeyEntity privateKeyEntity) {
         try {
-            if (!StringUtils.isEmpty(privateKeyEntity.getCertificateEncoded())) {
+            if (StringUtils.isValid(privateKeyEntity.getCertificateEncoded())) {
                 privateKeyEntity.setCertificate(pemService.decodeCertificate(privateKeyEntity.getCertificateEncoded()));
             }
-            if (!StringUtils.isEmpty(privateKeyEntity.getPrivateKeyEncoded())) {
+            if (StringUtils.isValid(privateKeyEntity.getPrivateKeyEncoded())) {
                 privateKeyEntity.setPrivateKey(pemService.decodePrivateKey(privateKeyEntity.getPrivateKeyEncoded()));
             }
             return privateKeyEntity;

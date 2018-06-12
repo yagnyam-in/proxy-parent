@@ -1,6 +1,8 @@
 package in.yagnyam.proxy.messages.bunq;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.SignableRequestMessage;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 
@@ -32,5 +34,18 @@ public class AccountAuthorizationRequest implements SignableRequestMessage {
     @Override
     public String signer() {
         return proxyId;
+    }
+
+    @Override
+    public String toReadableString() {
+        return String.format("With request %s, authorize account with Api Token %s to Proxy Id %s ", requestId, apiToken, proxyId);
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isValid() {
+        return StringUtils.isValid(requestId)
+                && StringUtils.isValid(apiToken)
+                && StringUtils.isValid(proxyId);
     }
 }

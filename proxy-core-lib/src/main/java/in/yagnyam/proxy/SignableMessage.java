@@ -5,4 +5,7 @@ public interface SignableMessage {
 
     String signer();
 
+    String toReadableString();
+
+    boolean isValid();
 }

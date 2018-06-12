@@ -1,9 +1,12 @@
 package in.yagnyam.proxy.messages.payments;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.utils.DateUtils;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 import java.util.Date;
@@ -52,6 +55,26 @@ public class PaymentAuthorization implements SignableRequestMessage, Addressable
     @Override
     public String signer() {
         return proxyAccount.getMessage().getProxyId();
+    }
+
+    @Override
+    public String toReadableString() {
+        return null;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isValid() {
+        return StringUtils.isValid(requestId)
+                && proxyAccount != null
+                && proxyAccount.isValid()
+                && StringUtils.isValid(payeeId)
+                && DateUtils.isValid(validFrom)
+                && DateUtils.isValid(validTill)
+                && DateUtils.isValid(issueDate)
+                && amount != null
+                && amount.isValid()
+                && StringUtils.isValid(transactionId);
     }
 
     @Override

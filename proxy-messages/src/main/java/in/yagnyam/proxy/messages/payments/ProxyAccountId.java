@@ -1,5 +1,7 @@
 package in.yagnyam.proxy.messages.payments;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 /**
@@ -19,4 +21,8 @@ public class ProxyAccountId {
     @NonNull
     private String accountId;
 
+    @JsonIgnore
+    public boolean isValid() {
+        return StringUtils.isValid(bankId) && StringUtils.isValid(accountId);
+    }
 }

@@ -1,8 +1,10 @@
 package in.yagnyam.proxy.messages.registration;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignableRequestMessage;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 /**
@@ -36,6 +38,18 @@ public class ProxyCustomerUpdateRequest implements SignableRequestMessage {
     @Override
     public String signer() {
         return proxyId;
+    }
+
+    @Override
+    public String toReadableString() {
+        return null;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isValid() {
+        return StringUtils.isValid(requestId)
+                && StringUtils.isValid(proxyId);
     }
 
     @Override

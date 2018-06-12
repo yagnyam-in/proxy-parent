@@ -3,6 +3,7 @@ package in.yagnyam.proxy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 import java.util.List;
@@ -35,4 +36,9 @@ public class CertificateChain {
         return certificates.stream().filter(c -> c.getSerialNumber().equals(certificateSerial)).findFirst();
     }
 
+    @JsonIgnore
+    public boolean isValid() {
+        return (StringUtils.isValid(certificateSerial) || StringUtils.isValid(certificateId))
+                && certificates.stream().allMatch(Certificate::isValid);
+    }
 }

@@ -2,6 +2,7 @@ package in.yagnyam.proxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import in.yagnyam.proxy.utils.DateUtils;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
@@ -85,5 +86,16 @@ public class Certificate {
         } else {
             throw new IllegalArgumentException("Invalid certificate Id" + certificateUniqueId);
         }
+    }
+
+    @JsonIgnore
+    public boolean isValid() {
+        return StringUtils.isValid(serialNumber)
+                && StringUtils.isValid(owner)
+                && StringUtils.isValid(sha256Thumbprint)
+                && StringUtils.isValid(subject)
+                && DateUtils.isValid(validFrom)
+                && DateUtils.isValid(validTill)
+                && StringUtils.isValid(certificateEncoded);
     }
 }

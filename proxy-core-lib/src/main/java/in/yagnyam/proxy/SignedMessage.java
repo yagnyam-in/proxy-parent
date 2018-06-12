@@ -1,6 +1,7 @@
 package in.yagnyam.proxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 import java.util.List;
@@ -21,6 +22,11 @@ public class SignedMessage<T extends SignableMessage> {
         private String algorithm;
 
         private String value;
+
+        @JsonIgnore
+        public boolean isValid() {
+            return StringUtils.isValid(algorithm) && StringUtils.isValid(value);
+        }
     }
 
     @JsonIgnore
@@ -46,4 +52,13 @@ public class SignedMessage<T extends SignableMessage> {
         return this;
     }
 
+    @JsonIgnore
+    public boolean isValid() {
+        return message != null
+                && message.isValid()
+                && StringUtils.isValid(type)
+                && StringUtils.isValid(payload)
+                && signatures != null
+                && signatures.stream().allMatch(Signature::isValid);
+    }
 }

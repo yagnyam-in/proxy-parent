@@ -1,7 +1,9 @@
 package in.yagnyam.proxy.messages.identity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 @Builder
@@ -18,13 +20,11 @@ public class IdentityAuthorization implements SignableRequestMessage {
     @NonNull
     public SignedMessage<ProxyIdentity> proxyIdentity;
 
-
     private boolean consentToMail;
 
     private boolean consentToRequestPayments;
 
     private boolean consentToVoiceCall;
-
 
     @Override
     public String requestId() {
@@ -34,5 +34,18 @@ public class IdentityAuthorization implements SignableRequestMessage {
     @Override
     public String signer() {
         return proxyIdentity.getMessage().getProxyId();
+    }
+
+    @Override
+    public String toReadableString() {
+        return null;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isValid() {
+        return StringUtils.isValid(requestId)
+                && proxyIdentity != null
+                && proxyIdentity.isValid();
     }
 }

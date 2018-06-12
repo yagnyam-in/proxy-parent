@@ -10,6 +10,10 @@ public class StringUtils {
         return s == null || s.trim().isEmpty();
     }
 
+    public static boolean isValid(String s) {
+        return !isEmpty(s);
+    }
+
     public static String nonNull(String... strings) {
         if (strings == null) {
             return "";

@@ -25,5 +25,8 @@ public class DateUtils {
         return today.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
     }
 
+    public static boolean isValid(Date date) {
+        return date != null;
+    }
 
 }

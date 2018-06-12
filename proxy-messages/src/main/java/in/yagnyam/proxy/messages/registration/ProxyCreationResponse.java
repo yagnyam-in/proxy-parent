@@ -1,9 +1,11 @@
 package in.yagnyam.proxy.messages.registration;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import in.yagnyam.proxy.CertificateChain;
 import in.yagnyam.proxy.Constants;
 import in.yagnyam.proxy.SignableMessage;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 import java.util.Map;
@@ -35,6 +37,21 @@ public class ProxyCreationResponse implements SignableMessage {
     @Override
     public String signer() {
         return Constants.PROXY_CENTRAL;
+    }
+
+    @Override
+    public String toReadableString() {
+        return null;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isValid() {
+        return StringUtils.isValid(requestId)
+                && StringUtils.isValid(proxyId)
+                && StringUtils.isValid(certificateSerial)
+                && certificateChain != null
+                && certificateChain.isValid();
     }
 
 }

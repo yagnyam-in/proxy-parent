@@ -42,6 +42,16 @@ public class MessageSignerServiceTest {
             public String signer() {
                 return "dummy";
             }
+
+            @Override
+            public String toReadableString() {
+                return "dummy";
+            }
+
+            @Override
+            public boolean isValid() {
+                return true;
+            }
         };
         MessageSignerService service = MessageSignerService.builder()
                 .serializer(new MessageSerializerService())

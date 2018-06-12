@@ -1,5 +1,6 @@
 package in.yagnyam.proxy.messages.payments;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import lombok.*;
@@ -39,6 +40,17 @@ public class SecretProtectedPaymentAuthorization implements SignableMessage {
     @Override
     public String signer() {
         return proxyAccount.signer();
+    }
+
+    @Override
+    public String toReadableString() {
+        return null;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isValid() {
+        return false;
     }
 
 }

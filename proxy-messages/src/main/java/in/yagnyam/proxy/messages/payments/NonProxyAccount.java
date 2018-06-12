@@ -1,5 +1,7 @@
 package in.yagnyam.proxy.messages.payments;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 /**
@@ -27,5 +29,12 @@ public class NonProxyAccount {
      * Account Holder Name
      */
     private String accountHolder;
+
+    @JsonIgnore
+    public boolean isValid() {
+        return StringUtils.isValid(bank)
+                && StringUtils.isValid(accountNumber)
+                && StringUtils.isValid(accountHolder);
+    }
 
 }
