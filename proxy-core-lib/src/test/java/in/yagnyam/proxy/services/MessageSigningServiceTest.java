@@ -19,7 +19,7 @@ import java.security.Security;
 import static org.mockito.Mockito.mock;
 
 @RunWith(MockitoJUnitRunner.class)
-public class MessageSignerServiceTest {
+public class MessageSigningServiceTest {
 
     static {
         Security.addProvider(new BouncyCastleProvider());
@@ -53,7 +53,7 @@ public class MessageSignerServiceTest {
                 return true;
             }
         };
-        MessageSignerService service = MessageSignerService.builder()
+        MessageSigningService service = MessageSigningService.builder()
                 .serializer(new MessageSerializerService())
                 .cryptographyService(CryptographyService.instance())
                 .signatureAlgorithm("SHA256WithRSAEncryption")

@@ -19,6 +19,9 @@ public class MessageFactory {
     @NonNull
     private CryptographyService cryptographyService;
 
+    @NonNull
+    private MessageVerificationService verificationService;
+
     public SignedMessage buildSignedMessage(String signedMessage) throws IOException {
         SignedMessage signedMessageObject = serializer.deserialize(signedMessage, SignedMessage.class);
         return verifySignedMessage(signedMessageObject);
@@ -31,7 +34,9 @@ public class MessageFactory {
         try {
             Class messageClass = Class.forName(underlyingMessageType);
             SignableMessage underlyingMessage = buildSignableMessage(signedMessage.getPayload(), messageClass);
-            return signedMessage.setMessage(underlyingMessage);
+            SignedMessage<T> extraced = signedMessage.setMessage(underlyingMessage);
+            verificationService.verify(extraced);
+            return extraced;
         } catch (ClassNotFoundException e) {
             log.error("Unknown message type " + underlyingMessageType, e);
             throw new IllegalArgumentException("Unknown message type " + underlyingMessageType);

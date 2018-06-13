@@ -84,7 +84,7 @@ public class MessageFactoryTest {
     @Test
     public void testVerifyAndBuildSignedMessage() throws IOException {
         Proxy proxy = sampleProxy();
-        MessageSignerService service = MessageSignerService.builder()
+        MessageSigningService service = MessageSigningService.builder()
                 .serializer(messageSerializerService)
                 .cryptographyService(CryptographyService.instance())
                 .signatureAlgorithm("SHA256WithRSAEncryption")
@@ -104,7 +104,7 @@ public class MessageFactoryTest {
     @Test
     public void testVerifyAndBuildSignedMessage_InnerObject() throws IOException {
         Proxy proxy = sampleProxy();
-        MessageSignerService service = MessageSignerService.builder()
+        MessageSigningService service = MessageSigningService.builder()
                 .serializer(messageSerializerService)
                 .cryptographyService(CryptographyService.instance())
                 .signatureAlgorithm("SHA256WithRSAEncryption")
