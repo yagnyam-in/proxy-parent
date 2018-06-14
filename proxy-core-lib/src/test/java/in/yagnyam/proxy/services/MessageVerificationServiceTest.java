@@ -1,6 +1,7 @@
 package in.yagnyam.proxy.services;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -11,5 +12,10 @@ public class MessageVerificationServiceTest {
 
     static {
         Security.addProvider(new BouncyCastleProvider());
+    }
+
+    @Test
+    public void test() {
+
     }
 }

@@ -6,7 +6,9 @@ import in.yagnyam.proxy.SignableMessage;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
@@ -24,6 +26,9 @@ public class MessageSigningServiceTest {
     static {
         Security.addProvider(new BouncyCastleProvider());
     }
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @SneakyThrows
     private PrivateKey samplePrivateKey() {

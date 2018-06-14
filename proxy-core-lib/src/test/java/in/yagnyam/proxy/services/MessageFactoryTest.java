@@ -5,9 +5,12 @@ import in.yagnyam.proxy.*;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.security.KeyPairGenerator;
@@ -16,7 +19,8 @@ import java.security.SecureRandom;
 import java.security.Security;
 
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MessageFactoryTest {
@@ -26,7 +30,12 @@ public class MessageFactoryTest {
         Security.addProvider(new BouncyCastleProvider());
     }
 
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
     private MessageSerializerService messageSerializerService = new MessageSerializerService();
+
 
     @ToString
     static class SimpleSignableMessage implements SignableMessage {
@@ -84,6 +93,10 @@ public class MessageFactoryTest {
     @Test
     public void testVerifyAndBuildSignedMessage() throws IOException {
         Proxy proxy = sampleProxy();
+
+        MessageVerificationService verificationService = mock(MessageVerificationService.class);
+        doAnswer(invocation -> null).when(verificationService).verify(any(SignedMessage.class));
+
         MessageSigningService service = MessageSigningService.builder()
                 .serializer(messageSerializerService)
                 .cryptographyService(CryptographyService.instance())
@@ -95,6 +108,7 @@ public class MessageFactoryTest {
         MessageFactory messageFactory = MessageFactory.builder()
                 .serializer(messageSerializerService)
                 .cryptographyService(CryptographyService.instance())
+                .verificationService(verificationService)
                 .build();
 
         messageFactory.verifySignedMessage(signedMessage);
@@ -104,6 +118,10 @@ public class MessageFactoryTest {
     @Test
     public void testVerifyAndBuildSignedMessage_InnerObject() throws IOException {
         Proxy proxy = sampleProxy();
+
+        MessageVerificationService verificationService = mock(MessageVerificationService.class);
+        doAnswer(invocation -> null).when(verificationService).verify(any(SignedMessage.class));
+
         MessageSigningService service = MessageSigningService.builder()
                 .serializer(messageSerializerService)
                 .cryptographyService(CryptographyService.instance())
@@ -120,6 +138,7 @@ public class MessageFactoryTest {
 
         MessageFactory messageFactory = MessageFactory.builder()
                 .serializer(messageSerializerService)
+                .verificationService(verificationService)
                 .cryptographyService(CryptographyService.instance())
                 .build();
 
@@ -129,6 +148,31 @@ public class MessageFactoryTest {
         assertNotNull(result.getMessage());
     }
 
+
+    @Test
+    public void testVerifyAndBuildSignedMessage_InvalidMessage() throws IOException {
+        Proxy proxy = sampleProxy();
+        thrown.expect(IllegalArgumentException.class);
+
+        MessageVerificationService verificationService = mock(MessageVerificationService.class);
+        doThrow(new IllegalArgumentException("Invalid Message")).when(verificationService).verify(any(SignedMessage.class));
+
+        MessageSigningService service = MessageSigningService.builder()
+                .serializer(messageSerializerService)
+                .cryptographyService(CryptographyService.instance())
+                .signatureAlgorithm("SHA256WithRSAEncryption")
+                .build();
+        SimpleSignableMessage signableMessage = new SimpleSignableMessage();
+        SignedMessage<SimpleSignableMessage> signedMessage = service.sign(signableMessage, proxy);
+
+        MessageFactory messageFactory = MessageFactory.builder()
+                .serializer(messageSerializerService)
+                .cryptographyService(CryptographyService.instance())
+                .verificationService(verificationService)
+                .build();
+
+        messageFactory.verifySignedMessage(signedMessage);
+    }
 
 
 }
