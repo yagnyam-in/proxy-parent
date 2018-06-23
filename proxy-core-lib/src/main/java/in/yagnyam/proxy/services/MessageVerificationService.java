@@ -79,7 +79,7 @@ public class MessageVerificationService {
      * @param message Signed Message
      * @return Proxy matching the signature
      */
-    Proxy getSignerProxy(SignedMessage message) {
+    <T extends SignableMessage> Proxy getSignerProxy(SignedMessage<T> message) {
         if (message.getMessage() == null) {
             log.error("SignedMessage must be de-serialized before verifying signature");
             throw new IllegalStateException("SignedMessage must be de-serialized before verifying signature");
