@@ -8,9 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.security.GeneralSecurityException;
 
 @Builder
 @Slf4j
+@SuppressWarnings("unchecked")
 public class MessageFactory {
 
     @NonNull
@@ -22,21 +24,21 @@ public class MessageFactory {
     @NonNull
     private MessageVerificationService verificationService;
 
-    public SignedMessage buildSignedMessage(String signedMessage) throws IOException {
+    public SignedMessage buildSignedMessage(String signedMessage) throws IOException, GeneralSecurityException {
         SignedMessage signedMessageObject = serializer.deserialize(signedMessage, SignedMessage.class);
         return verifySignedMessage(signedMessageObject);
     }
 
 
-    public <T extends SignableMessage> SignedMessage<T> verifySignedMessage(SignedMessage<T> signedMessage) throws IOException {
+    public <T extends SignableMessage> SignedMessage<T> verifySignedMessage(SignedMessage<T> signedMessage) throws IOException, GeneralSecurityException {
         log.debug("verifying signature for " + signedMessage);
         String underlyingMessageType = signedMessage.getType();
         try {
             Class messageClass = Class.forName(underlyingMessageType);
             SignableMessage underlyingMessage = buildSignableMessage(signedMessage.getPayload(), messageClass);
-            SignedMessage<T> extraced = signedMessage.setMessage(underlyingMessage);
-            verificationService.verify(extraced);
-            return extraced;
+            SignedMessage<T> extracted = signedMessage.setMessage(underlyingMessage);
+            verificationService.verify(extracted);
+            return extracted;
         } catch (ClassNotFoundException e) {
             log.error("Unknown message type " + underlyingMessageType, e);
             throw new IllegalArgumentException("Unknown message type " + underlyingMessageType);
@@ -44,7 +46,7 @@ public class MessageFactory {
     }
 
 
-    private <T extends SignableMessage> T buildSignableMessage(String signableMessage, Class<T> messageClass) throws IOException {
+    private <T extends SignableMessage> T buildSignableMessage(String signableMessage, Class<T> messageClass) throws IOException, GeneralSecurityException {
         log.debug("buildSignableMessage({}, {})", signableMessage, messageClass);
         T signableMessageObject = serializer.deserialize(signableMessage, messageClass);
         Field[] fields = signableMessageObject.getClass().getDeclaredFields();

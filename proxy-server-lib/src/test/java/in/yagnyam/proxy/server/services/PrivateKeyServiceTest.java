@@ -63,11 +63,12 @@ public class PrivateKeyServiceTest {
     @Test
     public void testGetIssuer_Enrich() throws GeneralSecurityException, IOException {
         PrivateKeyEntity privateKeyEntity = TestUtils.samplePrivateKeyEntity("1");
+        privateKeyEntity.setPrivateKeyAlgorithm("RSA");
         privateKeyEntity.setPrivateKeyEncoded("PKE");
         privateKeyEntity.setCertificateEncoded("CE");
 
         when(privateKeyRepository.getPrivateKeyEntity(eq("1"))).thenReturn(Optional.of(privateKeyEntity));
-        when(pemService.decodePrivateKey(eq("PKE"))).thenReturn(mock(PrivateKey.class));
+        when(pemService.decodePrivateKey(eq("RSA"), eq("PKE"))).thenReturn(mock(PrivateKey.class));
         when(pemService.decodeCertificate(eq("CE"))).thenReturn(mock(X509Certificate.class));
 
         Optional<PrivateKeyEntity> actual = privateKeyService.getPrivateKey("1");

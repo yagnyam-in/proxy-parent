@@ -3,12 +3,15 @@ package in.yagnyam.proxy.services;
 import in.yagnyam.proxy.Proxy;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Singular;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.List;
 
 /**
@@ -16,6 +19,8 @@ import java.util.List;
  */
 @Builder
 @Slf4j
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MessageVerificationService {
 
     @NonNull
@@ -32,10 +37,10 @@ public class MessageVerificationService {
      * Verify Signature on Singed Messages
      * @param message Signed Message to verify signature
      * @param <T> Underlying Message Type
-     * @throws IOException In case of any exceptions while validating Signature
+     * @throws GeneralSecurityException In case of any exceptions while validating Signature
      * @throws IllegalArgumentException If Signatures are missing or wrong
      */
-    public <T extends SignableMessage> void verify(@NonNull SignedMessage<T> message) throws IOException {
+    public <T extends SignableMessage> void verify(@NonNull SignedMessage<T> message) throws GeneralSecurityException {
         if (signatureAlgorithms.isEmpty()) {
             log.error("At least one signature algorithm is required");
             throw new IllegalStateException("At least one signature algorithm is required");
@@ -43,14 +48,11 @@ public class MessageVerificationService {
         Proxy proxy = getSignerProxy(message);
         for (String algorithm : signatureAlgorithms) {
             SignedMessage.Signature signature = findSignature(message, algorithm);
-            if (!cryptographyService.verifySignature(message.getPayload().getBytes(), algorithm, proxy.getCertificate().getCertificate(), signature.getValue())) {
+            if (!cryptographyService.verifySignature(message.getPayload(), algorithm, proxy.getCertificate().getCertificate(), signature.getValue())) {
                 log.error("Invalid Signature on " + message);
                 throw new IllegalArgumentException("Invalid Signature");
             }
         }
-        signatureAlgorithms.forEach(algorithm -> {
-
-        });
     }
 
 

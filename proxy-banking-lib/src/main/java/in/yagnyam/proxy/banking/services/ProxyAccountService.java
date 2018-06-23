@@ -4,11 +4,9 @@ import in.yagnyam.proxy.banking.db.ProxyAccountRepository;
 import in.yagnyam.proxy.banking.model.ProxyAccountEntity;
 import lombok.Builder;
 import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.Optional;
 
-@Slf4j
 @Builder
 public class ProxyAccountService {
 

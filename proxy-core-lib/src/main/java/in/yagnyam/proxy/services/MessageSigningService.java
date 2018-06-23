@@ -6,9 +6,9 @@ import in.yagnyam.proxy.SignedMessage;
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.Singular;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.List;
 
 /**
@@ -29,24 +29,27 @@ public class MessageSigningService {
 
     /**
      * Sign the message and produce signed message using the given Proxy
+     *
      * @param message Message to Sign
-     * @param signer Proxy that is signing the message
-     * @param <T> Message type being signed
+     * @param signer  Proxy that is signing the message
+     * @param <T>     Message type being signed
      * @return Signed Message
      * @throws IOException Any Signing related issues while signing
      */
-    public <T extends SignableMessage> SignedMessage<T> sign(T message, Proxy signer) throws IOException {
+    public <T extends SignableMessage> SignedMessage<T> sign(T message, Proxy signer) throws IOException, GeneralSecurityException {
         if (signatureAlgorithms.isEmpty()) {
             throw new IllegalStateException("At least one signature algorithm is required");
         }
         // TODO: Check if signer is same as message.signer
         String payload = serializer.serialize(message);
-        byte[] payloadBytes = payload.getBytes();
         SignedMessage.SignedMessageBuilder<T> builder = SignedMessage.<T>builder()
                 .message(message)
                 .type(message.getClass().getName())
                 .payload(payload);
-        signatureAlgorithms.forEach((a) -> builder.signature(SignedMessage.Signature.of(a, cryptographyService.getSignature(payloadBytes, a, signer.getPrivateKey()))));
+        for (String signatureAlgorithm : signatureAlgorithms) {
+            String signature = cryptographyService.getSignature(payload, signatureAlgorithm, signer.getPrivateKey());
+            builder.signature(SignedMessage.Signature.of(signatureAlgorithm, signature));
+        }
         return builder.build();
     }
 }

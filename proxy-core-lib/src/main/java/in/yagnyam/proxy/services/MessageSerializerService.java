@@ -13,10 +13,9 @@ import java.io.IOException;
 @Builder
 public class MessageSerializerService {
 
-    private final ObjectMapper objectMapper = new ObjectMapper() {{
-    }};
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public String serialize(SignedMessage message) throws IOException {
+    public <T extends SignableMessage> String serialize(SignedMessage<T> message) throws IOException {
         try {
             return objectMapper.writeValueAsString(message);
         } catch (JsonProcessingException e) {

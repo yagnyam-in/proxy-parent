@@ -2,6 +2,7 @@ package in.yagnyam.proxy.services;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.*;
+import in.yagnyam.proxy.Certificate;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -13,10 +14,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.Security;
+import java.security.*;
 
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
@@ -25,21 +23,21 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class MessageFactoryTest {
 
-
     static {
         Security.addProvider(new BouncyCastleProvider());
     }
-
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
     private MessageSerializerService messageSerializerService = new MessageSerializerService();
 
+    private CryptographyService cryptographyService = BcCryptographyService.builder().pemService(PemService.builder().build()).build();
 
     @ToString
     static class SimpleSignableMessage implements SignableMessage {
         public String message = "hello";
+
         @Override
         public String signer() {
             return "dummy";
@@ -61,6 +59,7 @@ public class MessageFactoryTest {
     @ToString
     static class ComplexSignableMessage implements SignableMessage {
         public SignedMessage<SimpleSignableMessage> internalObject;
+
         @Override
         public String signer() {
             return "dummy";
@@ -91,7 +90,7 @@ public class MessageFactoryTest {
 
 
     @Test
-    public void testVerifyAndBuildSignedMessage() throws IOException {
+    public void testVerifyAndBuildSignedMessage() throws IOException, GeneralSecurityException {
         Proxy proxy = sampleProxy();
 
         MessageVerificationService verificationService = mock(MessageVerificationService.class);
@@ -99,7 +98,7 @@ public class MessageFactoryTest {
 
         MessageSigningService service = MessageSigningService.builder()
                 .serializer(messageSerializerService)
-                .cryptographyService(CryptographyService.instance())
+                .cryptographyService(cryptographyService)
                 .signatureAlgorithm("SHA256WithRSAEncryption")
                 .build();
         SimpleSignableMessage signableMessage = new SimpleSignableMessage();
@@ -107,7 +106,7 @@ public class MessageFactoryTest {
 
         MessageFactory messageFactory = MessageFactory.builder()
                 .serializer(messageSerializerService)
-                .cryptographyService(CryptographyService.instance())
+                .cryptographyService(cryptographyService)
                 .verificationService(verificationService)
                 .build();
 
@@ -116,7 +115,7 @@ public class MessageFactoryTest {
 
 
     @Test
-    public void testVerifyAndBuildSignedMessage_InnerObject() throws IOException {
+    public void testVerifyAndBuildSignedMessage_InnerObject() throws IOException, GeneralSecurityException {
         Proxy proxy = sampleProxy();
 
         MessageVerificationService verificationService = mock(MessageVerificationService.class);
@@ -124,7 +123,7 @@ public class MessageFactoryTest {
 
         MessageSigningService service = MessageSigningService.builder()
                 .serializer(messageSerializerService)
-                .cryptographyService(CryptographyService.instance())
+                .cryptographyService(cryptographyService)
                 .signatureAlgorithm("SHA256WithRSAEncryption")
                 .build();
 
@@ -139,7 +138,7 @@ public class MessageFactoryTest {
         MessageFactory messageFactory = MessageFactory.builder()
                 .serializer(messageSerializerService)
                 .verificationService(verificationService)
-                .cryptographyService(CryptographyService.instance())
+                .cryptographyService(cryptographyService)
                 .build();
 
         SignedMessage<ComplexSignableMessage> result = messageFactory.buildSignedMessage(signedText);
@@ -150,7 +149,7 @@ public class MessageFactoryTest {
 
 
     @Test
-    public void testVerifyAndBuildSignedMessage_InvalidMessage() throws IOException {
+    public void testVerifyAndBuildSignedMessage_InvalidMessage() throws IOException, GeneralSecurityException {
         Proxy proxy = sampleProxy();
         thrown.expect(IllegalArgumentException.class);
 
@@ -159,7 +158,7 @@ public class MessageFactoryTest {
 
         MessageSigningService service = MessageSigningService.builder()
                 .serializer(messageSerializerService)
-                .cryptographyService(CryptographyService.instance())
+                .cryptographyService(cryptographyService)
                 .signatureAlgorithm("SHA256WithRSAEncryption")
                 .build();
         SimpleSignableMessage signableMessage = new SimpleSignableMessage();
@@ -167,7 +166,7 @@ public class MessageFactoryTest {
 
         MessageFactory messageFactory = MessageFactory.builder()
                 .serializer(messageSerializerService)
-                .cryptographyService(CryptographyService.instance())
+                .cryptographyService(cryptographyService)
                 .verificationService(verificationService)
                 .build();
 

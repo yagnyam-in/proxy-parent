@@ -39,9 +39,12 @@ public class PrivateKeyEntity {
 
     @Index
     private String certificateSerialNumber;
-
+    
     @JsonIgnore
     private String certificateRequestEncoded;
+
+    @JsonIgnore
+    private String privateKeyAlgorithm;
 
     @JsonIgnore
     private String privateKeyEncoded;

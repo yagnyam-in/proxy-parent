@@ -1,7 +1,7 @@
 package in.yagnyam.proxy.services;
 
 import lombok.Builder;
-import org.bouncycastle.cert.X509CertificateHolder;
+
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
@@ -18,18 +18,11 @@ import java.security.spec.X509EncodedKeySpec;
 /**
  * PEM Services for encoding and decoding Cryptographic objects to/from String
  */
+@Builder
 public class PemService {
 
-    static {
-        Security.addProvider(new BouncyCastleProvider());
-    }
-
-    private final CryptographyService cryptographyService;
-
-    @Builder
-    public PemService(CryptographyService cryptographyService) {
-        this.cryptographyService = cryptographyService;
-    }
+    @Builder.Default
+    private String provider = BouncyCastleProvider.PROVIDER_NAME;
 
     private String asPemString(String name, byte[] content) throws IOException {
         PemObject pemObject = new PemObject(name, content);
@@ -46,13 +39,13 @@ public class PemService {
         }
     }
 
-    public PublicKey decodePublicKey(String encodedKey) throws GeneralSecurityException, IOException {
-        KeyFactory factory = KeyFactory.getInstance(cryptographyService.getKeyGenerationAlgorithm(), cryptographyService.getProviderName());
-        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(getPemContent(encodedKey));
+    public PublicKey decodePublicKey(String algorithm, String publicKeyEncoded) throws GeneralSecurityException, IOException {
+        KeyFactory factory = KeyFactory.getInstance(algorithm, provider);
+        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(getPemContent(publicKeyEncoded));
         return factory.generatePublic(publicKeySpec);
     }
 
-    public String encodePublicKey(PublicKey publicKey) throws GeneralSecurityException, IOException {
+    public String encodePublicKey(PublicKey publicKey) throws IOException {
         return encodePublicKey(publicKey, "RSA PUBLIC KEY");
     }
 
@@ -61,9 +54,9 @@ public class PemService {
     }
 
 
-    public PrivateKey decodePrivateKey(String encodedKey) throws GeneralSecurityException, IOException {
-        KeyFactory factory = KeyFactory.getInstance(cryptographyService.getKeyGenerationAlgorithm(), cryptographyService.getProviderName());
-        PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(getPemContent(encodedKey));
+    public PrivateKey decodePrivateKey(String algorithm, String privateKeyEncoded) throws GeneralSecurityException, IOException {
+        KeyFactory factory = KeyFactory.getInstance(algorithm, provider);
+        PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(getPemContent(privateKeyEncoded));
         return factory.generatePrivate(privKeySpec);
     }
 
@@ -73,16 +66,12 @@ public class PemService {
 
     public X509Certificate decodeCertificate(String encodedCertificate) throws GeneralSecurityException, IOException {
         ByteArrayInputStream byteStream = new ByteArrayInputStream(getPemContent(encodedCertificate));
-        CertificateFactory factory = CertificateFactory.getInstance("X.509", cryptographyService.getProviderName());
+        CertificateFactory factory = CertificateFactory.getInstance("X.509", provider);
         return (X509Certificate) factory.generateCertificate(byteStream);
     }
 
     public String encodeCertificate(X509Certificate certificate) throws GeneralSecurityException, IOException {
         return asPemString("CERTIFICATE", certificate.getEncoded());
-    }
-
-    public String encodeCertificate(X509CertificateHolder certificateHolder) throws IOException {
-        return asPemString("CERTIFICATE", certificateHolder.getEncoded());
     }
 
     public PKCS10CertificationRequest decodeCertificateRequest(final String encodedCertificateRequest) throws IOException {
@@ -91,6 +80,7 @@ public class PemService {
 
     /**
      * Returns Certificate Request as PEM encoded String
+     *
      * @param certificateRequest Certificate Request
      * @return PEM encoded string for Certificate Request
      * @throws IOException Any error while encoding

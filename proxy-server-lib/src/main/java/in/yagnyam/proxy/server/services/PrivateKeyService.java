@@ -44,7 +44,7 @@ public class PrivateKeyService {
                 privateKeyEntity.setCertificate(pemService.decodeCertificate(privateKeyEntity.getCertificateEncoded()));
             }
             if (StringUtils.isValid(privateKeyEntity.getPrivateKeyEncoded())) {
-                privateKeyEntity.setPrivateKey(pemService.decodePrivateKey(privateKeyEntity.getPrivateKeyEncoded()));
+                privateKeyEntity.setPrivateKey(pemService.decodePrivateKey(privateKeyEntity.getPrivateKeyAlgorithm(), privateKeyEntity.getPrivateKeyEncoded()));
             }
             return privateKeyEntity;
         } catch (GeneralSecurityException | IOException e) {

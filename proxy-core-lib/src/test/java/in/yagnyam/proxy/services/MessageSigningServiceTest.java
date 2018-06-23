@@ -13,10 +13,7 @@ import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.IOException;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.Security;
+import java.security.*;
 
 import static org.mockito.Mockito.mock;
 
@@ -30,6 +27,8 @@ public class MessageSigningServiceTest {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
+    private CryptographyService cryptographyService = BcCryptographyService.builder().pemService(PemService.builder().build()).build();
+
     @SneakyThrows
     private PrivateKey samplePrivateKey() {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", BouncyCastleProvider.PROVIDER_NAME);
@@ -38,11 +37,12 @@ public class MessageSigningServiceTest {
     }
 
     @Test
-    public void testSign() throws IOException {
+    public void testSign() throws IOException, GeneralSecurityException {
         Proxy proxy = Proxy.builder().id("dummy").privateKey(samplePrivateKey()).sha256Thumbprint("SHA256").certificate(mock(Certificate.class)).build();
 
         SignableMessage signableMessage = new SignableMessage() {
             public String message = "hello";
+
             @Override
             public String signer() {
                 return "dummy";
@@ -60,7 +60,7 @@ public class MessageSigningServiceTest {
         };
         MessageSigningService service = MessageSigningService.builder()
                 .serializer(new MessageSerializerService())
-                .cryptographyService(CryptographyService.instance())
+                .cryptographyService(cryptographyService)
                 .signatureAlgorithm("SHA256WithRSAEncryption")
                 .build();
         val s = service.sign(signableMessage, proxy);

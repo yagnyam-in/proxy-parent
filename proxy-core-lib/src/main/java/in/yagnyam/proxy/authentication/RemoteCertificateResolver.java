@@ -3,7 +3,6 @@ package in.yagnyam.proxy.authentication;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import in.yagnyam.proxy.services.CryptographyService;
 import in.yagnyam.proxy.services.NetworkService;
 import in.yagnyam.proxy.services.PemService;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +28,7 @@ public class RemoteCertificateResolver implements CertificateResolver {
         private long cacheTimeout = 1;
         private TimeUnit cacheTimeoutUnit = TimeUnit.HOURS;
         private NetworkService networkService = NetworkService.builder().build();
-        private PemService pemService = PemService.builder().cryptographyService(CryptographyService.instance()).build();
+        private PemService pemService = PemService.builder().build();
         private Builder() {
         }
 

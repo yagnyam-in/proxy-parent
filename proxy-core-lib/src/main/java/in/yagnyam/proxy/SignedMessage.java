@@ -5,7 +5,6 @@ import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @Builder
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -48,8 +47,9 @@ public class SignedMessage<T extends SignableMessage> {
     }
 
     @JsonIgnore
+    @SuppressWarnings("unchecked")
     public SignedMessage<T> setMessage(SignableMessage message) {
-        this.message = (T)message;
+        this.message = (T) message;
         return this;
     }
 
