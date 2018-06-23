@@ -1,21 +1,27 @@
 package in.yagnyam.proxy.services;
 
-import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Sequence;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.cert.Certificate;
+
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
-import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509v3CertificateBuilder;
-import org.bouncycastle.cert.bc.BcX509ExtensionUtils;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
@@ -24,10 +30,8 @@ import org.bouncycastle.util.encoders.Base64;
 import org.jose4j.base64url.Base64Url;
 import org.jose4j.lang.HashUtil;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.security.*;
-import java.security.cert.Certificate;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Cryptography Service
@@ -73,32 +77,6 @@ public class CryptographyService {
     }
 
 
-    private static SubjectKeyIdentifier createSubjectKeyIdentifier(Key key) throws IOException {
-        ASN1InputStream is = null;
-        try {
-            is = new ASN1InputStream(new ByteArrayInputStream(key.getEncoded()));
-            ASN1Sequence seq = (ASN1Sequence) is.readObject();
-            SubjectPublicKeyInfo info = SubjectPublicKeyInfo.getInstance(seq);
-            return createSubjectKeyIdentifier(info);
-        } finally {
-            if (is != null) {
-                is.close();
-            }
-        }
-    }
-
-    private static SubjectKeyIdentifier createSubjectKeyIdentifier(SubjectPublicKeyInfo info) throws IOException {
-        return new BcX509ExtensionUtils().createSubjectKeyIdentifier(info);
-    }
-
-
-    private static X509CertificateHolder buildCertificate(X509v3CertificateBuilder certificateBuilder, PrivateKey signedWithPrivateKey)
-            throws OperatorCreationException {
-        ContentSigner signer = new JcaContentSignerBuilder(SIGNATURE_ALGORITHM).setProvider(PROVIDER_NAME).build(signedWithPrivateKey);
-        return certificateBuilder.build(signer);
-    }
-
-
     public KeyPair generateKeyPair() throws GeneralSecurityException {
         KeyPairGenerator generator = KeyPairGenerator.getInstance(KEY_GENERATION_ALGORITHM, PROVIDER_NAME);
         generator.initialize(KEY_SIZE, new SecureRandom());
@@ -132,6 +110,7 @@ public class CryptographyService {
             signature.update(chequeBytes);
             return Base64.toBase64String(signature.sign());
         } catch (NoSuchProviderException | NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+            log.error("Error while signing", e);
             throw new RuntimeException(e);
         }
     }
@@ -143,6 +122,7 @@ public class CryptographyService {
             signature.update(chequeBytes);
             return signature.verify(Base64.decode(signatureBytes));
         } catch (NoSuchProviderException | NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+            log.error("Error while verifying signature", e);
             throw new RuntimeException(e);
         }
     }

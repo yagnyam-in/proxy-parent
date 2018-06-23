@@ -15,7 +15,6 @@ import java.util.List;
  * Service to sign the message
  */
 @Builder
-@Slf4j
 public class MessageSigningService {
 
     @NonNull
