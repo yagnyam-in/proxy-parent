@@ -1,6 +1,5 @@
 package in.yagnyam.proxy.services;
 
-import lombok.Builder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
@@ -24,12 +23,7 @@ public class PemService {
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    private final CryptographyService cryptographyService;
-
-    @Builder
-    public PemService(CryptographyService cryptographyService) {
-        this.cryptographyService = cryptographyService;
-    }
+    private static final String PROVIDER_NAME = BouncyCastleProvider.PROVIDER_NAME;
 
     private String asPemString(String name, byte[] content) throws IOException {
         PemObject pemObject = new PemObject(name, content);
@@ -46,13 +40,13 @@ public class PemService {
         }
     }
 
-    public PublicKey decodePublicKey(String encodedKey) throws GeneralSecurityException, IOException {
-        KeyFactory factory = KeyFactory.getInstance(cryptographyService.getKeyGenerationAlgorithm(), cryptographyService.getProviderName());
+    public PublicKey decodePublicKey(String algorithm, String encodedKey) throws GeneralSecurityException, IOException {
+        KeyFactory factory = KeyFactory.getInstance(algorithm, PROVIDER_NAME);
         X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(getPemContent(encodedKey));
         return factory.generatePublic(publicKeySpec);
     }
 
-    public String encodePublicKey(PublicKey publicKey) throws GeneralSecurityException, IOException {
+    public String encodePublicKey(PublicKey publicKey) throws IOException {
         return encodePublicKey(publicKey, "RSA PUBLIC KEY");
     }
 
@@ -61,8 +55,8 @@ public class PemService {
     }
 
 
-    public PrivateKey decodePrivateKey(String encodedKey) throws GeneralSecurityException, IOException {
-        KeyFactory factory = KeyFactory.getInstance(cryptographyService.getKeyGenerationAlgorithm(), cryptographyService.getProviderName());
+    public PrivateKey decodePrivateKey(String algorithm, String encodedKey) throws GeneralSecurityException, IOException {
+        KeyFactory factory = KeyFactory.getInstance(algorithm, PROVIDER_NAME);
         PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(getPemContent(encodedKey));
         return factory.generatePrivate(privKeySpec);
     }
@@ -73,7 +67,7 @@ public class PemService {
 
     public X509Certificate decodeCertificate(String encodedCertificate) throws GeneralSecurityException, IOException {
         ByteArrayInputStream byteStream = new ByteArrayInputStream(getPemContent(encodedCertificate));
-        CertificateFactory factory = CertificateFactory.getInstance("X.509", cryptographyService.getProviderName());
+        CertificateFactory factory = CertificateFactory.getInstance("X.509", PROVIDER_NAME);
         return (X509Certificate) factory.generateCertificate(byteStream);
     }
 
