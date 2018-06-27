@@ -26,6 +26,7 @@ public class AccountCredentialsEntity {
      * As AccountCredentialsEntity will always be extended, this would make builder pattern for subclasses easier to construct
      * @param <T>
      */
+    @SuppressWarnings("unchecked")
     public static class AccountCredentialsEntityBuilder<T extends AccountCredentialsEntityBuilder> {
 
         protected String credentialId;

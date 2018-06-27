@@ -1,8 +1,23 @@
 package in.yagnyam.proxy.services;
 
-import lombok.Builder;
-import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.cert.Certificate;
+
+import javax.crypto.Cipher;
+import javax.security.auth.x500.X500Principal;
+
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -10,11 +25,9 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.bouncycastle.util.encoders.Base64;
 
-import javax.security.auth.x500.X500Principal;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.*;
-import java.security.cert.Certificate;
+import lombok.Builder;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Cryptography Service using Bouncy Castle
@@ -27,7 +40,7 @@ public class BcCryptographyService extends CryptographyService {
         Security.addProvider(new BouncyCastleProvider());
     }
 
-    private static final String DEFAULT_CHARSET = "UTF-8";
+    private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
     private static final String PROVIDER_NAME = BouncyCastleProvider.PROVIDER_NAME;
 
     @NonNull
@@ -39,12 +52,14 @@ public class BcCryptographyService extends CryptographyService {
         return generator.generateKeyPair();
     }
 
-
     @Override
-    public String createCertificateRequest(KeyPair keyPair, String signatureAlgorithm, X500Principal subject) throws GeneralSecurityException {
+    public String createCertificateRequest(KeyPair keyPair, String signatureAlgorithm, X500Principal subject)
+            throws GeneralSecurityException {
         try {
-            PKCS10CertificationRequest certificationRequest = new JcaPKCS10CertificationRequestBuilder(subject, keyPair.getPublic())
-                    .build(new JcaContentSignerBuilder(signatureAlgorithm).setProvider(PROVIDER_NAME).build(keyPair.getPrivate()));
+            PKCS10CertificationRequest certificationRequest = new JcaPKCS10CertificationRequestBuilder(subject,
+                    keyPair.getPublic())
+                            .build(new JcaContentSignerBuilder(signatureAlgorithm).setProvider(PROVIDER_NAME)
+                                    .build(keyPair.getPrivate()));
             return pemService.encodeCertificateRequest(certificationRequest);
         } catch (OperatorCreationException | IOException e) {
             log.error("Error while creating certificate request for subject " + subject, e);
@@ -62,14 +77,12 @@ public class BcCryptographyService extends CryptographyService {
         } catch (NoSuchProviderException | NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             log.error("Error signing for algorithm " + algorithm, e);
             throw new GeneralSecurityException(e);
-        } catch (UnsupportedEncodingException e) {
-            log.error("Error signing for algorithm " + algorithm, e);
-            throw new RuntimeException(e);
         }
     }
 
     @Override
-    public boolean verifySignature(String input, String algorithm, Certificate certificate, String signature) throws GeneralSecurityException {
+    public boolean verifySignature(String input, String algorithm, Certificate certificate, String signature)
+            throws GeneralSecurityException {
         try {
             Signature signatureInstance = getSignatureInstance(algorithm);
             signatureInstance.initVerify(certificate);
@@ -78,14 +91,27 @@ public class BcCryptographyService extends CryptographyService {
         } catch (NoSuchProviderException | NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
             log.error("Error verifying signature of algorithm " + algorithm, e);
             throw new GeneralSecurityException(e);
-        } catch (UnsupportedEncodingException e) {
-            log.error("Error verifying signature of algorithm " + algorithm, e);
-            throw new RuntimeException(e);
         }
     }
 
     private Signature getSignatureInstance(String algorithm) throws NoSuchProviderException, NoSuchAlgorithmException {
         return Signature.getInstance(algorithm, PROVIDER_NAME);
+    }
+
+    @Override
+    public String ecnrypt(String input, Certificate certificate) throws GeneralSecurityException {
+        Cipher cipher = Cipher.getInstance(RSA_CIPHER_TRANSFORMATION, PROVIDER_NAME);
+        cipher.init(Cipher.ENCRYPT_MODE, certificate);
+        byte[] cipherText = cipher.doFinal(input.getBytes(DEFAULT_CHARSET));
+        return Base64.toBase64String(cipherText);
+    }
+
+    @Override
+    public String decrypt(String cipherText, PrivateKey privateKey) throws GeneralSecurityException {
+        Cipher cipher = Cipher.getInstance(RSA_CIPHER_TRANSFORMATION, PROVIDER_NAME);
+        cipher.init(Cipher.DECRYPT_MODE, privateKey);
+        byte[] originalText = cipher.doFinal(Base64.decode(cipherText.getBytes(DEFAULT_CHARSET)));
+        return new String(originalText, DEFAULT_CHARSET);
     }
 
 }
