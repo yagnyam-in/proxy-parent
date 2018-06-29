@@ -3,6 +3,8 @@ package in.yagnyam.proxy.messages.payments;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.messages.banking.Amount;
+import in.yagnyam.proxy.messages.banking.ProxyAccount;
 import lombok.*;
 
 import java.util.Date;

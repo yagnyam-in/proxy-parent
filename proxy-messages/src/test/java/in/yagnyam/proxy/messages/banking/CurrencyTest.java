@@ -1,4 +1,4 @@
-package in.yagnyam.proxy.messages.payments;
+package in.yagnyam.proxy.messages.banking;
 
 import org.junit.Test;
 

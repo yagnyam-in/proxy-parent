@@ -5,6 +5,8 @@ import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.messages.banking.Amount;
+import in.yagnyam.proxy.messages.banking.ProxyAccount;
 import in.yagnyam.proxy.utils.DateUtils;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;

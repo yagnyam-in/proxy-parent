@@ -5,6 +5,9 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.messages.banking.Amount;
+import in.yagnyam.proxy.messages.banking.ProxyAccount;
+import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 

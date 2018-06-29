@@ -9,6 +9,8 @@ import lombok.*;
 @Getter
 public class PaymentRequest {
 
+    public static final String REQUEST_PAYMENT_ACTION = "in.yagnyam.proxy.REQUEST_PAYMENT";
+
     private String requestId;
 
     private String currency;

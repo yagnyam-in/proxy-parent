@@ -9,6 +9,8 @@ import lombok.*;
 @Getter
 public class IdentityRequest {
 
+    public static final String REQUEST_IDENTITY_ACTION = "in.yagnyam.proxy.REQUEST_IDENTITY";
+
     private String requestId;
 
     private boolean revealNationality;

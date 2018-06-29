@@ -36,18 +36,18 @@ import lombok.extern.slf4j.Slf4j;
 @Builder
 public class BcCryptographyService extends CryptographyService {
 
-    static {
-        Security.addProvider(new BouncyCastleProvider());
-    }
-
     private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
-    private static final String PROVIDER_NAME = BouncyCastleProvider.PROVIDER_NAME;
+    private static final BouncyCastleProvider BC_PROVIDER = new BouncyCastleProvider();
+
+    static {
+        Security.addProvider(BC_PROVIDER);
+    }
 
     @NonNull
     private PemService pemService;
 
     public KeyPair generateKeyPair() throws GeneralSecurityException {
-        KeyPairGenerator generator = KeyPairGenerator.getInstance(getKeyGenerationAlgorithm(), PROVIDER_NAME);
+        KeyPairGenerator generator = KeyPairGenerator.getInstance(getKeyGenerationAlgorithm(), BC_PROVIDER);
         generator.initialize(getKeySize(), new SecureRandom());
         return generator.generateKeyPair();
     }
@@ -58,7 +58,7 @@ public class BcCryptographyService extends CryptographyService {
         try {
             PKCS10CertificationRequest certificationRequest = new JcaPKCS10CertificationRequestBuilder(subject,
                     keyPair.getPublic())
-                            .build(new JcaContentSignerBuilder(signatureAlgorithm).setProvider(PROVIDER_NAME)
+                            .build(new JcaContentSignerBuilder(signatureAlgorithm).setProvider(BC_PROVIDER)
                                     .build(keyPair.getPrivate()));
             return pemService.encodeCertificateRequest(certificationRequest);
         } catch (OperatorCreationException | IOException e) {
@@ -95,12 +95,12 @@ public class BcCryptographyService extends CryptographyService {
     }
 
     private Signature getSignatureInstance(String algorithm) throws NoSuchProviderException, NoSuchAlgorithmException {
-        return Signature.getInstance(algorithm, PROVIDER_NAME);
+        return Signature.getInstance(algorithm, BC_PROVIDER);
     }
 
     @Override
     public String ecnrypt(String input, Certificate certificate) throws GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance(RSA_CIPHER_TRANSFORMATION, PROVIDER_NAME);
+        Cipher cipher = Cipher.getInstance(RSA_CIPHER_TRANSFORMATION, BC_PROVIDER);
         cipher.init(Cipher.ENCRYPT_MODE, certificate);
         byte[] cipherText = cipher.doFinal(input.getBytes(DEFAULT_CHARSET));
         return Base64.toBase64String(cipherText);
@@ -108,7 +108,7 @@ public class BcCryptographyService extends CryptographyService {
 
     @Override
     public String decrypt(String cipherText, PrivateKey privateKey) throws GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance(RSA_CIPHER_TRANSFORMATION, PROVIDER_NAME);
+        Cipher cipher = Cipher.getInstance(RSA_CIPHER_TRANSFORMATION, BC_PROVIDER);
         cipher.init(Cipher.DECRYPT_MODE, privateKey);
         byte[] originalText = cipher.doFinal(Base64.decode(cipherText.getBytes(DEFAULT_CHARSET)));
         return new String(originalText, DEFAULT_CHARSET);

@@ -2,7 +2,7 @@ package in.yagnyam.proxy.banking.model;
 
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import in.yagnyam.proxy.messages.payments.Amount;
+import in.yagnyam.proxy.messages.banking.*;
 import lombok.*;
 
 /**
