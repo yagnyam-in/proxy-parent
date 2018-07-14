@@ -52,7 +52,6 @@
         <maven-assembly-plugin>3.0.0</maven-assembly-plugin>
         <maven-jar-plugin>3.0.2</maven-jar-plugin>
         <maven-source-plugin>3.0.1</maven-source-plugin>
-        <maven-archetype-plugin>3.0.1</maven-archetype-plugin>
 
         <maven-release-plugin>2.5.3</maven-release-plugin>
         <nexus-staging-maven-plugin>1.6.8</nexus-staging-maven-plugin>
@@ -246,6 +245,7 @@
             <id>release</id>
             <build>
                 <plugins>
+
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
@@ -260,11 +260,6 @@
                         </executions>
                     </plugin>
 
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-archetype-plugin</artifactId>
-                        <version>${maven-archetype-plugin}</version>
-                    </plugin>
 
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -393,6 +388,21 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Quality -->
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 </project>
