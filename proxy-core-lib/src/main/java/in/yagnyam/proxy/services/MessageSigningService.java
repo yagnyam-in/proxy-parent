@@ -47,7 +47,7 @@ public class MessageSigningService {
                 .type(message.getClass().getName())
                 .payload(payload);
         for (String signatureAlgorithm : signatureAlgorithms) {
-            String signature = cryptographyService.getSignature(payload, signatureAlgorithm, signer.getPrivateKey());
+            String signature = cryptographyService.getSignature(signatureAlgorithm, signer.getPrivateKey(), payload);
             builder.signature(SignedMessage.Signature.of(signatureAlgorithm, signature));
         }
         return builder.build();

@@ -1,8 +1,10 @@
 package in.yagnyam.proxy.services;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import in.yagnyam.proxy.*;
 import in.yagnyam.proxy.Certificate;
+import in.yagnyam.proxy.Proxy;
+import in.yagnyam.proxy.SignableMessage;
+import in.yagnyam.proxy.SignedMessage;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -11,7 +13,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.security.*;
@@ -21,6 +22,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
+@SuppressWarnings("unchecked")
 public class MessageFactoryTest {
 
     static {
@@ -78,13 +80,13 @@ public class MessageFactoryTest {
     }
 
     @SneakyThrows
-    PrivateKey samplePrivateKey() {
+    private PrivateKey samplePrivateKey() {
         KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", BouncyCastleProvider.PROVIDER_NAME);
         generator.initialize(2048, new SecureRandom());
         return generator.generateKeyPair().getPrivate();
     }
 
-    Proxy sampleProxy() {
+    private Proxy sampleProxy() {
         return Proxy.builder().id("dummy").privateKey(samplePrivateKey()).sha256Thumbprint("SHA256").certificate(mock(Certificate.class)).build();
     }
 

@@ -48,7 +48,7 @@ public class MessageVerificationService {
         Proxy proxy = getSignerProxy(message);
         for (String algorithm : signatureAlgorithms) {
             SignedMessage.Signature signature = findSignature(message, algorithm);
-            if (!cryptographyService.verifySignature(message.getPayload(), algorithm, proxy.getCertificate().getCertificate(), signature.getValue())) {
+            if (!cryptographyService.verifySignature(algorithm, proxy.getCertificate().getCertificate(), message.getPayload(), signature.getValue())) {
                 log.error("Invalid Signature on " + message);
                 throw new IllegalArgumentException("Invalid Signature");
             }

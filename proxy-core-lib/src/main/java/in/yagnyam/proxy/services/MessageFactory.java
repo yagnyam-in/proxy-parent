@@ -11,8 +11,8 @@ import java.lang.reflect.Field;
 import java.security.GeneralSecurityException;
 
 @Builder
-@Slf4j
 @SuppressWarnings("unchecked")
+@Slf4j
 public class MessageFactory {
 
     @NonNull
