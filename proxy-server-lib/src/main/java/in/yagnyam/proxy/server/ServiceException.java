@@ -4,6 +4,8 @@ import org.springframework.http.HttpStatus;
 
 public class ServiceException extends RuntimeException {
 
+  private static final long serialVersionUID = 1L;
+  
   private final HttpStatus statusCode;
 
   public HttpStatus getStatusCode() {

@@ -1,7 +1,6 @@
 package in.yagnyam.proxy.services;
 
 import lombok.Builder;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
@@ -24,6 +23,8 @@ public class BcCryptographyService implements CryptographyService {
     private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
     private static final BouncyCastleProvider BC_PROVIDER = new BouncyCastleProvider();
     private static final Map<String, String> encryptionAlgorithmMapping = new HashMap<String, String>() {
+        private static final long serialVersionUID = 1L;
+
         {
             put("RSA/NONE/OAEPwithSHA-256andMGF1Padding", "RSA/NONE/OAEPwithSHA-256andMGF1Padding");
         }
@@ -32,9 +33,6 @@ public class BcCryptographyService implements CryptographyService {
     static {
         Security.addProvider(BC_PROVIDER);
     }
-
-    @NonNull
-    private PemService pemService;
 
     @Override
     public KeyPair generateKeyPair() throws GeneralSecurityException {

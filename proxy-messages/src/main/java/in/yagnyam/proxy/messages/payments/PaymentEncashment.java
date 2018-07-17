@@ -1,14 +1,21 @@
 package in.yagnyam.proxy.messages.payments;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import in.yagnyam.proxy.AddressableMessage;
-import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
 /**
  * Payment Encashment

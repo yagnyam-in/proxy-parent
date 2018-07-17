@@ -12,24 +12,19 @@ import java.security.KeyPair;
 import java.security.cert.Certificate;
 
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BcCryptographyServiceTest {
 
     @Test
     public void testGenerateKeyPair() throws GeneralSecurityException {
-        BcCryptographyService cryptographyService = BcCryptographyService.builder()
-                .pemService(mock(PemService.class))
-                .build();
+        BcCryptographyService cryptographyService = BcCryptographyService.builder().build();
         assertNotNull(cryptographyService.generateKeyPair());
     }
 
     @Test
     public void testGetSignatureAndVerifySignature() throws GeneralSecurityException, IOException, OperatorCreationException {
-        BcCryptographyService cryptographyService = BcCryptographyService.builder()
-                .pemService(mock(PemService.class))
-                .build();
+        BcCryptographyService cryptographyService = BcCryptographyService.builder().build();
 
         String signatureAlgorithm = cryptographyService.getDefaultSignatureAlgorithm();
         KeyPair keyPair = cryptographyService.generateKeyPair();
@@ -44,9 +39,7 @@ public class BcCryptographyServiceTest {
 
     @Test
     public void testEncryptAndDecrypt() throws GeneralSecurityException, IOException, OperatorCreationException {
-        BcCryptographyService cryptographyService = BcCryptographyService.builder()
-                .pemService(mock(PemService.class))
-                .build();
+        BcCryptographyService cryptographyService = BcCryptographyService.builder().build();
 
         KeyPair keyPair = cryptographyService.generateKeyPair();
         Certificate certificate = TestUtils.createCertificate(keyPair);

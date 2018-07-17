@@ -32,6 +32,7 @@ public class RequestService {
      */
     public void assertNewRequest(@NonNull String requestId, String requestType) throws BadRequestException {
         if (requestExistsWithId(requestId, requestType)) {
+            log.info("Duplicate Request Id {} of type {}", requestId, requestType);
             throw ServiceException.badRequest("Duplicate Request Id");
         }
     }

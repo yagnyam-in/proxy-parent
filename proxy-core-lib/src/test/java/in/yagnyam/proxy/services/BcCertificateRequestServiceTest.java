@@ -25,8 +25,19 @@ public class BcCertificateRequestServiceTest {
                 .build();
         KeyPair keyPair = TestUtils.generateKeyPair();
         X500Principal subject = new X500Principal("CN=Hello");
-        String certificateRequest = service.createCertificateRequest("SHA256WithRSAEncryption", keyPair, subject);
+        String certificateRequest = service.createCertificateRequest(keyPair, subject);
         PKCS10CertificationRequest cr = pemService.decodeCertificateRequest(certificateRequest);
         assertEquals("CN=Hello", cr.getSubject().toString());
     }
+
+    @Test
+    public void testSubjectForProxyId() throws IOException {
+        PemService pemService = PemService.builder().provider(BouncyCastleProvider.PROVIDER_NAME).build();
+        CertificateRequestService service = BcCertificateRequestService.builder()
+                .pemService(pemService)
+                .build();
+        X500Principal subject = service.subjectForProxyId("Hello");
+        assertEquals("CN=Hello", subject.toString());
+    }
+
 }

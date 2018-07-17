@@ -34,7 +34,7 @@ public class MessageFactoryTest {
 
     private MessageSerializerService messageSerializerService = new MessageSerializerService();
 
-    private CryptographyService cryptographyService = BcCryptographyService.builder().pemService(PemService.builder().build()).build();
+    private CryptographyService cryptographyService = BcCryptographyService.builder().build();
 
     @ToString
     static class SimpleSignableMessage implements SignableMessage {

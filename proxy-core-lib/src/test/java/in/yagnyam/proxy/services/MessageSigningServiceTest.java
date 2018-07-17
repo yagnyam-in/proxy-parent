@@ -27,7 +27,7 @@ public class MessageSigningServiceTest {
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
-    private CryptographyService cryptographyService = BcCryptographyService.builder().pemService(PemService.builder().build()).build();
+    private CryptographyService cryptographyService = BcCryptographyService.builder().build();
 
     @SneakyThrows
     private PrivateKey samplePrivateKey() {
@@ -41,8 +41,6 @@ public class MessageSigningServiceTest {
         Proxy proxy = Proxy.builder().id("dummy").privateKey(samplePrivateKey()).sha256Thumbprint("SHA256").certificate(mock(Certificate.class)).build();
 
         SignableMessage signableMessage = new SignableMessage() {
-            public String message = "hello";
-
             @Override
             public String signer() {
                 return "dummy";

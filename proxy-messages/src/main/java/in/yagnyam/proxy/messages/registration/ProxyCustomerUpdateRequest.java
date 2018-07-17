@@ -2,10 +2,17 @@ package in.yagnyam.proxy.messages.registration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import in.yagnyam.proxy.SignableMessage;
+
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
 /**
  * Request to update Customer details for given Proxy Id

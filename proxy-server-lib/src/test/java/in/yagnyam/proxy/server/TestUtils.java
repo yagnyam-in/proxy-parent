@@ -4,7 +4,6 @@ import in.yagnyam.proxy.Certificate;
 import in.yagnyam.proxy.server.model.PrivateKeyEntity;
 import in.yagnyam.proxy.services.BcCryptographyService;
 import in.yagnyam.proxy.services.CryptographyService;
-import in.yagnyam.proxy.services.PemService;
 
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
@@ -15,8 +14,7 @@ import java.util.Date;
 public final class TestUtils {
 
     private static final CryptographyService cryptographyService = BcCryptographyService.builder()
-        .pemService(PemService.builder().build())
-        .build();
+            .build();
 
     public static Certificate sampleCertificate(String serialNumber) {
         return Certificate.builder()

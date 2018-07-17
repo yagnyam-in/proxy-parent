@@ -1,10 +1,16 @@
 package in.yagnyam.proxy.messages.registration;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import in.yagnyam.proxy.CertificateChain;
-import lombok.*;
 
-import java.util.Map;
+import in.yagnyam.proxy.CertificateChain;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
 /**
  * Registration Response
