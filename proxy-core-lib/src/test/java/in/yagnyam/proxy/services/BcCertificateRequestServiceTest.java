@@ -1,7 +1,6 @@
 package in.yagnyam.proxy.services;
 
 import in.yagnyam.proxy.TestUtils;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,7 +18,7 @@ public class BcCertificateRequestServiceTest {
 
     @Test
     public void testCreateCertificateRequest() throws IOException, GeneralSecurityException {
-        PemService pemService = PemService.builder().provider(BouncyCastleProvider.PROVIDER_NAME).build();
+        PemService pemService = PemService.builder().build();
         CertificateRequestService service = BcCertificateRequestService.builder()
                 .pemService(pemService)
                 .build();
@@ -32,7 +31,7 @@ public class BcCertificateRequestServiceTest {
 
     @Test
     public void testSubjectForProxyId() throws IOException {
-        PemService pemService = PemService.builder().provider(BouncyCastleProvider.PROVIDER_NAME).build();
+        PemService pemService = PemService.builder().build();
         CertificateRequestService service = BcCertificateRequestService.builder()
                 .pemService(pemService)
                 .build();
