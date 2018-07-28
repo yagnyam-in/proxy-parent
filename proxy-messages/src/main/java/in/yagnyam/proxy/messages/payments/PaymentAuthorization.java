@@ -5,6 +5,7 @@ import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import in.yagnyam.proxy.AddressableMessage;
+import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.messages.banking.Amount;
@@ -44,7 +45,7 @@ public class PaymentAuthorization implements SignableRequestMessage, Addressable
      * Payee is mandatory (Anonymous Cheques are not supported to prevent Fraud)
      */
     @NonNull
-    private String payeeId;
+    private ProxyId payeeId;
 
     @NonNull
     private Date validFrom;
@@ -62,7 +63,7 @@ public class PaymentAuthorization implements SignableRequestMessage, Addressable
     private String transactionId;
 
     @Override
-    public String signer() {
+    public ProxyId signer() {
         return proxyAccount.getMessage().getProxyId();
     }
 
@@ -77,7 +78,7 @@ public class PaymentAuthorization implements SignableRequestMessage, Addressable
         return StringUtils.isValid(requestId)
                 && proxyAccount != null
                 && proxyAccount.isValid()
-                && StringUtils.isValid(payeeId)
+                && payeeId != null && payeeId.isValid()
                 && DateUtils.isValid(validFrom)
                 && DateUtils.isValid(validTill)
                 && DateUtils.isValid(issueDate)
@@ -87,7 +88,7 @@ public class PaymentAuthorization implements SignableRequestMessage, Addressable
     }
 
     @Override
-    public String address() {
+    public ProxyId address() {
         return payeeId;
     }
 

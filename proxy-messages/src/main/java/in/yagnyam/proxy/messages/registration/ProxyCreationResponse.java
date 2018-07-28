@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import in.yagnyam.proxy.CertificateChain;
 import in.yagnyam.proxy.Constants;
+import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.AccessLevel;
@@ -32,7 +33,7 @@ public class ProxyCreationResponse implements SignableMessage {
     private String requestId;
 
     @NonNull
-    private String proxyId;
+    private ProxyId proxyId;
 
     @NonNull
     private String certificateSerial;
@@ -41,8 +42,8 @@ public class ProxyCreationResponse implements SignableMessage {
     private CertificateChain certificateChain;
 
     @Override
-    public String signer() {
-        return Constants.PROXY_CENTRAL;
+    public ProxyId signer() {
+        return ProxyId.of(Constants.PROXY_CENTRAL);
     }
 
     @Override
@@ -54,7 +55,7 @@ public class ProxyCreationResponse implements SignableMessage {
     @JsonIgnore
     public boolean isValid() {
         return StringUtils.isValid(requestId)
-                && StringUtils.isValid(proxyId)
+                && proxyId != null && proxyId.isValid()
                 && StringUtils.isValid(certificateSerial)
                 && certificateChain != null
                 && certificateChain.isValid();

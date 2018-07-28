@@ -1,10 +1,8 @@
 package in.yagnyam.proxy.services;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import in.yagnyam.proxy.*;
 import in.yagnyam.proxy.Certificate;
-import in.yagnyam.proxy.Proxy;
-import in.yagnyam.proxy.SignableMessage;
-import in.yagnyam.proxy.SignedMessage;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -41,8 +39,8 @@ public class MessageFactoryTest {
         public String message = "hello";
 
         @Override
-        public String signer() {
-            return "dummy";
+        public ProxyId signer() {
+            return ProxyId.of("dummy");
         }
 
         @Override
@@ -63,8 +61,8 @@ public class MessageFactoryTest {
         public SignedMessage<SimpleSignableMessage> internalObject;
 
         @Override
-        public String signer() {
-            return "dummy";
+        public ProxyId signer() {
+            return ProxyId.of("dummy");
         }
 
         @Override
@@ -87,7 +85,8 @@ public class MessageFactoryTest {
     }
 
     private Proxy sampleProxy() {
-        return Proxy.builder().id("dummy").privateKey(samplePrivateKey()).sha256Thumbprint("SHA256").certificate(mock(Certificate.class)).build();
+        ProxyId proxyId = ProxyId.of("dummy", "SHA256");
+        return Proxy.builder().id(proxyId).privateKey(samplePrivateKey()).certificate(mock(Certificate.class)).build();
     }
 
 

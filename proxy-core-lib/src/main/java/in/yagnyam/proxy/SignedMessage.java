@@ -42,7 +42,7 @@ public class SignedMessage<T extends SignableMessage> {
     @Singular
     private List<Signature> signatures;
 
-    public String signer() {
+    public ProxyId signer() {
         return message.signer();
     }
 

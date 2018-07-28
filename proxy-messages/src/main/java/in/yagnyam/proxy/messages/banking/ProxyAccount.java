@@ -2,9 +2,9 @@ package in.yagnyam.proxy.messages.banking;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.AddressableMessage;
+import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.utils.DateUtils;
-import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 import java.util.Date;
@@ -24,7 +24,7 @@ public class ProxyAccount implements SignableMessage, AddressableMessage {
     private ProxyAccountId proxyAccountId;
 
     @NonNull
-    private String proxyId;
+    private ProxyId proxyId;
 
     @NonNull
     private Date creationDate;
@@ -39,8 +39,8 @@ public class ProxyAccount implements SignableMessage, AddressableMessage {
     private Amount maximumAmountPerTransaction;
 
     @Override
-    public String signer() {
-        return proxyAccountId.getBankId();
+    public ProxyId signer() {
+        return ProxyId.of(proxyAccountId.getBankId());
     }
 
     @Override
@@ -53,7 +53,7 @@ public class ProxyAccount implements SignableMessage, AddressableMessage {
     public boolean isValid() {
         return proxyAccountId != null
                 && proxyAccountId.isValid()
-                && StringUtils.isEmpty(proxyId)
+                && proxyId != null && proxyId.isValid()
                 && DateUtils.isValid(creationDate)
                 && DateUtils.isValid(expiryDate)
                 && maximumAmountPerTransaction != null
@@ -61,7 +61,7 @@ public class ProxyAccount implements SignableMessage, AddressableMessage {
     }
 
     @Override
-    public String address() {
+    public ProxyId address() {
         return proxyId;
     }
 }

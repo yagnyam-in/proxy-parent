@@ -1,6 +1,7 @@
 package in.yagnyam.proxy.messages.identity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
@@ -33,7 +34,7 @@ public class IdentityUpdateRequest implements SignableRequestMessage {
      * Only owner is allowed to Update the identity details
      */
     @NonNull
-    private String ownerProxyId;
+    private ProxyId ownerProxyId;
 
     @Override
     public String requestId() {
@@ -41,7 +42,7 @@ public class IdentityUpdateRequest implements SignableRequestMessage {
     }
 
     @Override
-    public String signer() {
+    public ProxyId signer() {
         return ownerProxyId;
     }
 
@@ -54,7 +55,7 @@ public class IdentityUpdateRequest implements SignableRequestMessage {
     @JsonIgnore
     public boolean isValid() {
         return StringUtils.isValid(requestId)
-                && StringUtils.isValid(ownerProxyId)
+                && ownerProxyId != null && ownerProxyId.isValid()
                 && subject != null && subject.isValid();
     }
 }

@@ -1,6 +1,7 @@
 package in.yagnyam.proxy.messages.payments;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.messages.banking.Amount;
@@ -40,7 +41,7 @@ public class SecretProtectedPaymentAuthorization implements SignableMessage {
     private String ivPrefixedSecretHash;
 
     @Override
-    public String signer() {
+    public ProxyId signer() {
         return proxyAccount.signer();
     }
 

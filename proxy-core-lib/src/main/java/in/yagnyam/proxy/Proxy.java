@@ -11,10 +11,7 @@ import java.security.PrivateKey;
 public class Proxy {
 
     @NonNull
-    private String id;
-
-    @NonNull
-    private String sha256Thumbprint;
+    private ProxyId id;
 
     private String name;
 
@@ -28,7 +25,7 @@ public class Proxy {
     private PrivateKey privateKey;
 
     public String getUniqueId() {
-        return id + "#" + sha256Thumbprint;
+        return id.getUniqueId();
     }
 
     public static Proxy of(Certificate certificate) {
@@ -37,8 +34,7 @@ public class Proxy {
 
     public static Proxy of(Certificate certificate, PrivateKey privateKey) {
         return builder()
-                .id(certificate.getId())
-                .sha256Thumbprint(certificate.getSha256Thumbprint())
+                .id(ProxyId.of(certificate))
                 .certificateSerialNumber(certificate.getSerialNumber())
                 .name(certificate.getOwner())
                 .certificate(certificate)

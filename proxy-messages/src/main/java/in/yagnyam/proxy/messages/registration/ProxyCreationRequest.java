@@ -1,5 +1,6 @@
 package in.yagnyam.proxy.messages.registration;
 
+import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.RequestMessage;
 import lombok.*;
 
@@ -24,7 +25,7 @@ public class ProxyCreationRequest implements RequestMessage {
      * Unique Proxy Id
      */
     @NonNull
-    private String proxyId;
+    private ProxyId proxyId;
 
     /**
      * Valid Certificate Request for Subject requestId.

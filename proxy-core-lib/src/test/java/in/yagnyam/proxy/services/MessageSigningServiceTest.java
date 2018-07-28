@@ -2,6 +2,7 @@ package in.yagnyam.proxy.services;
 
 import in.yagnyam.proxy.Certificate;
 import in.yagnyam.proxy.Proxy;
+import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import lombok.SneakyThrows;
 import lombok.val;
@@ -38,12 +39,13 @@ public class MessageSigningServiceTest {
 
     @Test
     public void testSign() throws IOException, GeneralSecurityException {
-        Proxy proxy = Proxy.builder().id("dummy").privateKey(samplePrivateKey()).sha256Thumbprint("SHA256").certificate(mock(Certificate.class)).build();
+        ProxyId proxyId = ProxyId.of("dummy", "SHA256");
+        Proxy proxy = Proxy.builder().id(proxyId).privateKey(samplePrivateKey()).certificate(mock(Certificate.class)).build();
 
         SignableMessage signableMessage = new SignableMessage() {
             @Override
-            public String signer() {
-                return "dummy";
+            public ProxyId signer() {
+                return ProxyId.of("dummy");
             }
 
             @Override

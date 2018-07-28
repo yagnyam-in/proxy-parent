@@ -1,6 +1,7 @@
 package in.yagnyam.proxy.messages.identity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.utils.StringUtils;
@@ -32,7 +33,7 @@ public class IdentityAuthorization implements SignableRequestMessage {
     }
 
     @Override
-    public String signer() {
+    public ProxyId signer() {
         return proxyIdentity.getMessage().getProxyId();
     }
 

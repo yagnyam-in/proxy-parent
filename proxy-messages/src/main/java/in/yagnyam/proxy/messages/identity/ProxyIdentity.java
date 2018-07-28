@@ -3,9 +3,9 @@ package in.yagnyam.proxy.messages.identity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import in.yagnyam.proxy.AddressableMessage;
+import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.utils.DateUtils;
-import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 import java.util.Date;
@@ -23,10 +23,10 @@ import java.util.Date;
 public class ProxyIdentity implements SignableMessage, AddressableMessage {
 
     @NonNull
-    private String issuerId;
+    private ProxyId issuerId;
 
     @NonNull
-    private String proxyId;
+    private ProxyId proxyId;
 
     private String nationality;
 
@@ -47,7 +47,7 @@ public class ProxyIdentity implements SignableMessage, AddressableMessage {
     private Date expiryDate;
 
     @Override
-    public String signer() {
+    public ProxyId signer() {
         return issuerId;
     }
 
@@ -67,15 +67,15 @@ public class ProxyIdentity implements SignableMessage, AddressableMessage {
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return StringUtils.isValid(issuerId)
-                && StringUtils.isValid(proxyId)
+        return issuerId != null && issuerId.isValid()
+                && proxyId != null && proxyId.isValid()
                 && !DateUtils.isValid(creationDate)
                 && !DateUtils.isValid(expiryDate);
         // TODO: Add optional fields
     }
 
     @Override
-    public String address() {
+    public ProxyId address() {
         return proxyId;
     }
 }

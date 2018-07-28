@@ -1,6 +1,7 @@
 package in.yagnyam.proxy.services;
 
 import in.yagnyam.proxy.Proxy;
+import in.yagnyam.proxy.ProxyId;
 import lombok.Builder;
 import lombok.NonNull;
 
@@ -18,10 +19,10 @@ public class SimpleProxyResolver implements ProxyResolver {
 
     /**
      * Fetch proxy for given Proxy Id
-     * @param pid Proxy Id
+     * @param proxyId Proxy Id
      * @return Proxy if available, otherwise None
      */
-    public List<Proxy> resolveProxy(@NonNull String pid) {
-        return certificateService.getCertificatesById(pid).stream().map(Proxy::of).collect(Collectors.toList());
+    public List<Proxy> resolveProxy(@NonNull ProxyId proxyId) {
+        return certificateService.getCertificatesById(proxyId.getUniqueId()).stream().map(Proxy::of).collect(Collectors.toList());
     }
 }

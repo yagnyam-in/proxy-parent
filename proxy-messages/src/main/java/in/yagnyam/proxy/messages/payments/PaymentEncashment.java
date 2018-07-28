@@ -3,6 +3,7 @@ package in.yagnyam.proxy.messages.payments;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import in.yagnyam.proxy.AddressableMessage;
+import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.messages.banking.Amount;
@@ -41,7 +42,7 @@ public class PaymentEncashment implements SignableRequestMessage, AddressableMes
     private NonProxyAccount receivingNonProxyAccount;
 
     @Override
-    public String signer() {
+    public ProxyId signer() {
         return paymentAuthorization.getMessage().getPayeeId();
     }
 
@@ -63,7 +64,7 @@ public class PaymentEncashment implements SignableRequestMessage, AddressableMes
     }
 
     @Override
-    public String address() {
+    public ProxyId address() {
         return paymentAuthorization.getMessage().getProxyAccount().signer();
     }
 

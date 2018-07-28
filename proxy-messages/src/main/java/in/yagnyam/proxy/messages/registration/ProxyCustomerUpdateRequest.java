@@ -3,6 +3,7 @@ package in.yagnyam.proxy.messages.registration;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.AccessLevel;
@@ -30,7 +31,7 @@ public class ProxyCustomerUpdateRequest implements SignableRequestMessage {
     private String requestId;
 
     @NonNull
-    private String proxyId;
+    private ProxyId proxyId;
 
     private String gcmToken;
 
@@ -43,7 +44,7 @@ public class ProxyCustomerUpdateRequest implements SignableRequestMessage {
     private boolean syncWithContacts;
 
     @Override
-    public String signer() {
+    public ProxyId signer() {
         return proxyId;
     }
 
@@ -56,7 +57,7 @@ public class ProxyCustomerUpdateRequest implements SignableRequestMessage {
     @JsonIgnore
     public boolean isValid() {
         return StringUtils.isValid(requestId)
-                && StringUtils.isValid(proxyId);
+                && proxyId != null && proxyId.isValid();
     }
 
     @Override

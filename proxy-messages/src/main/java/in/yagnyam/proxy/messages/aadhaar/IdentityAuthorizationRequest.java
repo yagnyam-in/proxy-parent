@@ -1,6 +1,7 @@
 package in.yagnyam.proxy.messages.aadhaar;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
@@ -20,10 +21,13 @@ public class IdentityAuthorizationRequest implements SignableRequestMessage {
     private String requestId;
 
     @NonNull
-    private String apiToken;
+    private ProxyId proxyId;
 
     @NonNull
-    private String proxyId;
+    private ProxyId ownerProxyId;
+
+    @NonNull
+    private String subjectId;
 
     private boolean revealNationality;
 
@@ -43,8 +47,8 @@ public class IdentityAuthorizationRequest implements SignableRequestMessage {
     }
 
     @Override
-    public String signer() {
-        return proxyId;
+    public ProxyId signer() {
+        return ownerProxyId;
     }
 
     @Override
@@ -56,7 +60,8 @@ public class IdentityAuthorizationRequest implements SignableRequestMessage {
     @JsonIgnore
     public boolean isValid() {
         return StringUtils.isValid(requestId)
-                && StringUtils.isValid(apiToken)
-                && StringUtils.isValid(proxyId);
+                && proxyId != null && proxyId.isValid()
+                && ownerProxyId != null && ownerProxyId.isValid()
+                && StringUtils.isValid(subjectId);
     }
 }
