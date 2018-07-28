@@ -53,16 +53,15 @@ public class ProxyIdentity implements SignableMessage, AddressableMessage {
 
     @Override
     public String toReadableString() {
-        StringBuilder stringBuilder = new StringBuilder(issuerId);
-        stringBuilder = stringBuilder.append(" certify that ")
-                .append(proxyId)
-                .append(" is a valid id from ")
-                .append(creationDate)
-                .append(" till ")
-                .append(expiryDate)
-                .append(".");
         // TODO: Add optional fields
-        return stringBuilder.toString();
+        return issuerId +
+                " certify that " +
+                proxyId +
+                " is a valid id from " +
+                creationDate +
+                " till " +
+                expiryDate +
+                ".";
     }
 
     @Override

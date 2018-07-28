@@ -1,10 +1,9 @@
-package in.yagnyam.proxy.messages.xxx;
+package in.yagnyam.proxy.messages.aadhaar;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
-
 
 /**
  * Identity authorization message
