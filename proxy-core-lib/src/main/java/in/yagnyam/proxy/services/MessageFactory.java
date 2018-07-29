@@ -36,6 +36,10 @@ public class MessageFactory {
         try {
             Class messageClass = Class.forName(underlyingMessageType);
             SignableMessage underlyingMessage = buildSignableMessage(signedMessage.getPayload(), messageClass);
+            if (!underlyingMessageType.equals(underlyingMessage.getType())) {
+                log.error("Message type " + underlyingMessageType + " from SignedMessage doesn't match Message type from Payload " + underlyingMessage.getType());
+                throw new IllegalArgumentException("Message type " + underlyingMessageType + " from SignedMessage doesn't match Message type from Payload " + underlyingMessage.getType());
+            }
             SignedMessage<T> extracted = signedMessage.setMessage(underlyingMessage);
             verificationService.verify(extracted);
             return extracted;
