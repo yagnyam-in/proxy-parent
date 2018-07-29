@@ -1,22 +1,23 @@
-package in.yagnyam.proxy.messages.identity;
+package in.yagnyam.proxy.messages.aadhaar;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
+import in.yagnyam.proxy.messages.identity.IdentitySubject;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 /**
- * Request Message to Create/Update Identity (Subject) details
+ * Request Message to Verify Subject using Aadhaar verification
  */
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
-@JsonRootName("in.yagnyam.proxy.messages.identity.IdentityUpdateRequest")
-public class IdentityUpdateRequest implements SignableRequestMessage {
+@JsonRootName("in.yagnyam.proxy.messages.identity.IdentityVerificationRequest")
+public class IdentityVerificationRequest implements SignableRequestMessage {
 
     /**
      * Unique Request Id
@@ -25,18 +26,24 @@ public class IdentityUpdateRequest implements SignableRequestMessage {
     private String requestId;
 
     /**
-     * Identity Subject that is being modified
-     */
-    @NonNull
-    private IdentitySubject subject;
-
-    /**
      * Owner of this Identity.
      * <p>
      * Only owner is allowed to Update the identity details
      */
     @NonNull
     private ProxyId ownerProxyId;
+
+    /**
+     * Subject being verified
+     */
+    @NonNull
+    private String subjectId;
+
+    /**
+     * TODO: This is worst way of verification. Customer need to send OTP received on mobile for verification.
+     */
+    @NonNull
+    private Boolean verified;
 
     @Override
     public String requestId() {
@@ -58,6 +65,6 @@ public class IdentityUpdateRequest implements SignableRequestMessage {
     public boolean isValid() {
         return StringUtils.isValid(requestId)
                 && ownerProxyId != null && ownerProxyId.isValid()
-                && subject != null && subject.isValid();
+                && StringUtils.isValid(subjectId);
     }
 }
