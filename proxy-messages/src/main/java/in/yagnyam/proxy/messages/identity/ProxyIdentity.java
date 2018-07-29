@@ -2,6 +2,7 @@ package in.yagnyam.proxy.messages.identity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
@@ -20,6 +21,7 @@ import java.util.Date;
 @ToString
 @EqualsAndHashCode(of = {"issuerId", "proxyId"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonRootName("in.yagnyam.proxy.messages.identity.ProxyIdentity")
 public class ProxyIdentity implements SignableMessage, AddressableMessage {
 
     @NonNull

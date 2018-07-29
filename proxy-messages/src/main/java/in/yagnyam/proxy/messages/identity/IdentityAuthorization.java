@@ -1,6 +1,7 @@
 package in.yagnyam.proxy.messages.identity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
@@ -13,6 +14,7 @@ import lombok.*;
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"proxyIdentity", "requestId"})
+@JsonRootName("in.yagnyam.proxy.messages.identity.IdentityAuthorization")
 public class IdentityAuthorization implements SignableRequestMessage {
 
     @NonNull

@@ -62,6 +62,11 @@ public class Certificate {
         return false;
     }
 
+    public boolean matchesId(ProxyId proxyId) {
+        return proxyId != null && proxyId.getId().equals(owner)
+                && (proxyId.getSha256Thumbprint() == null || StringUtils.equals(proxyId.getSha256Thumbprint(), sha256Thumbprint));
+    }
+
     public static String extractOnlyId(String certificateUniqueId) {
         if (StringUtils.isEmpty(certificateUniqueId)) {
             throw new IllegalArgumentException("Invalid certificate Id");

@@ -134,7 +134,8 @@ public class MessageFactoryTest {
         ComplexSignableMessage complexMessage = new ComplexSignableMessage();
         complexMessage.internalObject = signedSimpleMessage;
         SignedMessage<ComplexSignableMessage> signedComplexMessage = service.sign(complexMessage, proxy);
-        String signedText = messageSerializerService.serialize(signedComplexMessage);
+        String signedText = messageSerializerService.serializeSignedMessage(signedComplexMessage);
+        System.out.println("signedText: " + signedText);
 
         MessageFactory messageFactory = MessageFactory.builder()
                 .serializer(messageSerializerService)

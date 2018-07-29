@@ -1,6 +1,7 @@
 package in.yagnyam.proxy.messages.identity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonRootName;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.utils.StringUtils;
@@ -14,6 +15,7 @@ import lombok.*;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
+@JsonRootName("in.yagnyam.proxy.messages.identity.IdentityUpdateRequest")
 public class IdentityUpdateRequest implements SignableRequestMessage {
 
     /**

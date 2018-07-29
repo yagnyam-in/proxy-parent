@@ -41,7 +41,7 @@ public class MessageSigningService {
             throw new IllegalStateException("At least one signature algorithm is required");
         }
         // TODO: Check if signer is same as message.signer
-        String payload = serializer.serialize(message);
+        String payload = serializer.serializeSignableMessage(message);
         SignedMessage.SignedMessageBuilder<T> builder = SignedMessage.<T>builder()
                 .message(message)
                 .type(message.getClass().getName())

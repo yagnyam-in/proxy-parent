@@ -25,7 +25,7 @@ public class MessageFactory {
     private MessageVerificationService verificationService;
 
     public SignedMessage buildSignedMessage(String signedMessage) throws IOException, GeneralSecurityException {
-        SignedMessage signedMessageObject = serializer.deserialize(signedMessage, SignedMessage.class);
+        SignedMessage signedMessageObject = serializer.deserializeSignedMessage(signedMessage);
         return verifySignedMessage(signedMessageObject);
     }
 
@@ -48,7 +48,7 @@ public class MessageFactory {
 
     private <T extends SignableMessage> T buildSignableMessage(String signableMessage, Class<T> messageClass) throws IOException, GeneralSecurityException {
         log.debug("buildSignableMessage({}, {})", signableMessage, messageClass);
-        T signableMessageObject = serializer.deserialize(signableMessage, messageClass);
+        T signableMessageObject = serializer.deserializeSignableMessage(signableMessage, messageClass);
         Field[] fields = signableMessageObject.getClass().getDeclaredFields();
         try {
             // See if any signed message fields are there
