@@ -38,7 +38,7 @@ public interface SignableMessage {
      *
      * @return Type of the Message
      */
-    default String getType() {
+    default String getMessageType() {
         return getClass().getName();
     }
 
@@ -47,9 +47,9 @@ public interface SignableMessage {
      *
      * @param type Type of the message
      */
-    default void setType(String type) {
-        if (!getType().equals(type)) {
-            throw new IllegalArgumentException("Invalid Type " + type + ". It must be " + getType());
+    default void setMessageType(String type) {
+        if (!getMessageType().equals(type)) {
+            throw new IllegalArgumentException("Invalid Type " + type + ". It must be " + getMessageType());
         }
     }
 }
