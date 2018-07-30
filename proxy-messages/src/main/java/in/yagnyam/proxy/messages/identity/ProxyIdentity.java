@@ -30,6 +30,8 @@ public class ProxyIdentity implements SignableMessage, AddressableMessage {
     @NonNull
     private ProxyId proxyId;
 
+    private String verificationMethod;
+
     private String nationality;
 
     private String name;
