@@ -1,9 +1,14 @@
 package in.yagnyam.proxy.messages.identity;
 
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.*;
-
 import java.util.Date;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 /**
  * Identity Subject to represent Person
@@ -16,20 +21,20 @@ import java.util.Date;
 @EqualsAndHashCode(of = {"subjectId"})
 public class IdentitySubject {
 
-    /**
-     * Subject Unique Id
-     */
-    private String subjectId;
+  /**
+   * Subject Unique Id
+   */
+  private String subjectId;
 
-    private String nationality;
+  private String nationality;
 
-    private String name;
+  private String name;
 
-    private String gender;
+  private String gender;
 
-    private Date dateOfBirth;
+  private Date dateOfBirth;
 
-    public boolean isValid() {
-        return StringUtils.isValid(subjectId);
-    }
+  public boolean isValid() {
+    return StringUtils.isValid(subjectId);
+  }
 }

@@ -1,7 +1,6 @@
 package in.yagnyam.proxy.messages.payments;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
@@ -29,47 +28,45 @@ import lombok.ToString;
 @EqualsAndHashCode(of = {"paymentAuthorization"})
 public class PaymentEncashment implements SignableRequestMessage, AddressableMessage {
 
-    @NonNull
-    private String requestId;
+  @NonNull
+  public SignedMessage<PaymentAuthorization> paymentAuthorization;
+  @NonNull
+  private String requestId;
+  private Amount amount;
 
-    @NonNull
-    public SignedMessage<PaymentAuthorization> paymentAuthorization;
+  private ProxyAccountId receivingProxyAccountId;
 
-    private Amount amount;
+  private NonProxyAccount receivingNonProxyAccount;
 
-    private ProxyAccountId receivingProxyAccountId;
+  @Override
+  public ProxyId signer() {
+    return paymentAuthorization.getMessage().getPayeeId();
+  }
 
-    private NonProxyAccount receivingNonProxyAccount;
+  @Override
+  public String toReadableString() {
+    return null;
+  }
 
-    @Override
-    public ProxyId signer() {
-        return paymentAuthorization.getMessage().getPayeeId();
-    }
+  @Override
+  @JsonIgnore
+  public boolean isValid() {
+    return StringUtils.isValid(requestId)
+        && paymentAuthorization != null
+        && paymentAuthorization.isValid()
+        && amount != null
+        && amount.isValid()
+        && (receivingProxyAccountId != null && receivingProxyAccountId.isValid()
+        || receivingNonProxyAccount != null && receivingNonProxyAccount.isValid());
+  }
 
-    @Override
-    public String toReadableString() {
-        return null;
-    }
+  @Override
+  public ProxyId address() {
+    return paymentAuthorization.getMessage().getProxyAccount().signer();
+  }
 
-    @Override
-    @JsonIgnore
-    public boolean isValid() {
-        return StringUtils.isValid(requestId)
-                && paymentAuthorization != null
-                && paymentAuthorization.isValid()
-                && amount != null
-                && amount.isValid()
-                && (receivingProxyAccountId != null && receivingProxyAccountId.isValid()
-                || receivingNonProxyAccount != null && receivingNonProxyAccount.isValid());
-    }
-
-    @Override
-    public ProxyId address() {
-        return paymentAuthorization.getMessage().getProxyAccount().signer();
-    }
-
-    @Override
-    public String requestId() {
-        return requestId;
-    }
+  @Override
+  public String requestId() {
+    return requestId;
+  }
 }

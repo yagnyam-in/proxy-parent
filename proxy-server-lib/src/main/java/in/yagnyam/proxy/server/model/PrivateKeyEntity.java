@@ -6,10 +6,16 @@ import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Index;
-import lombok.*;
-
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
  * Database Entity to store Certificate for this module
@@ -25,40 +31,40 @@ import java.security.cert.X509Certificate;
 @EqualsAndHashCode(of = "id")
 public class PrivateKeyEntity {
 
-    @Id
-    @NonNull
-    private String id;
+  @Id
+  @NonNull
+  private String id;
 
-    private String name;
+  private String name;
 
-    private String email;
+  private String email;
 
-    private String phoneNumber;
+  private String phoneNumber;
 
-    private String postalAddress;
+  private String postalAddress;
 
-    @Index
-    private String certificateSerialNumber;
-    
-    @JsonIgnore
-    private String certificateRequestEncoded;
+  @Index
+  private String certificateSerialNumber;
 
-    @JsonIgnore
-    private String privateKeyAlgorithm;
+  @JsonIgnore
+  private String certificateRequestEncoded;
 
-    @JsonIgnore
-    private String privateKeyEncoded;
+  @JsonIgnore
+  private String privateKeyAlgorithm;
 
-    @JsonIgnore
-    private String certificateEncoded;
+  @JsonIgnore
+  private String privateKeyEncoded;
 
-    @JsonIgnore
-    @Setter
-    @Ignore
-    private PrivateKey privateKey;
+  @JsonIgnore
+  private String certificateEncoded;
 
-    @JsonIgnore
-    @Setter
-    @Ignore
-    private X509Certificate certificate;
+  @JsonIgnore
+  @Setter
+  @Ignore
+  private PrivateKey privateKey;
+
+  @JsonIgnore
+  @Setter
+  @Ignore
+  private X509Certificate certificate;
 }

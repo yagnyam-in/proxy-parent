@@ -7,15 +7,15 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class NetworkServiceTest {
 
-    @Test
-    public void testGet() {
-    }
+  @Test
+  public void testGet() {
+  }
 
-    @Test
-    public void testGetValue() {
-    }
+  @Test
+  public void testGetValue() {
+  }
 
-    @Test
-    public void testPostValue() {
-    }
+  @Test
+  public void testPostValue() {
+  }
 }

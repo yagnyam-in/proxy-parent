@@ -8,48 +8,46 @@ import lombok.Getter;
 @EqualsAndHashCode(of = {"id", "sha256Thumbprint"})
 public class ProxyId {
 
-    private ProxyId(String id, String sha256Thumbprint) {
-        if (StringUtils.isEmpty(id)) {
-            throw new IllegalArgumentException("Invalid Proxy Id: " + id);
-        }
-        this.id = id;
-        this.sha256Thumbprint = sha256Thumbprint;
-        this.uniqueId = uniqueId();
+  private final String id;
+  private final String sha256Thumbprint;
+  private final String uniqueId;
+
+  private ProxyId(String id, String sha256Thumbprint) {
+    if (StringUtils.isEmpty(id)) {
+      throw new IllegalArgumentException("Invalid Proxy Id: " + id);
     }
+    this.id = id;
+    this.sha256Thumbprint = sha256Thumbprint;
+    this.uniqueId = uniqueId();
+  }
 
-    private final String id;
+  public static ProxyId of(String id) {
+    return new ProxyId(id, null);
+  }
 
-    private final String sha256Thumbprint;
+  public static ProxyId of(String id, String sha256Thumbprint) {
+    return new ProxyId(id, sha256Thumbprint);
+  }
 
-    private final String uniqueId;
+  public static ProxyId of(Certificate certificate) {
+    return of(certificate.getId(), certificate.getSha256Thumbprint());
+  }
 
-    private String uniqueId() {
-        if (StringUtils.isValid(sha256Thumbprint)) {
-            return id + "#" + sha256Thumbprint;
-        } else {
-            return id;
-        }
+  private String uniqueId() {
+    if (StringUtils.isValid(sha256Thumbprint)) {
+      return id + "#" + sha256Thumbprint;
+    } else {
+      return id;
     }
+  }
 
-    public boolean isValid() {
-        return StringUtils.isValid(id);
-    }
+  public boolean isValid() {
+    return StringUtils.isValid(id);
+  }
 
-    public static ProxyId of(String id) {
-        return new ProxyId(id, null);
-    }
-
-    public static ProxyId of(String id, String sha256Thumbprint) {
-        return new ProxyId(id, sha256Thumbprint);
-    }
-
-    public static ProxyId of(Certificate certificate) {
-        return of(certificate.getId(), certificate.getSha256Thumbprint());
-    }
-
-    @Override
-    public String toString() {
-        return uniqueId;
-    }
+  @Override
+  public String toString() {
+    return uniqueId;
+  }
 
 }

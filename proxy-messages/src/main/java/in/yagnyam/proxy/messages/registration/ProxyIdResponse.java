@@ -1,6 +1,11 @@
 package in.yagnyam.proxy.messages.registration;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
 /**
  * Proxy Id response from Server
@@ -12,16 +17,16 @@ import lombok.*;
 @ToString
 public class ProxyIdResponse {
 
-    /**
-     * Request Number
-     */
-    @NonNull
-    private String requestId;
+  /**
+   * Request Number
+   */
+  @NonNull
+  private String requestId;
 
-    /**
-     * Unique Proxy Id
-     */
-    @NonNull
-    private String proxyId;
+  /**
+   * Unique Proxy Id
+   */
+  @NonNull
+  private String proxyId;
 
 }

@@ -2,7 +2,6 @@ package in.yagnyam.proxy.messages.registration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-
 import in.yagnyam.proxy.CertificateChain;
 import in.yagnyam.proxy.Constants;
 import in.yagnyam.proxy.ProxyId;
@@ -29,36 +28,36 @@ import lombok.ToString;
 @Builder
 public class ProxyCreationResponse implements SignableMessage {
 
-    @NonNull
-    private String requestId;
+  @NonNull
+  private String requestId;
 
-    @NonNull
-    private ProxyId proxyId;
+  @NonNull
+  private ProxyId proxyId;
 
-    @NonNull
-    private String certificateSerial;
+  @NonNull
+  private String certificateSerial;
 
-    @NonNull
-    private CertificateChain certificateChain;
+  @NonNull
+  private CertificateChain certificateChain;
 
-    @Override
-    public ProxyId signer() {
-        return ProxyId.of(Constants.PROXY_CENTRAL);
-    }
+  @Override
+  public ProxyId signer() {
+    return ProxyId.of(Constants.PROXY_CENTRAL);
+  }
 
-    @Override
-    public String toReadableString() {
-        return null;
-    }
+  @Override
+  public String toReadableString() {
+    return null;
+  }
 
-    @Override
-    @JsonIgnore
-    public boolean isValid() {
-        return StringUtils.isValid(requestId)
-                && proxyId != null && proxyId.isValid()
-                && StringUtils.isValid(certificateSerial)
-                && certificateChain != null
-                && certificateChain.isValid();
-    }
+  @Override
+  @JsonIgnore
+  public boolean isValid() {
+    return StringUtils.isValid(requestId)
+        && proxyId != null && proxyId.isValid()
+        && StringUtils.isValid(certificateSerial)
+        && certificateChain != null
+        && certificateChain.isValid();
+  }
 
 }

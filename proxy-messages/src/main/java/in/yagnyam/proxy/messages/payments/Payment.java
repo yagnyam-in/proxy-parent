@@ -10,7 +10,14 @@ import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.messages.banking.ProxyAccount;
 import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
 /**
  * Direct Payment to the payee
@@ -24,45 +31,43 @@ import lombok.*;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Payment implements SignableRequestMessage, AddressableMessage {
 
-    @NonNull
-    private String requestId;
+  @NonNull
+  public SignedMessage<ProxyAccount> proxyAccount;
+  @NonNull
+  private String requestId;
+  @NonNull
+  private Amount amount;
 
-    @NonNull
-    public SignedMessage<ProxyAccount> proxyAccount;
+  private ProxyAccountId receivingProxyAccountId;
 
-    @NonNull
-    private Amount amount;
+  private NonProxyAccount receivingNonProxyAccount;
 
-    private ProxyAccountId receivingProxyAccountId;
+  @Override
+  public ProxyId signer() {
+    return proxyAccount.getMessage().getProxyId();
+  }
 
-    private NonProxyAccount receivingNonProxyAccount;
+  @Override
+  public String toReadableString() {
+    return null;
+  }
 
-    @Override
-    public ProxyId signer() {
-        return proxyAccount.getMessage().getProxyId();
-    }
+  @Override
+  @JsonIgnore
+  public boolean isValid() {
+    return StringUtils.isValid(requestId)
+        && proxyAccount != null && proxyAccount.isValid()
+        && (receivingProxyAccountId != null && receivingProxyAccountId.isValid()
+        || receivingNonProxyAccount != null && receivingNonProxyAccount.isValid());
+  }
 
-    @Override
-    public String toReadableString() {
-        return null;
-    }
+  @Override
+  public ProxyId address() {
+    return proxyAccount.signer();
+  }
 
-    @Override
-    @JsonIgnore
-    public boolean isValid() {
-        return StringUtils.isValid(requestId)
-                && proxyAccount != null && proxyAccount.isValid()
-                && (receivingProxyAccountId != null && receivingProxyAccountId.isValid()
-                || receivingNonProxyAccount != null && receivingNonProxyAccount.isValid());
-    }
-
-    @Override
-    public ProxyId address() {
-        return proxyAccount.signer();
-    }
-
-    @Override
-    public String requestId() {
-        return requestId;
-    }
+  @Override
+  public String requestId() {
+    return requestId;
+  }
 }

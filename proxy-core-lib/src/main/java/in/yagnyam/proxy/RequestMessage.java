@@ -1,6 +1,13 @@
 package in.yagnyam.proxy;
 
+/**
+ * Interfaced for Request messages with Request Id
+ */
 public interface RequestMessage {
 
-    String requestId();
+  /**
+   * Request Id
+   * @return Request Id
+   */
+  String requestId();
 }

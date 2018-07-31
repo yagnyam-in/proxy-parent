@@ -2,7 +2,6 @@ package in.yagnyam.proxy.messages.registration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.utils.StringUtils;
@@ -27,41 +26,41 @@ import lombok.ToString;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ProxyCustomerUpdateRequest implements SignableRequestMessage {
 
-    @NonNull
-    private String requestId;
+  @NonNull
+  private String requestId;
 
-    @NonNull
-    private ProxyId proxyId;
+  @NonNull
+  private ProxyId proxyId;
 
-    private String gcmToken;
+  private String gcmToken;
 
-    private String name;
+  private String name;
 
-    private String emailAddress;
+  private String emailAddress;
 
-    private String phoneNumber;
+  private String phoneNumber;
 
-    private boolean syncWithContacts;
+  private boolean syncWithContacts;
 
-    @Override
-    public ProxyId signer() {
-        return proxyId;
-    }
+  @Override
+  public ProxyId signer() {
+    return proxyId;
+  }
 
-    @Override
-    public String toReadableString() {
-        return null;
-    }
+  @Override
+  public String toReadableString() {
+    return null;
+  }
 
-    @Override
-    @JsonIgnore
-    public boolean isValid() {
-        return StringUtils.isValid(requestId)
-                && proxyId != null && proxyId.isValid();
-    }
+  @Override
+  @JsonIgnore
+  public boolean isValid() {
+    return StringUtils.isValid(requestId)
+        && proxyId != null && proxyId.isValid();
+  }
 
-    @Override
-    public String requestId() {
-        return requestId;
-    }
+  @Override
+  public String requestId() {
+    return requestId;
+  }
 }

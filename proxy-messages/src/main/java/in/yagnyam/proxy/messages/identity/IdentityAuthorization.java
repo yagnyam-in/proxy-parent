@@ -6,7 +6,14 @@ import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
 @Builder
 @NoArgsConstructor
@@ -17,38 +24,36 @@ import lombok.*;
 @JsonRootName("in.yagnyam.proxy.messages.identity.IdentityAuthorization")
 public class IdentityAuthorization implements SignableRequestMessage {
 
-    @NonNull
-    private String requestId;
+  @NonNull
+  public SignedMessage<ProxyIdentity> proxyIdentity;
+  @NonNull
+  private String requestId;
+  private boolean consentToMail;
 
-    @NonNull
-    public SignedMessage<ProxyIdentity> proxyIdentity;
+  private boolean consentToRequestPayments;
 
-    private boolean consentToMail;
+  private boolean consentToVoiceCall;
 
-    private boolean consentToRequestPayments;
+  @Override
+  public String requestId() {
+    return requestId;
+  }
 
-    private boolean consentToVoiceCall;
+  @Override
+  public ProxyId signer() {
+    return proxyIdentity.getMessage().getProxyId();
+  }
 
-    @Override
-    public String requestId() {
-        return requestId;
-    }
+  @Override
+  public String toReadableString() {
+    return null;
+  }
 
-    @Override
-    public ProxyId signer() {
-        return proxyIdentity.getMessage().getProxyId();
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
-    @JsonIgnore
-    public boolean isValid() {
-        return StringUtils.isValid(requestId)
-                && proxyIdentity != null
-                && proxyIdentity.isValid();
-    }
+  @Override
+  @JsonIgnore
+  public boolean isValid() {
+    return StringUtils.isValid(requestId)
+        && proxyIdentity != null
+        && proxyIdentity.isValid();
+  }
 }

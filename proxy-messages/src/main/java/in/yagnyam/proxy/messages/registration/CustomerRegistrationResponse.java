@@ -1,7 +1,6 @@
 package in.yagnyam.proxy.messages.registration;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-
 import in.yagnyam.proxy.CertificateChain;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -24,15 +23,15 @@ import lombok.ToString;
 @Builder
 public class CustomerRegistrationResponse {
 
-    @NonNull
-    private String requestId;
-    
-    @NonNull
-    private String proxyId;
+  @NonNull
+  private String requestId;
 
-    @NonNull
-    private String certificateSerial;
+  @NonNull
+  private String proxyId;
 
-    @NonNull
-    private CertificateChain certificateChain;
+  @NonNull
+  private String certificateSerial;
+
+  @NonNull
+  private CertificateChain certificateChain;
 }

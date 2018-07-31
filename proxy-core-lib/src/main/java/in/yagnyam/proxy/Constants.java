@@ -5,8 +5,8 @@ package in.yagnyam.proxy;
  */
 public interface Constants {
 
-    /**
-     * Central Authority Id to give Proxy Id's
-     */
-    String PROXY_CENTRAL = "proxy-central";
+  /**
+   * Central Authority Id to give Proxy Id's
+   */
+  String PROXY_CENTRAL = "proxy-central";
 }

@@ -5,7 +5,13 @@ import com.fasterxml.jackson.annotation.JsonRootName;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
 /**
  * Request Message to Create/Update Identity (Subject) details
@@ -18,46 +24,46 @@ import lombok.*;
 @JsonRootName("in.yagnyam.proxy.messages.identity.IdentityUpdateRequest")
 public class IdentityUpdateRequest implements SignableRequestMessage {
 
-    /**
-     * Unique Request Id
-     */
-    @NonNull
-    private String requestId;
+  /**
+   * Unique Request Id
+   */
+  @NonNull
+  private String requestId;
 
-    /**
-     * Identity Subject that is being modified
-     */
-    @NonNull
-    private IdentitySubject subject;
+  /**
+   * Identity Subject that is being modified
+   */
+  @NonNull
+  private IdentitySubject subject;
 
-    /**
-     * Owner of this Identity.
-     * <p>
-     * Only owner is allowed to Update the identity details
-     */
-    @NonNull
-    private ProxyId ownerProxyId;
+  /**
+   * Owner of this Identity.
+   * <p>
+   * Only owner is allowed to Update the identity details
+   */
+  @NonNull
+  private ProxyId ownerProxyId;
 
-    @Override
-    public String requestId() {
-        return requestId;
-    }
+  @Override
+  public String requestId() {
+    return requestId;
+  }
 
-    @Override
-    public ProxyId signer() {
-        return ownerProxyId;
-    }
+  @Override
+  public ProxyId signer() {
+    return ownerProxyId;
+  }
 
-    @Override
-    public String toReadableString() {
-        return null;
-    }
+  @Override
+  public String toReadableString() {
+    return null;
+  }
 
-    @Override
-    @JsonIgnore
-    public boolean isValid() {
-        return StringUtils.isValid(requestId)
-                && ownerProxyId != null && ownerProxyId.isValid()
-                && subject != null && subject.isValid();
-    }
+  @Override
+  @JsonIgnore
+  public boolean isValid() {
+    return StringUtils.isValid(requestId)
+        && ownerProxyId != null && ownerProxyId.isValid()
+        && subject != null && subject.isValid();
+  }
 }

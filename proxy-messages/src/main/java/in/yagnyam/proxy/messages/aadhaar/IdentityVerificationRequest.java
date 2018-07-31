@@ -4,9 +4,14 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonRootName;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
-import in.yagnyam.proxy.messages.identity.IdentitySubject;
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
 /**
  * Request Message to Verify Subject using Aadhaar verification
@@ -19,52 +24,53 @@ import lombok.*;
 @JsonRootName("in.yagnyam.proxy.messages.identity.IdentityVerificationRequest")
 public class IdentityVerificationRequest implements SignableRequestMessage {
 
-    /**
-     * Unique Request Id
-     */
-    @NonNull
-    private String requestId;
+  /**
+   * Unique Request Id
+   */
+  @NonNull
+  private String requestId;
 
-    /**
-     * Owner of this Identity.
-     * <p>
-     * Only owner is allowed to Update the identity details
-     */
-    @NonNull
-    private ProxyId ownerProxyId;
+  /**
+   * Owner of this Identity.
+   * <p>
+   * Only owner is allowed to Update the identity details
+   */
+  @NonNull
+  private ProxyId ownerProxyId;
 
-    /**
-     * Subject being verified
-     */
-    @NonNull
-    private String subjectId;
+  /**
+   * Subject being verified
+   */
+  @NonNull
+  private String subjectId;
 
-    /**
-     * TODO: This is worst way of verification. Customer need to send OTP received on mobile for verification.
-     */
-    @NonNull
-    private Boolean verified;
+  /**
+   * TODO: This is worst way of verification. Customer need to send OTP received on mobile for
+   * verification.
+   */
+  @NonNull
+  private Boolean verified;
 
-    @Override
-    public String requestId() {
-        return requestId;
-    }
+  @Override
+  public String requestId() {
+    return requestId;
+  }
 
-    @Override
-    public ProxyId signer() {
-        return ownerProxyId;
-    }
+  @Override
+  public ProxyId signer() {
+    return ownerProxyId;
+  }
 
-    @Override
-    public String toReadableString() {
-        return null;
-    }
+  @Override
+  public String toReadableString() {
+    return null;
+  }
 
-    @Override
-    @JsonIgnore
-    public boolean isValid() {
-        return StringUtils.isValid(requestId)
-                && ownerProxyId != null && ownerProxyId.isValid()
-                && StringUtils.isValid(subjectId);
-    }
+  @Override
+  @JsonIgnore
+  public boolean isValid() {
+    return StringUtils.isValid(requestId)
+        && ownerProxyId != null && ownerProxyId.isValid()
+        && StringUtils.isValid(subjectId);
+  }
 }

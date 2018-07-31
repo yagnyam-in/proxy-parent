@@ -1,6 +1,11 @@
 package in.yagnyam.proxy.messages.mobile;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Builder
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -9,24 +14,24 @@ import lombok.*;
 @Getter
 public class IdentityRequest {
 
-    public static final String REQUEST_IDENTITY_ACTION = "in.yagnyam.proxy.REQUEST_IDENTITY";
+  public static final String REQUEST_IDENTITY_ACTION = "in.yagnyam.proxy.REQUEST_IDENTITY";
 
-    private String requestId;
+  private String requestId;
 
-    private boolean revealNationality;
+  private boolean revealNationality;
 
-    private boolean revealName;
+  private boolean revealName;
 
-    private boolean revealAge;
+  private boolean revealAge;
 
-    private boolean revealIs18Plus;
+  private boolean revealIs18Plus;
 
-    private boolean revealDateOfBirth;
+  private boolean revealDateOfBirth;
 
-    private boolean consentToMail;
+  private boolean consentToMail;
 
-    private boolean consentToRequestPayments;
+  private boolean consentToRequestPayments;
 
-    private boolean consentToVoiceCall;
+  private boolean consentToVoiceCall;
 
 }

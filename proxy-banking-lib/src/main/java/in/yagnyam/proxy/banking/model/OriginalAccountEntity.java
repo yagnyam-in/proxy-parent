@@ -2,11 +2,17 @@ package in.yagnyam.proxy.banking.model;
 
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import in.yagnyam.proxy.messages.banking.*;
-import lombok.*;
+import in.yagnyam.proxy.messages.banking.Amount;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
 /**
- * Entity to represent Orignal Account
+ * Entity to represent Original Account
  */
 @Entity
 @Getter
@@ -17,14 +23,14 @@ import lombok.*;
 @EqualsAndHashCode(of = "accountId")
 public class OriginalAccountEntity {
 
-    @Id
-    @NonNull
-    private String accountId;
+  @Id
+  @NonNull
+  private String accountId;
 
-    @NonNull
-    private String accountHolder;
+  @NonNull
+  private String accountHolder;
 
-    @NonNull
-    private Amount balance;
+  @NonNull
+  private Amount balance;
 
 }

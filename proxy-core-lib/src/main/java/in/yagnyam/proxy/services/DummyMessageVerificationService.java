@@ -10,8 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(staticName = "instance")
 public class DummyMessageVerificationService extends MessageVerificationService {
 
-    @Override
-    public <T extends SignableMessage> void verify(@NonNull SignedMessage<T> message) {
-        log.warn("Using DummyMessageVerificationService.");
-    }    
+  @Override
+  public <T extends SignableMessage> void verify(@NonNull SignedMessage<T> message) {
+    log.warn("Using DummyMessageVerificationService.");
+  }
 }

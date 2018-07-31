@@ -1,6 +1,19 @@
 package in.yagnyam.proxy;
 
+import static org.junit.Assert.fail;
+
 import in.yagnyam.proxy.utils.DateUtils;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.cert.X509Certificate;
+import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
@@ -14,26 +27,17 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.*;
-import java.security.cert.X509Certificate;
-import java.util.Date;
-
-import static org.junit.Assert.fail;
-
 @Slf4j
 public class TestUtils {
-
-  static {
-    Security.addProvider(new BouncyCastleProvider());
-  }
 
   public static final String KEY_GENERATION_ALGORITHM = "RSA";
   public static final String SIGNATURE_ALGORITHM = "SHA256WithRSAEncryption";
   public static final String PROVIDER_NAME = BouncyCastleProvider.PROVIDER_NAME;
   public static final int KEY_SIZE = 2048;
+
+  static {
+    Security.addProvider(new BouncyCastleProvider());
+  }
 
   public static void expectException(Class<? extends Throwable> e, Runnable r) {
     boolean failure = false;

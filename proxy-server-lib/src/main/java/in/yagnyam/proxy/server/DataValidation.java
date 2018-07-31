@@ -1,9 +1,8 @@
 package in.yagnyam.proxy.server;
 
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.extern.slf4j.Slf4j;
-
 import java.math.BigInteger;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class DataValidation {
