@@ -11,6 +11,8 @@ import static org.mockito.Mockito.when;
 
 import in.yagnyam.proxy.Certificate;
 import in.yagnyam.proxy.CertificateChain;
+import in.yagnyam.proxy.Certificates;
+import in.yagnyam.proxy.services.NetworkService.HttpException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
@@ -31,7 +33,7 @@ public class RemoteCertificateServiceTest {
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(mock(NetworkService.class))
         .pemService(mock(PemService.class))
-        .certificateByIdUrlTemplate("dummy")
+        .certificatesByIdUrlTemplate("dummy")
         .certificateBySerialNumberUrlTemplate("dummy")
         .build();
     thrown.expect(NullPointerException.class);
@@ -39,14 +41,14 @@ public class RemoteCertificateServiceTest {
   }
 
   @Test
-  public void testCertificateBySerialNumber_NetworkError() throws IOException {
+  public void testCertificateBySerialNumber_NetworkError() throws IOException, HttpException {
     NetworkService networkService = mock(NetworkService.class);
     when(networkService.get(anyString())).thenThrow(new IOException("Error"));
 
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(networkService)
         .pemService(mock(PemService.class))
-        .certificateByIdUrlTemplate("dummy")
+        .certificatesByIdUrlTemplate("dummy")
         .certificateBySerialNumberUrlTemplate("dummy")
         .build();
     assertFalse(certificateService.getCertificateBySerialNumber("1").isPresent());
@@ -54,7 +56,7 @@ public class RemoteCertificateServiceTest {
 
   @Test
   public void testCertificateBySerialNumber_InvalidCertificate()
-      throws IOException, GeneralSecurityException {
+      throws IOException, GeneralSecurityException, HttpException {
     Certificate certificate = mock(Certificate.class);
     when(certificate.getSerialNumber()).thenReturn("1");
     when(certificate.getCertificateEncoded()).thenReturn("Certificate");
@@ -69,7 +71,7 @@ public class RemoteCertificateServiceTest {
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(networkService)
         .pemService(pemService)
-        .certificateByIdUrlTemplate("dummy")
+        .certificatesByIdUrlTemplate("dummy")
         .certificateBySerialNumberUrlTemplate("dummy")
         .build();
     assertFalse(certificateService.getCertificateBySerialNumber("1").isPresent());
@@ -78,7 +80,7 @@ public class RemoteCertificateServiceTest {
 
   @Test
   public void testCertificateBySerialNumber_ValidCertificate()
-      throws IOException, GeneralSecurityException {
+      throws IOException, GeneralSecurityException, HttpException {
     Certificate certificate = mock(Certificate.class);
     when(certificate.getSerialNumber()).thenReturn("1");
     when(certificate.getCertificateEncoded()).thenReturn("Certificate");
@@ -93,7 +95,7 @@ public class RemoteCertificateServiceTest {
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(networkService)
         .pemService(pemService)
-        .certificateByIdUrlTemplate("dummy")
+        .certificatesByIdUrlTemplate("dummy")
         .certificateBySerialNumberUrlTemplate("dummy")
         .build();
     assertTrue(certificateService.getCertificateBySerialNumber("1").isPresent());
@@ -101,11 +103,11 @@ public class RemoteCertificateServiceTest {
 
 
   @Test
-  public void testGetCertificateById_InvalidArguments() {
+  public void testGetCertificatesById_InvalidArguments() {
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(mock(NetworkService.class))
         .pemService(mock(PemService.class))
-        .certificateByIdUrlTemplate("dummy")
+        .certificatesByIdUrlTemplate("dummy")
         .certificateBySerialNumberUrlTemplate("dummy")
         .build();
     thrown.expect(NullPointerException.class);
@@ -113,22 +115,22 @@ public class RemoteCertificateServiceTest {
   }
 
   @Test
-  public void testCertificateById_NetworkError() throws IOException {
+  public void testCertificatesById_NetworkError() throws IOException, HttpException {
     NetworkService networkService = mock(NetworkService.class);
     when(networkService.get(anyString())).thenThrow(new IOException("Error"));
 
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(networkService)
         .pemService(mock(PemService.class))
-        .certificateByIdUrlTemplate("dummy")
+        .certificatesByIdUrlTemplate("dummy")
         .certificateBySerialNumberUrlTemplate("dummy")
         .build();
     assertTrue(certificateService.getCertificatesById("1").isEmpty());
   }
 
   @Test
-  public void testCertificateById_InvalidCertificate()
-      throws IOException, GeneralSecurityException {
+  public void testCertificatesById_InvalidCertificate()
+      throws IOException, GeneralSecurityException, HttpException {
     Certificate certificate = mock(Certificate.class);
     when(certificate.getSerialNumber()).thenReturn("1");
     when(certificate.getCertificateEncoded()).thenReturn("Certificate");
@@ -143,7 +145,7 @@ public class RemoteCertificateServiceTest {
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(networkService)
         .pemService(pemService)
-        .certificateByIdUrlTemplate("dummy")
+        .certificatesByIdUrlTemplate("dummy")
         .certificateBySerialNumberUrlTemplate("dummy")
         .build();
     assertTrue(certificateService.getCertificatesById("1").isEmpty());
@@ -151,7 +153,8 @@ public class RemoteCertificateServiceTest {
 
 
   @Test
-  public void testCertificateById_ValidCertificate() throws IOException, GeneralSecurityException {
+  public void testCertificatesById_ValidCertificate()
+      throws IOException, GeneralSecurityException, HttpException {
     Certificate certificate = mock(Certificate.class);
     when(certificate.getSerialNumber()).thenReturn("1");
     when(certificate.getCertificateEncoded()).thenReturn("Certificate");
@@ -159,7 +162,7 @@ public class RemoteCertificateServiceTest {
 
     NetworkService networkService = mock(NetworkService.class);
     when(networkService.getValue(anyString(), any()))
-        .thenReturn(CertificateChain.builder().certificate(certificate).build());
+        .thenReturn(Certificates.builder().certificate(certificate).build());
 
     PemService pemService = mock(PemService.class);
     when(pemService.decodeCertificate(eq("Certificate"))).thenReturn(mock(X509Certificate.class));
@@ -167,7 +170,7 @@ public class RemoteCertificateServiceTest {
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(networkService)
         .pemService(pemService)
-        .certificateByIdUrlTemplate("dummy")
+        .certificatesByIdUrlTemplate("dummy")
         .certificateBySerialNumberUrlTemplate("dummy")
         .build();
     assertEquals(1, certificateService.getCertificatesById("1").size());

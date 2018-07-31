@@ -1,6 +1,7 @@
 package in.yagnyam.proxy.server.services;
 
 import in.yagnyam.proxy.Certificate;
+import in.yagnyam.proxy.CertificateChain;
 import in.yagnyam.proxy.server.db.DataStoreCertificateRepository;
 import in.yagnyam.proxy.services.CertificateService;
 import in.yagnyam.proxy.services.PemService;
@@ -59,6 +60,12 @@ public class DbBackedCertificateService implements CertificateService {
     }
     return certificates.stream().map(c -> CertificateUtils.enrichCertificate(c, pemService))
         .collect(Collectors.toList());
+  }
+
+  @Override
+  public Optional<CertificateChain> getCertificateChain(String certificateId) {
+    // TODO: Use DB as Cache
+    return remoteCertificateService.getCertificateChain(certificateId);
   }
 
 

@@ -3,12 +3,14 @@ package in.yagnyam.proxy.services;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import in.yagnyam.proxy.Certificate;
+import in.yagnyam.proxy.CertificateChain;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 @Slf4j
 public class CacheBackedCertificateService implements CertificateService {
@@ -46,16 +48,15 @@ public class CacheBackedCertificateService implements CertificateService {
   @Override
   public Optional<Certificate> getCertificateBySerialNumber(@NonNull String serialNumber) {
     try {
-      // Little ugly, but google Cache doesn't like null values
-      Optional<Certificate> result = Optional
-          .ofNullable(certificateCacheBySerialNumber.getIfPresent(serialNumber));
-      if (!result.isPresent()) {
-        result = certificateService.getCertificateBySerialNumber(serialNumber);
-        result.ifPresent((c) -> certificateCacheBySerialNumber.put(serialNumber, c));
+      @Nullable Certificate cached = certificateCacheBySerialNumber.getIfPresent(serialNumber);
+      if (cached != null) {
+        return Optional.of(cached);
       }
+      Optional<Certificate> result = certificateService.getCertificateBySerialNumber(serialNumber);
+      result.ifPresent((c) -> certificateCacheBySerialNumber.put(serialNumber, c));
       return result;
     } catch (Exception e) {
-      log.error("Unable to fetch certificate for serial " + serialNumber, e);
+      log.error("Unable to fetch certificate for Serial number " + serialNumber, e);
       return Optional.empty();
     }
   }
@@ -69,8 +70,7 @@ public class CacheBackedCertificateService implements CertificateService {
   @Override
   public List<Certificate> getCertificatesById(@NonNull String certificateId) {
     try {
-      // Little ugly, but google Cache doesn't like null values
-      List<Certificate> result = certificateCacheById.getIfPresent(certificateId);
+      @Nullable List<Certificate> result = certificateCacheById.getIfPresent(certificateId);
       if (result == null || result.isEmpty()) {
         result = certificateService.getCertificatesById(certificateId);
         if (!result.isEmpty()) {
@@ -79,9 +79,15 @@ public class CacheBackedCertificateService implements CertificateService {
       }
       return result;
     } catch (Exception e) {
-      log.error("Unable to fetch certificate for id " + certificateId, e);
+      log.error("Unable to fetch certificate for Id " + certificateId, e);
       return Collections.emptyList();
     }
+  }
+
+  @Override
+  public Optional<CertificateChain> getCertificateChain(String certificateId) {
+    // TODO: Implement Cache
+    return certificateService.getCertificateChain(certificateId);
   }
 
   public static class Builder {

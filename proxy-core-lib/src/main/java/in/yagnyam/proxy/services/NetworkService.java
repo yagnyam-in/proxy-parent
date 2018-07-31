@@ -16,11 +16,24 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class NetworkService {
+
+  public static class HttpException extends Exception {
+    @Getter
+    private final int statusCode;
+    public HttpException(int statusCode, String errorMessage) {
+      super(errorMessage);
+      this.statusCode = statusCode;
+    }
+    public static HttpException of(int statusCode, String errorMessage) {
+      return new HttpException(statusCode, errorMessage);
+    }
+  }
 
   private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 
@@ -39,17 +52,17 @@ public class NetworkService {
     return new Builder();
   }
 
-  public String get(String url) throws IOException {
+  public String get(String url) throws IOException, HttpException {
     HttpResponse httpResponse = httpRequestFactory().buildGetRequest(new GenericUrl(url)).execute();
     return extractResponse(url, httpResponse);
   }
 
-  public <T> T getValue(String url, Class<T> resultClass) throws IOException {
+  public <T> T getValue(String url, Class<T> resultClass) throws IOException, HttpException {
     return new ObjectMapper().readValue(get(url), resultClass);
   }
 
   public <O> O postJsonString(String url, Map<String, String> headers, String request,
-      Class<O> resultClass) throws IOException {
+      Class<O> resultClass) throws IOException, HttpException {
     log.debug("POST {} with {}", url, request);
     HttpContent httpContent = ByteArrayContent.fromString(MediaType.JSON_UTF_8.toString(), request);
     HttpResponse httpResponse = httpRequestFactory(headers)
@@ -62,7 +75,7 @@ public class NetworkService {
     return new ObjectMapper().readValue(response, resultClass);
   }
 
-  public <I, O> O postValue(String url, I request, Class<O> resultClass) throws IOException {
+  public <I, O> O postValue(String url, I request, Class<O> resultClass) throws IOException, HttpException {
     return postValueWithHeaders(url, Collections.emptyMap(), request, resultClass);
   }
 
@@ -83,23 +96,21 @@ public class NetworkService {
   }
 
   public <I, O> O postValueWithHeaders(String url, Map<String, String> headers, I request,
-      Class<O> resultClass) throws IOException {
+      Class<O> resultClass) throws IOException, HttpException {
     HttpResponse httpResponse = postValueWithHeaders(url, headers, request);
     String response = extractResponse(url, httpResponse);
     log.info("POST {} with {} => {}", url, request, response);
     return new ObjectMapper().readValue(response, resultClass);
   }
 
-  private String extractResponse(String url, HttpResponse httpResponse) throws IOException {
+  private String extractResponse(String url, HttpResponse httpResponse) throws IOException, HttpException {
     // TODO: Is this too broad ??
     if (httpResponse.isSuccessStatusCode()) {
-      String response = httpResponse.parseAsString();
-      log.debug("{} => {}", url, response);
-      return response;
+      log.debug("{} => {}", url, httpResponse.parseAsString());
+      return httpResponse.parseAsString();
     } else {
       log.error("Request " + url + " failed with status " + httpResponse.getStatusMessage());
-      throw new IOException(
-          "Request " + url + " failed with status " + httpResponse.getStatusMessage());
+      throw new HttpException(httpResponse.getStatusCode(), httpResponse.getStatusMessage());
     }
   }
 

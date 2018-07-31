@@ -2,6 +2,7 @@ package in.yagnyam.proxy.services;
 
 import in.yagnyam.proxy.Certificate;
 import in.yagnyam.proxy.CertificateChain;
+import in.yagnyam.proxy.Certificates;
 import in.yagnyam.proxy.utils.CertificateUtils;
 import java.net.URLEncoder;
 import java.text.MessageFormat;
@@ -25,7 +26,7 @@ public class RemoteCertificateService implements CertificateService {
   private final NetworkService networkService;
 
   @NonNull
-  private final String certificateByIdUrlTemplate;
+  private final String certificatesByIdUrlTemplate;
 
   @NonNull
   private final String certificateBySerialNumberUrlTemplate;
@@ -35,7 +36,7 @@ public class RemoteCertificateService implements CertificateService {
    */
   @Override
   public Optional<Certificate> getCertificateBySerialNumber(@NonNull String serialNumber) {
-    String certificateUrl = certificateUrlBySerialNumber(serialNumber);
+    String certificateUrl = certificateBySerialNumberUrl(serialNumber);
     try {
       return Optional.ofNullable(networkService.getValue(certificateUrl, Certificate.class))
           .filter(c -> c.getSerialNumber().equals(serialNumber))
@@ -52,9 +53,9 @@ public class RemoteCertificateService implements CertificateService {
    */
   @Override
   public List<Certificate> getCertificatesById(@NonNull String certificateId) {
-    String certificateUrl = certificateUrlById(certificateId);
+    String certificateUrl = certificatesByIdUrl(certificateId);
     try {
-      return networkService.getValue(certificateUrl, CertificateChain.class)
+      return networkService.getValue(certificateUrl, Certificates.class)
           .getCertificates().stream()
           .filter(c -> c.matchesId(certificateId))
           .map(c -> CertificateUtils.enrichCertificate(c, pemService))
@@ -65,16 +66,31 @@ public class RemoteCertificateService implements CertificateService {
     }
   }
 
+  @Override
+  public Optional<CertificateChain> getCertificateChain(String certificateId) {
+    String certificateUrl = certificatesByIdUrl(certificateId);
+    try {
+      CertificateChain certificateChain = networkService
+          .getValue(certificateUrl, CertificateChain.class);
+      certificateChain.getCertificates()
+          .forEach(c -> CertificateUtils.enrichCertificate(c, pemService));
+      return Optional.of(certificateChain);
+    } catch (Exception e) {
+      log.error("Unable to fetch certificate " + certificateUrl, e);
+      return Optional.empty();
+    }
+  }
 
-  private String certificateUrlBySerialNumber(String serialNumber) {
+
+  private String certificateBySerialNumberUrl(String serialNumber) {
     return MessageFormat.format(certificateBySerialNumberUrlTemplate, serialNumber);
   }
 
 
   @SneakyThrows
-  private String certificateUrlById(String certificateId) {
+  private String certificatesByIdUrl(String certificateId) {
     return MessageFormat
-        .format(certificateByIdUrlTemplate, URLEncoder.encode(certificateId, "UTF-8"));
+        .format(certificatesByIdUrlTemplate, URLEncoder.encode(certificateId, "UTF-8"));
   }
 
 }
