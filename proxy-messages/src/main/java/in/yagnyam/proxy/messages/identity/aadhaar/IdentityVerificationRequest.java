@@ -1,4 +1,4 @@
-package in.yagnyam.proxy.messages.aadhaar;
+package in.yagnyam.proxy.messages.identity.aadhaar;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonRootName;
@@ -21,7 +21,7 @@ import lombok.ToString;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
-@JsonRootName("in.yagnyam.proxy.messages.identity.IdentityVerificationRequest")
+@JsonRootName("in.yagnyam.proxy.messages.identity.aadhaar.IdentityVerificationRequest")
 public class IdentityVerificationRequest implements SignableRequestMessage {
 
   /**
