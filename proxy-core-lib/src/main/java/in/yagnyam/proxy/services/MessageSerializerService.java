@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Builder
+@SuppressWarnings("unchecked")
 public class MessageSerializerService {
 
   private final ObjectMapper objectMapper = new ObjectMapper();
@@ -19,7 +20,7 @@ public class MessageSerializerService {
     try {
       return objectMapper.writeValueAsString(message);
     } catch (JsonProcessingException e) {
-      log.error("Unable to serializeSignedMessage " + message, e);
+      log.error("Unable to serialize SignedMessage " + message, e);
       throw new IOException(e);
     }
   }
@@ -29,21 +30,22 @@ public class MessageSerializerService {
       // objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
       return objectMapper.writeValueAsString(message);
     } catch (JsonProcessingException e) {
-      log.error("Unable to serializeSignedMessage " + message, e);
+      log.error("Unable to serialize SignableMessage " + message, e);
       throw new IOException(e);
     }
   }
 
-  public String serialize(Object object) throws IOException {
+  public String serializeMessage(Object object) throws IOException {
     try {
       return objectMapper.writeValueAsString(object);
     } catch (JsonProcessingException e) {
-      log.error("Unable to serializeSignedMessage " + object, e);
+      log.error("Unable to serialize Message " + object, e);
       throw new IOException(e);
     }
   }
 
-  public SignedMessage deserializeSignedMessage(String message) throws IOException {
+
+  public <T extends SignableMessage> SignedMessage<T> deserializeSignedMessage(String message) throws IOException {
     try {
       return objectMapper.readValue(message, SignedMessage.class);
     } catch (IOException e) {
@@ -62,5 +64,17 @@ public class MessageSerializerService {
       throw e;
     }
   }
+
+  public <T> T deserializeMessage(String message, Class<T> tClass)
+          throws IOException {
+    try {
+      return objectMapper.readValue(message, tClass);
+    } catch (IOException e) {
+      log.error("Unable to deserialize " + message);
+      throw e;
+    }
+  }
+
+
 
 }

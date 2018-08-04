@@ -10,8 +10,8 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Builder
-@SuppressWarnings("unchecked")
 @Slf4j
+@SuppressWarnings("unchecked")
 public class MessageFactory {
 
   @NonNull
