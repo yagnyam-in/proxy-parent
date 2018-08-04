@@ -1,10 +1,13 @@
 package in.yagnyam.proxy.messages.mobile;
 
+import in.yagnyam.proxy.ProxyId;
+import in.yagnyam.proxy.messages.banking.Amount;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.ToString;
 
 @Builder
@@ -18,11 +21,10 @@ public class PaymentRequest {
 
   private String requestId;
 
-  private String currency;
-
-  private double amount;
-
-  private String payeeId;
+  private ProxyId payeeId;
 
   private String payeeName;
+
+  @NonNull
+  private Amount amount;
 }

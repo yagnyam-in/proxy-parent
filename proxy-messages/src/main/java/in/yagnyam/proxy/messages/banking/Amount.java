@@ -29,4 +29,5 @@ public class Amount {
   public boolean isValid() {
     return StringUtils.isValid(currency) && value >= 0;
   }
+  
 }
