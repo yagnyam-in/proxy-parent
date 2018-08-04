@@ -45,7 +45,8 @@ public class MessageSerializerService {
   }
 
 
-  public <T extends SignableMessage> SignedMessage<T> deserializeSignedMessage(String message) throws IOException {
+  public <T extends SignableMessage> SignedMessage<T> deserializeSignedMessage(String message)
+      throws IOException {
     try {
       return objectMapper.readValue(message, SignedMessage.class);
     } catch (IOException e) {
@@ -66,7 +67,7 @@ public class MessageSerializerService {
   }
 
   public <T> T deserializeMessage(String message, Class<T> tClass)
-          throws IOException {
+      throws IOException {
     try {
       return objectMapper.readValue(message, tClass);
     } catch (IOException e) {
@@ -74,7 +75,6 @@ public class MessageSerializerService {
       throw e;
     }
   }
-
 
 
 }

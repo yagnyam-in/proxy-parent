@@ -24,12 +24,15 @@ import lombok.extern.slf4j.Slf4j;
 public class NetworkService {
 
   public static class HttpException extends Exception {
+
     @Getter
     private final int statusCode;
+
     public HttpException(int statusCode, String errorMessage) {
       super(errorMessage);
       this.statusCode = statusCode;
     }
+
     public static HttpException of(int statusCode, String errorMessage) {
       return new HttpException(statusCode, errorMessage);
     }
@@ -75,7 +78,8 @@ public class NetworkService {
     return new ObjectMapper().readValue(response, resultClass);
   }
 
-  public <I, O> O postValue(String url, I request, Class<O> resultClass) throws IOException, HttpException {
+  public <I, O> O postValue(String url, I request, Class<O> resultClass)
+      throws IOException, HttpException {
     return postValueWithHeaders(url, Collections.emptyMap(), request, resultClass);
   }
 
@@ -103,7 +107,8 @@ public class NetworkService {
     return new ObjectMapper().readValue(response, resultClass);
   }
 
-  private String extractResponse(String url, HttpResponse httpResponse) throws IOException, HttpException {
+  private String extractResponse(String url, HttpResponse httpResponse)
+      throws IOException, HttpException {
     // TODO: Is this too broad ??
     if (httpResponse.isSuccessStatusCode()) {
       log.debug("{} => {}", url, httpResponse.parseAsString());

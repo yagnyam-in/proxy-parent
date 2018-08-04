@@ -7,6 +7,7 @@ public interface RequestMessage {
 
   /**
    * Request Id
+   *
    * @return Request Id
    */
   String requestId();
