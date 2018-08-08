@@ -1,16 +1,16 @@
 package in.yagnyam.proxy;
 
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import lombok.*;
 
 @Getter
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@Setter(AccessLevel.PRIVATE)
 @EqualsAndHashCode(of = {"id", "sha256Thumbprint"})
 public class ProxyId {
 
-  private final String id;
-  private final String sha256Thumbprint;
-  private final String uniqueId;
+  private String id;
+  private String sha256Thumbprint;
 
   private ProxyId(String id, String sha256Thumbprint) {
     if (StringUtils.isEmpty(id)) {
@@ -18,7 +18,6 @@ public class ProxyId {
     }
     this.id = id;
     this.sha256Thumbprint = sha256Thumbprint;
-    this.uniqueId = uniqueId();
   }
 
   public static ProxyId of(String id) {
@@ -33,7 +32,7 @@ public class ProxyId {
     return of(certificate.getId(), certificate.getSha256Thumbprint());
   }
 
-  private String uniqueId() {
+  public String uniqueId() {
     if (StringUtils.isValid(sha256Thumbprint)) {
       return id + "#" + sha256Thumbprint;
     } else {
@@ -47,7 +46,7 @@ public class ProxyId {
 
   @Override
   public String toString() {
-    return uniqueId;
+    return uniqueId();
   }
 
 }

@@ -23,7 +23,7 @@ public class SimpleProxyResolver implements ProxyResolver {
    * @return Proxy if available, otherwise None
    */
   public List<Proxy> resolveProxy(@NonNull ProxyId proxyId) {
-    return certificateService.getCertificatesById(proxyId.getUniqueId()).stream()
+    return certificateService.getCertificatesById(proxyId.uniqueId()).stream()
         .map(Proxy::of)
         .collect(Collectors.toList());
   }

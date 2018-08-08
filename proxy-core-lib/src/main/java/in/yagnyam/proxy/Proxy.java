@@ -42,6 +42,6 @@ public class Proxy {
   }
 
   public String getUniqueId() {
-    return id.getUniqueId();
+    return id.uniqueId();
   }
 }
