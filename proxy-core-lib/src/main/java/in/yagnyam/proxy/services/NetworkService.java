@@ -57,7 +57,11 @@ public class NetworkService {
 
   public String get(String url) throws IOException, HttpException {
     HttpResponse httpResponse = httpRequestFactory().buildGetRequest(new GenericUrl(url)).execute();
-    return extractResponse(url, httpResponse);
+    try {
+      return extractResponse(url, httpResponse);
+    } finally {
+      httpResponse.disconnect();
+    }
   }
 
   public <T> T getValue(String url, Class<T> resultClass) throws IOException, HttpException {
@@ -73,9 +77,13 @@ public class NetworkService {
         .setLoggingEnabled(true)
         .setSuppressUserAgentSuffix(true)
         .execute();
-    String response = extractResponse(url, httpResponse);
-    log.info("POST {} with {} => {}", url, request, response);
-    return new ObjectMapper().readValue(response, resultClass);
+    try {
+      String response = extractResponse(url, httpResponse);
+      log.info("POST {} with {} => {}", url, request, response);
+      return new ObjectMapper().readValue(response, resultClass);
+    } finally {
+      httpResponse.disconnect();
+    }
   }
 
   public <I, O> O postValue(String url, I request, Class<O> resultClass)
