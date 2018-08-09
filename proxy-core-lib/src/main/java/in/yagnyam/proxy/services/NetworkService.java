@@ -7,7 +7,6 @@ import com.google.api.client.http.ByteArrayContent;
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpContent;
 import com.google.api.client.http.HttpRequestFactory;
-import com.google.api.client.http.HttpResponse;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.common.net.MediaType;
@@ -38,6 +37,48 @@ public class NetworkService {
     }
   }
 
+  public static class HttpResponse implements AutoCloseable {
+
+    private final String url;
+    private final com.google.api.client.http.HttpResponse response;
+    private String content;
+
+    private HttpResponse(String url, com.google.api.client.http.HttpResponse response) {
+      this.url = url;
+      this.response = response;
+    }
+
+    public int getStatusCode() {
+      return response.getStatusCode();
+    }
+
+    public String getContent() throws IOException, HttpException {
+      if (content == null) {
+        content = response.parseAsString();
+      }
+      if (response.isSuccessStatusCode()) {
+        log.debug("{} => {}", url, content);
+        return content;
+      } else {
+        log.error("Request " + url + " failed with status " + response.getStatusMessage());
+        throw new HttpException(response.getStatusCode(), response.getStatusMessage());
+      }
+    }
+
+    public <T> T getValue(Class<T> valueClass) throws IOException, HttpException {
+      return new ObjectMapper().readValue(getContent(), valueClass);
+    }
+
+    public static HttpResponse of(String url, com.google.api.client.http.HttpResponse response) {
+      return new HttpResponse(url, response);
+    }
+
+    @Override
+    public void close() throws IOException {
+      response.disconnect();
+    }
+  }
+
   private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 
   private final Map<String, String> defaultHeaders;
@@ -56,11 +97,9 @@ public class NetworkService {
   }
 
   public String get(String url) throws IOException, HttpException {
-    HttpResponse httpResponse = httpRequestFactory().buildGetRequest(new GenericUrl(url)).execute();
-    try {
-      return extractResponse(url, httpResponse);
-    } finally {
-      httpResponse.disconnect();
+    try (HttpResponse response = HttpResponse
+        .of(url, httpRequestFactory().buildGetRequest(new GenericUrl(url)).execute())) {
+      return response.getContent();
     }
   }
 
@@ -68,68 +107,29 @@ public class NetworkService {
     return new ObjectMapper().readValue(get(url), resultClass);
   }
 
-  public <O> O postJsonString(String url, Map<String, String> headers, String request,
-      Class<O> resultClass) throws IOException, HttpException {
-    log.info("POST {} with {}", url, request);
-    HttpContent httpContent = ByteArrayContent.fromString(MediaType.JSON_UTF_8.toString(), request);
-    HttpResponse httpResponse = httpRequestFactory(headers)
-        .buildPostRequest(new GenericUrl(url), httpContent)
-        .setLoggingEnabled(true)
-        .setSuppressUserAgentSuffix(true)
-        .execute();
-    try {
-      String response = extractResponse(url, httpResponse);
-      log.info("POST {} with {} => {}", url, request, response);
-      return new ObjectMapper().readValue(response, resultClass);
-    } finally {
-      httpResponse.disconnect();
-    }
-  }
-
   public <I, O> O postValue(String url, I request, Class<O> resultClass)
       throws IOException, HttpException {
     return postValueWithHeaders(url, Collections.emptyMap(), request, resultClass);
   }
 
-  private <T> HttpResponse postValue(String url, T request) throws IOException {
-    return postValueWithHeaders(url, Collections.emptyMap(), request);
-  }
-
   private <T> HttpResponse postValueWithHeaders(String url, Map<String, String> headers, T request)
       throws IOException {
-    log.info("POST {} with {}", url, request);
     byte[] requestBytes = new ObjectMapper().writeValueAsBytes(request);
     HttpContent httpContent = new ByteArrayContent(MediaType.JSON_UTF_8.toString(), requestBytes);
-    return httpRequestFactory(headers)
+    return HttpResponse.of(url, httpRequestFactory(headers)
         .buildPostRequest(new GenericUrl(url), httpContent)
         .setLoggingEnabled(true)
         .setSuppressUserAgentSuffix(true)
-        .execute();
+        .execute());
   }
 
   public <I, O> O postValueWithHeaders(String url, Map<String, String> headers, I request,
       Class<O> resultClass) throws IOException, HttpException {
-    HttpResponse httpResponse = postValueWithHeaders(url, headers, request);
-    try {
-      String response = extractResponse(url, httpResponse);
-      log.info("POST {} with {} => {}", url, request, response);
-      return new ObjectMapper().readValue(response, resultClass);
-    } finally {
-      httpResponse.disconnect();
+    try (HttpResponse httpResponse = postValueWithHeaders(url, headers, request)) {
+      return httpResponse.getValue(resultClass);
     }
   }
 
-  private String extractResponse(String url, HttpResponse httpResponse)
-      throws IOException, HttpException {
-    // TODO: Is this too broad ??
-    if (httpResponse.isSuccessStatusCode()) {
-      log.debug("{} => {}", url, httpResponse.parseAsString());
-      return httpResponse.parseAsString();
-    } else {
-      log.error("Request " + url + " failed with status " + httpResponse.getStatusMessage());
-      throw new HttpException(httpResponse.getStatusCode(), httpResponse.getStatusMessage());
-    }
-  }
 
   private HttpRequestFactory httpRequestFactory() {
     return HTTP_TRANSPORT.createRequestFactory(request -> {
