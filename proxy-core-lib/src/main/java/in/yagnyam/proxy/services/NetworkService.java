@@ -70,7 +70,7 @@ public class NetworkService {
 
   public <O> O postJsonString(String url, Map<String, String> headers, String request,
       Class<O> resultClass) throws IOException, HttpException {
-    log.debug("POST {} with {}", url, request);
+    log.info("POST {} with {}", url, request);
     HttpContent httpContent = ByteArrayContent.fromString(MediaType.JSON_UTF_8.toString(), request);
     HttpResponse httpResponse = httpRequestFactory(headers)
         .buildPostRequest(new GenericUrl(url), httpContent)
@@ -91,13 +91,13 @@ public class NetworkService {
     return postValueWithHeaders(url, Collections.emptyMap(), request, resultClass);
   }
 
-  public <T> HttpResponse postValue(String url, T request) throws IOException {
+  private <T> HttpResponse postValue(String url, T request) throws IOException {
     return postValueWithHeaders(url, Collections.emptyMap(), request);
   }
 
-  public <T> HttpResponse postValueWithHeaders(String url, Map<String, String> headers, T request)
+  private <T> HttpResponse postValueWithHeaders(String url, Map<String, String> headers, T request)
       throws IOException {
-    log.debug("POST {} with {}", url, request);
+    log.info("POST {} with {}", url, request);
     byte[] requestBytes = new ObjectMapper().writeValueAsBytes(request);
     HttpContent httpContent = new ByteArrayContent(MediaType.JSON_UTF_8.toString(), requestBytes);
     return httpRequestFactory(headers)
@@ -110,9 +110,13 @@ public class NetworkService {
   public <I, O> O postValueWithHeaders(String url, Map<String, String> headers, I request,
       Class<O> resultClass) throws IOException, HttpException {
     HttpResponse httpResponse = postValueWithHeaders(url, headers, request);
-    String response = extractResponse(url, httpResponse);
-    log.info("POST {} with {} => {}", url, request, response);
-    return new ObjectMapper().readValue(response, resultClass);
+    try {
+      String response = extractResponse(url, httpResponse);
+      log.info("POST {} with {} => {}", url, request, response);
+      return new ObjectMapper().readValue(response, resultClass);
+    } finally {
+      httpResponse.disconnect();
+    }
   }
 
   private String extractResponse(String url, HttpResponse httpResponse)
@@ -147,8 +151,8 @@ public class NetworkService {
 
   public static class Builder {
 
-    private long connectionTimeout = TimeUnit.SECONDS.toMillis(30);
-    private long readTimeout = TimeUnit.SECONDS.toMillis(30);
+    private long connectionTimeout = TimeUnit.SECONDS.toMillis(60);
+    private long readTimeout = TimeUnit.SECONDS.toMillis(60);
     private Map<String, String> headers = new HashMap<>();
 
     private Builder() {
