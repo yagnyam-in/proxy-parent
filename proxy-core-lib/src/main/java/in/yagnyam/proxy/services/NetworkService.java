@@ -98,7 +98,10 @@ public class NetworkService {
 
   public String get(String url) throws IOException, HttpException {
     try (HttpResponse response = HttpResponse
-        .of(url, httpRequestFactory().buildGetRequest(new GenericUrl(url)).execute())) {
+        .of(url, httpRequestFactory()
+            .buildGetRequest(new GenericUrl(url))
+            .setThrowExceptionOnExecuteError(false)
+            .execute())) {
       return response.getContent();
     }
   }
@@ -120,6 +123,7 @@ public class NetworkService {
         .buildPostRequest(new GenericUrl(url), httpContent)
         .setLoggingEnabled(true)
         .setSuppressUserAgentSuffix(true)
+        .setThrowExceptionOnExecuteError(false)
         .execute());
   }
 
