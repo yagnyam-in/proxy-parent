@@ -2,6 +2,7 @@ package in.yagnyam.proxy;
 
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -32,6 +33,7 @@ public class ProxyId {
     return of(certificate.getId(), certificate.getSha256Thumbprint());
   }
 
+  @JsonIgnore
   public String uniqueId() {
     if (StringUtils.isValid(sha256Thumbprint)) {
       return id + "#" + sha256Thumbprint;
@@ -40,6 +42,7 @@ public class ProxyId {
     }
   }
 
+  @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(id);
   }
