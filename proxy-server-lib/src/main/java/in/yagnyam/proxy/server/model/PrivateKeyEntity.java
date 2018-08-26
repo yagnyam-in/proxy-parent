@@ -46,6 +46,9 @@ public class PrivateKeyEntity {
   @Index
   private String certificateSerialNumber;
 
+  @Index
+  private String certificateSha256Thumbprint;
+
   @JsonIgnore
   private String certificateRequestEncoded;
 
