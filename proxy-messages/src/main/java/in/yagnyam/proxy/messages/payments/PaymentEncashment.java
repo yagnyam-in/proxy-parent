@@ -30,8 +30,10 @@ public class PaymentEncashment implements SignableRequestMessage, AddressableMes
 
   @NonNull
   public SignedMessage<PaymentAuthorization> paymentAuthorization;
+
   @NonNull
   private String requestId;
+
   private Amount amount;
 
   private ProxyAccountId receivingProxyAccountId;

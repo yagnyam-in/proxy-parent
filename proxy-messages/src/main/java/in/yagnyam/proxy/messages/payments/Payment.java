@@ -33,8 +33,10 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
 
   @NonNull
   public SignedMessage<ProxyAccount> proxyAccount;
+
   @NonNull
   private String requestId;
+
   @NonNull
   private Amount amount;
 

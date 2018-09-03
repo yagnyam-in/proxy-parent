@@ -1,7 +1,6 @@
-package in.yagnyam.proxy.messages.identity;
+package in.yagnyam.proxy.messages.banking;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonRootName;
+import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
@@ -16,25 +15,23 @@ import lombok.NonNull;
 import lombok.ToString;
 
 @Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
-@EqualsAndHashCode(of = {"proxyIdentity", "requestId"})
-@JsonRootName("in.yagnyam.proxy.messages.identity.IdentityAuthorization")
-public class IdentityAuthorization implements SignableRequestMessage {
-
-  @NonNull
-  public SignedMessage<ProxyIdentity> proxyIdentity;
+@EqualsAndHashCode(of = {"requestId"})
+public class AccountDetailsRequest implements SignableRequestMessage, AddressableMessage {
 
   @NonNull
   private String requestId;
 
-  private boolean consentToMail;
+  @NonNull
+  private SignedMessage<ProxyAccount> proxyAccount;
 
-  private boolean consentToRequestPayments;
-
-  private boolean consentToVoiceCall;
+  @Override
+  public ProxyId address() {
+    return proxyAccount.signer();
+  }
 
   @Override
   public String requestId() {
@@ -43,7 +40,7 @@ public class IdentityAuthorization implements SignableRequestMessage {
 
   @Override
   public ProxyId signer() {
-    return proxyIdentity.getMessage().getProxyId();
+    return proxyAccount.getMessage().getProxyId();
   }
 
   @Override
@@ -52,10 +49,8 @@ public class IdentityAuthorization implements SignableRequestMessage {
   }
 
   @Override
-  @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(requestId)
-        && proxyIdentity != null
-        && proxyIdentity.isValid();
+        && proxyAccount != null && proxyAccount.isValid();
   }
 }
