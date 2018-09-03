@@ -3,6 +3,7 @@ package in.yagnyam.proxy.services;
 import in.yagnyam.proxy.Proxy;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.SignedMessageSignature;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
@@ -49,7 +50,7 @@ public class MessageSigningService {
     for (String signatureAlgorithm : signatureAlgorithms) {
       String signature = cryptographyService
           .getSignature(signatureAlgorithm, signer.getPrivateKey(), payload);
-      builder.signature(SignedMessage.Signature.of(signatureAlgorithm, signature));
+      builder.signature(SignedMessageSignature.of(signatureAlgorithm, signature));
     }
     return builder.build();
   }

@@ -3,6 +3,7 @@ package in.yagnyam.proxy.services;
 import in.yagnyam.proxy.Proxy;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.SignedMessageSignature;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import lombok.AccessLevel;
@@ -48,10 +49,11 @@ public class MessageVerificationService {
     }
     Proxy proxy = getSignerProxy(message);
     for (String algorithm : signatureAlgorithms) {
-      SignedMessage.Signature signature = findSignature(message, algorithm);
-      if (!cryptographyService
-          .verifySignature(algorithm, proxy.getCertificate().getCertificate(), message.getPayload(),
-              signature.getValue())) {
+      SignedMessageSignature signature = findSignature(message, algorithm);
+      if (!cryptographyService.verifySignature(algorithm,
+          proxy.getCertificate().getCertificate(),
+          message.getPayload(),
+          signature.getValue())) {
         log.error("Invalid Signature on " + message);
         throw new IllegalArgumentException("Invalid Signature");
       }
@@ -63,20 +65,21 @@ public class MessageVerificationService {
    * Find Signature for given algorithm from signed message
    *
    * @param signedMessage Signed Message
-   * @param signatureAlgorithm Signature Algorithm
    * @param <T> Underlying Message Type
+   * @param signatureAlgorithm Signature Algorithm
    * @return Signature for given algorithm
    * @throws IllegalArgumentException If Signature not found
    */
-  <T extends SignableMessage> SignedMessage.Signature findSignature(SignedMessage<T> signedMessage,
-      @NonNull String signatureAlgorithm) throws IllegalArgumentException {
-    for (SignedMessage.Signature signature : signedMessage.getSignatures()) {
-      if (signature.getAlgorithm().equalsIgnoreCase(signatureAlgorithm)) {
-        return signature;
-      }
-    }
-    log.error("No Signature for algorithm " + signatureAlgorithm + " in " + signedMessage);
-    throw new IllegalArgumentException("No Signature for algorithm " + signatureAlgorithm);
+  static <T extends SignableMessage> SignedMessageSignature findSignature(
+      SignedMessage<T> signedMessage,
+      @NonNull String signatureAlgorithm
+  ) throws IllegalArgumentException {
+
+    return signedMessage.getSignatures().stream()
+        .filter(s -> s.getAlgorithm().equalsIgnoreCase(signatureAlgorithm))
+        .findAny()
+        .orElseThrow(
+            () -> new IllegalArgumentException("No Signature for algorithm " + signatureAlgorithm));
   }
 
 
@@ -86,7 +89,8 @@ public class MessageVerificationService {
    * @param message Signed Message
    * @return Proxy matching the signature
    */
-  <T extends SignableMessage> Proxy getSignerProxy(SignedMessage<T> message) {
+  Proxy getSignerProxy(SignedMessage message) {
+
     if (message.getMessage() == null) {
       log.error("SignedMessage must be de-serialized before verifying signature");
       throw new IllegalStateException(
@@ -103,4 +107,5 @@ public class MessageVerificationService {
       return proxies.get(0);
     }
   }
+
 }

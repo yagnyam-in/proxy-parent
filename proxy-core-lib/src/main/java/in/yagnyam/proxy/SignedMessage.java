@@ -14,20 +14,23 @@ import lombok.ToString;
 
 @Builder
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@AllArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString(of = {"type", "payload", "signatures"})
 public class SignedMessage<T extends SignableMessage> {
 
   @JsonIgnore
   private T message;
+
   @NonNull
   private String type;
+
   @NonNull
   private String payload;
+
   @NonNull
   @Singular
-  private List<Signature> signatures;
+  private List<SignedMessageSignature> signatures;
 
   public ProxyId signer() {
     return message.signer();
@@ -47,22 +50,8 @@ public class SignedMessage<T extends SignableMessage> {
         && StringUtils.isValid(type)
         && StringUtils.isValid(payload)
         && signatures != null
-        && signatures.stream().allMatch(Signature::isValid);
+        && signatures.stream().allMatch(SignedMessageSignature::isValid);
   }
 
-  @Getter
-  @ToString
-  @NoArgsConstructor(access = AccessLevel.PRIVATE)
-  @AllArgsConstructor(staticName = "of")
-  public static class Signature {
 
-    private String algorithm;
-
-    private String value;
-
-    @JsonIgnore
-    public boolean isValid() {
-      return StringUtils.isValid(algorithm) && StringUtils.isValid(value);
-    }
-  }
 }
