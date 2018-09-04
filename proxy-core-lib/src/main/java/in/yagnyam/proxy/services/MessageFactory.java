@@ -29,11 +29,20 @@ public class MessageFactory {
     return verifySignedMessage(signedMessageObject);
   }
 
-
   public <T extends SignableMessage> SignedMessage<T> verifySignedMessage(
       SignedMessage<T> signedMessage) throws IOException, GeneralSecurityException {
+    return verifySignedMessage(signedMessage, null);
+  }
+
+  public <T extends SignableMessage> SignedMessage<T> verifySignedMessage(
+      SignedMessage signedMessage, Class<T> underlyingMessageClass) throws IOException, GeneralSecurityException {
     log.debug("verifying signature for " + signedMessage);
     String underlyingMessageType = signedMessage.getType();
+    if (underlyingMessageClass != null &&
+        underlyingMessageClass.getSimpleName().equals(underlyingMessageType)) {
+      throw new IllegalArgumentException("Message type " + underlyingMessageType
+          + " from SignedMessage is not " + underlyingMessageClass);
+    }
     try {
       Class messageClass = Class.forName(underlyingMessageType);
       SignableMessage underlyingMessage = buildSignableMessage(signedMessage.getPayload(),
@@ -54,6 +63,7 @@ public class MessageFactory {
       throw new IllegalArgumentException("Unknown message type " + underlyingMessageType);
     }
   }
+
 
 
   private <T extends SignableMessage> T buildSignableMessage(String signableMessage,
