@@ -38,6 +38,9 @@ public class ProxyAccount implements SignableMessage, AddressableMessage {
   @NonNull
   private Date expiryDate;
 
+  @NonNull
+  private Currency currency;
+
   /**
    * Maximum amount for which *each* Payment can be made
    */
@@ -62,6 +65,7 @@ public class ProxyAccount implements SignableMessage, AddressableMessage {
         && proxyId != null && proxyId.isValid()
         && DateUtils.isValid(creationDate)
         && DateUtils.isValid(expiryDate)
+        && currency != null
         && maximumAmountPerTransaction != null
         && maximumAmountPerTransaction.isValid();
   }

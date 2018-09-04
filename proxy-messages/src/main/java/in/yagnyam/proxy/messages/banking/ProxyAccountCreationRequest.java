@@ -31,6 +31,9 @@ public class ProxyAccountCreationRequest implements SignableRequestMessage {
   @NonNull
   private ProxyId proxyId;
 
+  @NonNull
+  private Currency currency;
+
   @Override
   public String requestId() {
     return requestId;
@@ -43,14 +46,15 @@ public class ProxyAccountCreationRequest implements SignableRequestMessage {
 
   @Override
   public String toReadableString() {
-    return String
-        .format("With request %s, create new account for proxy id %s ", requestId, proxyId);
+    return String.format(
+        "With request %s, create new %s account for proxy id %s ", requestId, currency, proxyId);
   }
 
   @Override
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(requestId)
-        && proxyId != null && proxyId.isValid();
+        && proxyId != null && proxyId.isValid()
+        && currency != null;
   }
 }
