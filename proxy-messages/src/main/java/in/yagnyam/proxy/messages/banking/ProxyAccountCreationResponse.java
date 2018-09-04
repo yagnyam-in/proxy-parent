@@ -32,6 +32,9 @@ public class ProxyAccountCreationResponse implements SignableMessage, Addressabl
   private SignedMessage<ProxyAccount> proxyAccount;
 
   @NonNull
+  private String bankName;
+
+  @NonNull
   private String accountNumber;
 
   @NonNull
