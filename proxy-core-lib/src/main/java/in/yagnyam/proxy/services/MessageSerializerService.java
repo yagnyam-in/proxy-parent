@@ -20,7 +20,7 @@ public class MessageSerializerService {
     try {
       return objectMapper.writeValueAsString(message);
     } catch (JsonProcessingException e) {
-      log.error("Unable to serialize SignedMessage " + message, e);
+      log.error("Unable to serialize Signed Message " + message, e);
       throw new IOException(e);
     }
   }
@@ -30,7 +30,7 @@ public class MessageSerializerService {
       // objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
       return objectMapper.writeValueAsString(message);
     } catch (JsonProcessingException e) {
-      log.error("Unable to serialize SignableMessage " + message, e);
+      log.error("Unable to serialize Signable Message " + message, e);
       throw new IOException(e);
     }
   }
@@ -50,7 +50,7 @@ public class MessageSerializerService {
     try {
       return objectMapper.readValue(message, SignedMessage.class);
     } catch (IOException e) {
-      log.error("Unable to deserialize " + message);
+      log.error("Unable to deserialize Signed Message: " + message, e);
       throw e;
     }
   }
@@ -61,7 +61,7 @@ public class MessageSerializerService {
       // objectMapper.enable(DeserializationFeature.UNWRAP_ROOT_VALUE);
       return objectMapper.readValue(message, tClass);
     } catch (IOException e) {
-      log.error("Unable to deserialize " + message);
+      log.error("Unable to deserialize signable Message: " + message, e);
       throw e;
     }
   }
@@ -71,7 +71,7 @@ public class MessageSerializerService {
     try {
       return objectMapper.readValue(message, tClass);
     } catch (IOException e) {
-      log.error("Unable to deserialize " + message);
+      log.error("Unable to deserialize Message: " + message, e);
       throw e;
     }
   }
