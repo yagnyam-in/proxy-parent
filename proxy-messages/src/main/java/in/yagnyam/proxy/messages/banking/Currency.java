@@ -1,6 +1,5 @@
 package in.yagnyam.proxy.messages.banking;
 
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -34,4 +33,5 @@ public interface Currency {
   static boolean isValidCurrency(String currency) {
     return currenciesSupported.contains(currency);
   }
+
 }

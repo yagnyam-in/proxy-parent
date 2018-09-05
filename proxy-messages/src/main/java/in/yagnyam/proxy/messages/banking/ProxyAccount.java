@@ -39,7 +39,7 @@ public class ProxyAccount implements SignableMessage, AddressableMessage {
   private Date expiryDate;
 
   @NonNull
-  private Currency currency;
+  private String currency;
 
   /**
    * Maximum amount for which *each* Payment can be made

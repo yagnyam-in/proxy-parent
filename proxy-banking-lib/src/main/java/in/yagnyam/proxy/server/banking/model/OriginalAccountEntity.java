@@ -35,7 +35,7 @@ public class OriginalAccountEntity {
   private String accountHolder;
 
   @NonNull
-  private Currency currency;
+  private String currency;
 
   @NonNull
   private Amount balance;

@@ -32,7 +32,7 @@ public class ProxyAccountCreationRequest implements SignableRequestMessage {
   private ProxyId proxyId;
 
   @NonNull
-  private Currency currency;
+  private String currency;
 
   @Override
   public String requestId() {

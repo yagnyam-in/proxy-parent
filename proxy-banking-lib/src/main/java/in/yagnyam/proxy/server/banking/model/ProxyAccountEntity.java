@@ -6,7 +6,6 @@ import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Load;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.messages.banking.Amount;
-import in.yagnyam.proxy.messages.banking.Currency;
 import in.yagnyam.proxy.messages.banking.ProxyAccount;
 import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import java.util.Date;
@@ -49,7 +48,7 @@ public class ProxyAccountEntity {
   private Date expiryDate;
 
   @NonNull
-  private Currency currency;
+  private String currency;
 
   /**
    * Maximum amount for which *each* Payment can be made
