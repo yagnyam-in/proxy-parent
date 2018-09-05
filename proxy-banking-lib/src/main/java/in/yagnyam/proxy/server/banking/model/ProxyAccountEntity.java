@@ -3,18 +3,23 @@ package in.yagnyam.proxy.server.banking.model;
 import com.googlecode.objectify.Ref;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import com.googlecode.objectify.annotation.Ignore;
 import com.googlecode.objectify.annotation.Load;
+import com.googlecode.objectify.annotation.OnLoad;
+import com.googlecode.objectify.annotation.OnSave;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.messages.banking.ProxyAccount;
 import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import java.util.Date;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.ToString;
 
 /**
@@ -57,14 +62,27 @@ public class ProxyAccountEntity {
   private Amount maximumAmountPerTransaction;
 
   @Load
+  @Setter(AccessLevel.PROTECTED)
   private Ref<OriginalAccountEntity> originalAccountEntityRef;
 
-  public OriginalAccountEntity getOriginalAccountEntity() {
-    return originalAccountEntityRef.get();
+  @Ignore
+  @NonNull
+  private OriginalAccountEntity originalAccountEntity;
+
+  @OnLoad
+  public void fetchOriginalAccountEntity() {
+    if (originalAccountEntityRef != null) {
+      originalAccountEntity = originalAccountEntityRef.get();
+    }
   }
 
-  public void setOriginalAccountEntity(OriginalAccountEntity originalAccountEntity) {
-    this.originalAccountEntityRef = Ref.create(originalAccountEntity);
+  @OnSave
+  public void setOriginalAccountEntityRef() {
+    if (this.originalAccountEntity != null) {
+      this.originalAccountEntityRef = Ref.create(originalAccountEntity);
+    } else {
+      this.originalAccountEntityRef = null;
+    }
   }
 
   public ProxyAccountId asProxyAccountId() {

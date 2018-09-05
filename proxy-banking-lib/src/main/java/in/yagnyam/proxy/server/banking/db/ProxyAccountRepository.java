@@ -61,7 +61,6 @@ public class ProxyAccountRepository {
       public void vrun() {
         ofy().transact(() -> {
           ofy().save().entity(underlyingAccount).now();
-          proxyAccount.setOriginalAccountEntity(underlyingAccount);
           ofy().save().entity(proxyAccount).now();
         });
       }
