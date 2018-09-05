@@ -1,7 +1,8 @@
-package in.yagnyam.proxy.banking.services;
+package in.yagnyam.proxy.server.banking.services;
 
-import in.yagnyam.proxy.banking.db.ProxyAccountRepository;
-import in.yagnyam.proxy.banking.model.ProxyAccountEntity;
+import in.yagnyam.proxy.server.banking.db.ProxyAccountRepository;
+import in.yagnyam.proxy.server.banking.model.OriginalAccountEntity;
+import in.yagnyam.proxy.server.banking.model.ProxyAccountEntity;
 import java.util.Optional;
 import lombok.Builder;
 import lombok.NonNull;
@@ -20,6 +21,11 @@ public class ProxyAccountService {
    */
   public Optional<ProxyAccountEntity> getProxyAccount(String proxyAccountId) {
     return proxyAccountRepository.fetchProxyAccount(proxyAccountId);
+  }
+
+  public void saveProxyAccount(@NonNull ProxyAccountEntity proxyAccount,
+      @NonNull OriginalAccountEntity underlyingAccount) {
+    proxyAccountRepository.saveProxyAccountWithLinkedAccount(proxyAccount, underlyingAccount);
   }
 
 }

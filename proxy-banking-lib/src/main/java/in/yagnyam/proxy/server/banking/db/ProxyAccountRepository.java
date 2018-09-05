@@ -1,11 +1,12 @@
-package in.yagnyam.proxy.banking.db;
+package in.yagnyam.proxy.server.banking.db;
 
 import static com.googlecode.objectify.ObjectifyService.ofy;
 
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.VoidWork;
-import in.yagnyam.proxy.banking.model.ProxyAccountEntity;
+import in.yagnyam.proxy.server.banking.model.OriginalAccountEntity;
+import in.yagnyam.proxy.server.banking.model.ProxyAccountEntity;
 import java.util.Optional;
 import lombok.Builder;
 import lombok.NonNull;
@@ -18,6 +19,7 @@ public class ProxyAccountRepository {
 
   static {
     ObjectifyService.register(ProxyAccountEntity.class);
+    ObjectifyService.register(OriginalAccountEntity.class);
   }
 
   /**
@@ -35,13 +37,30 @@ public class ProxyAccountRepository {
   /**
    * Save the Proxy Account to Database
    *
-   * @param proxyAccount RequestEntity
+   * @param proxyAccount Proxy Account
    */
   public void saveProxyAccount(@NonNull ProxyAccountEntity proxyAccount) {
     ObjectifyService.run(new VoidWork() {
       @Override
       public void vrun() {
         ofy().transact(() -> ofy().save().entity(proxyAccount).now());
+      }
+    });
+  }
+
+  /**
+   * Save the Proxy Account and Underlying Account to Database
+   *
+   * @param proxyAccount Proxy Account
+   * @param underlyingAccount Underlying Account
+   */
+  public void saveProxyAccountWithLinkedAccount(@NonNull ProxyAccountEntity proxyAccount,
+      @NonNull OriginalAccountEntity underlyingAccount) {
+    ObjectifyService.run(new VoidWork() {
+      @Override
+      public void vrun() {
+        proxyAccount.setOriginalAccountEntity(underlyingAccount);
+        ofy().transact(() -> ofy().save().entities(proxyAccount, underlyingAccount).now());
       }
     });
   }

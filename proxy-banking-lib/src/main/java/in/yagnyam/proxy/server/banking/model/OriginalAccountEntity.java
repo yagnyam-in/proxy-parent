@@ -1,4 +1,4 @@
-package in.yagnyam.proxy.banking.model;
+package in.yagnyam.proxy.server.banking.model;
 
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
@@ -28,7 +28,13 @@ public class OriginalAccountEntity {
   private String accountId;
 
   @NonNull
+  private String bank;
+
+  @NonNull
   private String accountHolder;
+
+  @NonNull
+  private String currency;
 
   @NonNull
   private Amount balance;

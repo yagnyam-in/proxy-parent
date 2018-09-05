@@ -1,4 +1,4 @@
-package in.yagnyam.proxy.banking.model;
+package in.yagnyam.proxy.server.banking.model;
 
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;

@@ -1,11 +1,12 @@
-package in.yagnyam.proxy.banking.model;
+package in.yagnyam.proxy.server.banking.model;
 
 import com.googlecode.objectify.Ref;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
-import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Load;
+import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.messages.banking.Amount;
+import in.yagnyam.proxy.messages.banking.Currency;
 import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,18 +33,21 @@ public class ProxyAccountEntity {
   private String proxyAccountId;
 
   @NonNull
-  @Index
-  private String proxyId;
+  private String bankId;
 
-  @Index
   @NonNull
-  private String originalAccountId;
+  private ProxyId proxyId;
+
+  private String accountName;
 
   @NonNull
   private Date creationDate;
 
   @NonNull
   private Date expiryDate;
+
+  @NonNull
+  private Currency currency;
 
   /**
    * Maximum amount for which *each* Payment can be made
@@ -54,9 +58,6 @@ public class ProxyAccountEntity {
   @Load
   private Ref<OriginalAccountEntity> originalAccountEntityRef;
 
-  @Load
-  private Ref<AccountCredentialsEntity> accountCredentialsEntityRef;
-
   public OriginalAccountEntity getOriginalAccountEntity() {
     return originalAccountEntityRef.get();
   }
@@ -65,11 +66,4 @@ public class ProxyAccountEntity {
     this.originalAccountEntityRef = Ref.create(originalAccountEntity);
   }
 
-  public AccountCredentialsEntity getAccountCredentialsEntity() {
-    return accountCredentialsEntityRef.get();
-  }
-
-  public void setAccountCredentialsEntity(AccountCredentialsEntity accountCredentialsEntity) {
-    this.accountCredentialsEntityRef = Ref.create(accountCredentialsEntity);
-  }
 }
