@@ -7,6 +7,8 @@ import com.googlecode.objectify.annotation.Load;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.messages.banking.Currency;
+import in.yagnyam.proxy.messages.banking.ProxyAccount;
+import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import java.util.Date;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -64,6 +66,24 @@ public class ProxyAccountEntity {
 
   public void setOriginalAccountEntity(OriginalAccountEntity originalAccountEntity) {
     this.originalAccountEntityRef = Ref.create(originalAccountEntity);
+  }
+
+  public ProxyAccountId asProxyAccountId() {
+    return ProxyAccountId.builder()
+        .accountId(proxyAccountId)
+        .bankId(bankId)
+        .build();
+  }
+
+  public ProxyAccount asProxyAccount() {
+    return ProxyAccount.builder()
+        .proxyAccountId(asProxyAccountId())
+        .proxyId(proxyId)
+        .currency(currency)
+        .maximumAmountPerTransaction(maximumAmountPerTransaction)
+        .creationDate(creationDate)
+        .expiryDate(expiryDate)
+        .build();
   }
 
 }
