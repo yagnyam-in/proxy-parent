@@ -1,5 +1,6 @@
 package in.yagnyam.proxy.messages.banking;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
@@ -26,7 +27,7 @@ public class AccountDetailsResponse implements SignableMessage, AddressableMessa
   private String requestId;
 
   @NonNull
-  private SignedMessage<ProxyAccount> proxyAccount;
+  public SignedMessage<ProxyAccount> proxyAccount;
 
   @NonNull
   private String accountNumber;
@@ -47,6 +48,7 @@ public class AccountDetailsResponse implements SignableMessage, AddressableMessa
   }
 
   @Override
+  @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(requestId)
         && proxyAccount != null && proxyAccount.isValid();
