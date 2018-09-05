@@ -2,7 +2,6 @@ package in.yagnyam.proxy.messages.banking;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import in.yagnyam.proxy.utils.StringUtils;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,13 +20,13 @@ import lombok.NonNull;
 public class Amount {
 
   @NonNull
-  private String currency;
+  private Currency currency;
 
   private double value;
 
   @JsonIgnore
   public boolean isValid() {
-    return StringUtils.isValid(currency) && value >= 0;
+    return currency != null && value >= 0;
   }
 
 }

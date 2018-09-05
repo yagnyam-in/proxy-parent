@@ -3,6 +3,7 @@ package in.yagnyam.proxy.server.banking.model;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import in.yagnyam.proxy.messages.banking.Amount;
+import in.yagnyam.proxy.messages.banking.Currency;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -34,7 +35,7 @@ public class OriginalAccountEntity {
   private String accountHolder;
 
   @NonNull
-  private String currency;
+  private Currency currency;
 
   @NonNull
   private Amount balance;
