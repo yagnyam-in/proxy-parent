@@ -59,8 +59,11 @@ public class ProxyAccountRepository {
     ObjectifyService.run(new VoidWork() {
       @Override
       public void vrun() {
-        proxyAccount.setOriginalAccountEntity(underlyingAccount);
-        ofy().transact(() -> ofy().save().entities(proxyAccount, underlyingAccount).now());
+        ofy().transact(() -> {
+          ofy().save().entity(underlyingAccount).now();
+          proxyAccount.setOriginalAccountEntity(underlyingAccount);
+          ofy().save().entity(proxyAccount).now();
+        });
       }
     });
   }
