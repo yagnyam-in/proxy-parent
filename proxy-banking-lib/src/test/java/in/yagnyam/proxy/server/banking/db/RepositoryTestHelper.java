@@ -16,9 +16,12 @@ import org.junit.rules.ExpectedException;
 public class RepositoryTestHelper {
 
   private final LocalServiceTestHelper helper = new LocalServiceTestHelper(
-      new LocalDatastoreServiceTestConfig());
+      new LocalDatastoreServiceTestConfig()
+  );
+
   @Rule
   public ExpectedException thrown = ExpectedException.none();
+
   private Closeable session;
 
   @BeforeClass

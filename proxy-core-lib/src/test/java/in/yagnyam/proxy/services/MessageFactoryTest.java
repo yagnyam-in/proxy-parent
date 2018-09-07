@@ -77,7 +77,7 @@ public class MessageFactoryTest {
         .verificationService(verificationService)
         .build();
 
-    messageFactory.verifySignedMessage(signedMessage);
+    messageFactory.verifyAndPopulateSignedMessage(signedMessage);
   }
 
   @Test
@@ -140,7 +140,7 @@ public class MessageFactoryTest {
         .verificationService(verificationService)
         .build();
 
-    messageFactory.verifySignedMessage(signedMessage);
+    messageFactory.verifyAndPopulateSignedMessage(signedMessage);
   }
 
   @ToString

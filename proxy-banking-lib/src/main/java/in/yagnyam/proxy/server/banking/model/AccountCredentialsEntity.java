@@ -19,10 +19,19 @@ public class AccountCredentialsEntity {
 
   @Id
   @NonNull
-  private String credentialId;
+  protected String credentialId;
 
-  public static AccountCredentialsEntityBuilder builder() {
+  public static AccountCredentialsEntityBuilder accountCredentialsEntityBuilder() {
     return new AccountCredentialsEntityBuilder();
+  }
+
+  public static class AccountCredentialsEntityBuilder extends
+      AbstractAccountCredentialsEntityBuilder<AccountCredentialsEntity, AccountCredentialsEntityBuilder> {
+
+    @Override
+    public AccountCredentialsEntity newInstance() {
+      return new AccountCredentialsEntity();
+    }
   }
 
   /**
@@ -30,35 +39,37 @@ public class AccountCredentialsEntity {
    * subclasses easier to construct
    */
   @SuppressWarnings("unchecked")
-  public static class AccountCredentialsEntityBuilder<T extends AccountCredentialsEntityBuilder> {
+  public static abstract class AbstractAccountCredentialsEntityBuilder<T extends AccountCredentialsEntity, B extends AbstractAccountCredentialsEntityBuilder> {
 
-    protected String credentialId;
+    String credentialId;
 
-    protected static void assertNotNull(String field, Object value) {
+    protected static void assertNotNull(@NonNull String field, Object value) {
       if (value == null) {
         throw new NullPointerException(field + " is null");
       }
     }
 
-    public T credentialId(String credentialId) {
+    public B credentialId(String credentialId) {
       this.credentialId = credentialId;
       return thisInstance();
     }
 
-    protected AccountCredentialsEntity populate(AccountCredentialsEntity accountCredentialsEntity) {
+    protected T populate(T accountCredentialsEntity) {
       assertNotNull("credentialId", credentialId);
       accountCredentialsEntity.credentialId = credentialId;
       return accountCredentialsEntity;
     }
 
 
-    public T thisInstance() {
-      return (T) this;
+    protected B thisInstance() {
+      return (B) this;
     }
 
-
-    public AccountCredentialsEntity build() {
-      return populate(new AccountCredentialsEntity());
+    public T build() {
+      return populate(newInstance());
     }
+
+    protected abstract T newInstance();
+
   }
 }

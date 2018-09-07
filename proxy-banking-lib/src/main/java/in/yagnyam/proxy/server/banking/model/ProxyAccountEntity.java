@@ -76,6 +76,7 @@ public class ProxyAccountEntity {
     }
   }
 
+
   @OnSave
   public void setOriginalAccountEntityRef() {
     if (this.originalAccountEntity != null) {
@@ -85,6 +86,7 @@ public class ProxyAccountEntity {
     }
   }
 
+  
   public ProxyAccountId asProxyAccountId() {
     return ProxyAccountId.builder()
         .accountId(proxyAccountId)

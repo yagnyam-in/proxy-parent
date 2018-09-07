@@ -8,17 +8,12 @@ import in.yagnyam.proxy.Proxy;
 import in.yagnyam.proxy.server.banking.model.BankConfigurationEntity;
 import java.util.List;
 import java.util.Optional;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BankConfigurationRepositoryTest extends RepositoryTestHelper {
-
-  @Rule
-  public ExpectedException expectedException = ExpectedException.none();
 
   private BankConfigurationRepository repository = BankConfigurationRepository.builder().build();
 

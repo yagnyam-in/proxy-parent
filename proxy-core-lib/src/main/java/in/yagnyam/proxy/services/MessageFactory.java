@@ -23,26 +23,30 @@ public class MessageFactory {
   @NonNull
   private MessageVerificationService verificationService;
 
-  public SignedMessage buildSignedMessage(String signedMessage)
+  SignedMessage buildSignedMessage(String signedMessage)
       throws IOException, GeneralSecurityException {
     SignedMessage signedMessageObject = serializer.deserializeSignedMessage(signedMessage);
-    return verifySignedMessage(signedMessageObject);
+    return verifyAndPopulateSignedMessage(signedMessageObject);
   }
 
-  public <T extends SignableMessage> SignedMessage<T> verifySignedMessage(
-      SignedMessage<T> signedMessage) throws IOException, GeneralSecurityException {
-    return verifySignedMessage(signedMessage, null);
-  }
-
-  public <T extends SignableMessage> SignedMessage<T> verifySignedMessage(
+  public <T extends SignableMessage> SignedMessage<T> verifyAndPopulateSignedMessage(
       SignedMessage signedMessage, Class<T> underlyingMessageClass) throws IOException, GeneralSecurityException {
     log.debug("verifying signature for " + signedMessage);
+    SignedMessage extracted = verifyAndPopulateSignedMessage(signedMessage);
     String underlyingMessageType = signedMessage.getType();
     if (underlyingMessageClass != null &&
         underlyingMessageClass.getSimpleName().equals(underlyingMessageType)) {
       throw new IllegalArgumentException("Message type " + underlyingMessageType
           + " from SignedMessage is not " + underlyingMessageClass);
     }
+    return extracted;
+  }
+
+
+  public SignedMessage verifyAndPopulateSignedMessage(
+      SignedMessage signedMessage) throws IOException, GeneralSecurityException {
+    log.debug("verifying signature for " + signedMessage);
+    String underlyingMessageType = signedMessage.getType();
     try {
       Class messageClass = Class.forName(underlyingMessageType);
       SignableMessage underlyingMessage = buildSignableMessage(signedMessage.getPayload(),
@@ -55,7 +59,7 @@ public class MessageFactory {
             + " from SignedMessage doesn't match Message type from Payload " + underlyingMessage
             .getMessageType());
       }
-      SignedMessage<T> extracted = signedMessage.setMessage(underlyingMessage);
+      SignedMessage extracted = signedMessage.setMessage(underlyingMessage);
       verificationService.verify(extracted);
       return extracted;
     } catch (ClassNotFoundException e) {
@@ -63,7 +67,6 @@ public class MessageFactory {
       throw new IllegalArgumentException("Unknown message type " + underlyingMessageType);
     }
   }
-
 
 
   private <T extends SignableMessage> T buildSignableMessage(String signableMessage,
@@ -77,7 +80,7 @@ public class MessageFactory {
         if (f.getType().isAssignableFrom(SignedMessage.class)) {
           log.debug("verifying field of type " + f.getType());
           SignedMessage signedMessage = (SignedMessage) f.get(signableMessageObject);
-          f.set(signableMessageObject, verifySignedMessage(signedMessage));
+          f.set(signableMessageObject, verifyAndPopulateSignedMessage(signedMessage));
         }
       }
       return signableMessageObject;
