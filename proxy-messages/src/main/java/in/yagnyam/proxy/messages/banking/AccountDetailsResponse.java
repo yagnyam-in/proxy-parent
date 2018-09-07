@@ -51,6 +51,7 @@ public class AccountDetailsResponse implements SignableMessage, AddressableMessa
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(requestId)
-        && proxyAccount != null && proxyAccount.isValid();
+        && proxyAccount != null && proxyAccount.isValid()
+        && StringUtils.isValid(accountNumber);
   }
 }

@@ -21,7 +21,7 @@ import lombok.ToString;
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"requestId"})
-public class AccountBalanceResponse implements SignableMessage, AddressableMessage {
+public class DepositLinkResponse implements SignableMessage, AddressableMessage {
 
   @NonNull
   private String requestId;
@@ -30,7 +30,7 @@ public class AccountBalanceResponse implements SignableMessage, AddressableMessa
   public SignedMessage<ProxyAccount> proxyAccount;
 
   @NonNull
-  private Amount balance;
+  private String depositLink;
 
   @Override
   public ProxyId address() {
@@ -52,6 +52,6 @@ public class AccountBalanceResponse implements SignableMessage, AddressableMessa
   public boolean isValid() {
     return StringUtils.isValid(requestId)
         && proxyAccount != null && proxyAccount.isValid()
-        && balance != null && balance.isValid();
+        && StringUtils.isValid(depositLink);
   }
 }

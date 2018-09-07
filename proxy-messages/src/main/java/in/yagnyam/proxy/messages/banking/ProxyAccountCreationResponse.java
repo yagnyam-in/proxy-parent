@@ -60,6 +60,9 @@ public class ProxyAccountCreationResponse implements SignableMessage, Addressabl
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(requestId)
-        && proxyAccount != null && proxyAccount.isValid();
+        && proxyAccount != null && proxyAccount.isValid()
+        && StringUtils.isValid(bankName)
+        && StringUtils.isValid(accountNumber)
+        && balance != null && balance.isValid();
   }
 }

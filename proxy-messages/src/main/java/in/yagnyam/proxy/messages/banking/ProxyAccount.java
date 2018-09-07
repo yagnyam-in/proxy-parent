@@ -66,8 +66,7 @@ public class ProxyAccount implements SignableMessage, AddressableMessage {
         && DateUtils.isValid(creationDate)
         && DateUtils.isValid(expiryDate)
         && currency != null
-        && maximumAmountPerTransaction != null
-        && maximumAmountPerTransaction.isValid();
+        && maximumAmountPerTransaction != null && maximumAmountPerTransaction.isValid();
   }
 
   @Override
