@@ -2,17 +2,23 @@ package in.yagnyam.proxy.server.banking.model;
 
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Entity to store credentials to access real account from the Bank.
- * Extend this class to add fields necessary to interact with Bank.
+ * Entity to store credentials to access real account from the Bank. Extend this class to add fields
+ * necessary to interact with Bank.
  */
 @Entity
 @Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 @ToString
 @EqualsAndHashCode(of = "credentialId")
 public class AccountCredentialsEntity {
