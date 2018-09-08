@@ -44,13 +44,22 @@ public class BankConfigurationService {
    * @return Bank Configuration
    */
   public BankConfigurationEntity getDefaultBankConfiguration() {
-    return bankConfigurationRepository.getBankConfiguration(defaultBankId)
+    return getBankConfiguration(defaultBankId);
+  }
+
+  /**
+   * Fetch Default Bank Configuration
+   * @return Bank Configuration
+   */
+  public BankConfigurationEntity getBankConfiguration(@NonNull String bankId) {
+    return bankConfigurationRepository.getBankConfiguration(bankId)
         .map(this::enrichBankConfiguration)
         .orElseThrow(() -> {
-          log.error("Missing Setup: Couldn't find Configuration for " + defaultBankId);
+          log.error("Missing Setup: Couldn't find Configuration for " + bankId);
           return ServiceException.internalServerError("Missing Setup");
         });
   }
+
 
   public BankConfigurationEntity saveBankConfiguration(
       @NonNull BankConfigurationEntity configuration) {

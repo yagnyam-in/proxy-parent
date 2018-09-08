@@ -33,6 +33,12 @@ public class DepositLinkRequest implements SignableRequestMessage, AddressableMe
   @NonNull
   public SignedMessage<ProxyAccount> proxyAccount;
 
+  @NonNull
+  private String accountName;
+
+  @NonNull
+  private Amount amount;
+
   @Override
   public ProxyId address() {
     return proxyAccount.signer();
@@ -57,6 +63,8 @@ public class DepositLinkRequest implements SignableRequestMessage, AddressableMe
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(requestId)
-        && proxyAccount != null && proxyAccount.isValid();
+        && proxyAccount != null && proxyAccount.isValid()
+        && StringUtils.isValid(accountName)
+        && amount != null && amount.isValid();
   }
 }

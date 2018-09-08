@@ -30,6 +30,12 @@ public class DepositLinkResponse implements SignableMessage, AddressableMessage 
   public SignedMessage<ProxyAccount> proxyAccount;
 
   @NonNull
+  private String accountName;
+
+  @NonNull
+  private Amount amount;
+
+  @NonNull
   private String depositLink;
 
   @Override
@@ -52,6 +58,8 @@ public class DepositLinkResponse implements SignableMessage, AddressableMessage 
   public boolean isValid() {
     return StringUtils.isValid(requestId)
         && proxyAccount != null && proxyAccount.isValid()
+        && StringUtils.isValid(accountName)
+        && amount != null && amount.isValid()
         && StringUtils.isValid(depositLink);
   }
 }
