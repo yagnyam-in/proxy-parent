@@ -49,6 +49,8 @@ public class RepresentativeAccountEntity {
 
   private Amount balance;
 
+  private String credentialsId;
+
   public String getBalanceString() {
     if (balance != null) {
       return balance.getValue() + " " + balance.getCurrency();

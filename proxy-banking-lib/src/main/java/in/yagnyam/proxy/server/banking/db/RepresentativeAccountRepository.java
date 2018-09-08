@@ -28,7 +28,7 @@ public class RepresentativeAccountRepository {
    *
    * @return All Representative Accounts
    */
-  public List<RepresentativeAccountEntity> fetchAllBankConfigurations() {
+  public List<RepresentativeAccountEntity> fetchAllRepresentativeAccounts() {
     return ObjectifyService.run(() -> ofy().load().type(RepresentativeAccountEntity.class).list());
   }
 
@@ -38,7 +38,7 @@ public class RepresentativeAccountRepository {
    * @param accountId Account Id
    * @return Representative Account with given bank Id
    */
-  public Optional<RepresentativeAccountEntity> getBankConfiguration(@NonNull String accountId) {
+  public Optional<RepresentativeAccountEntity> getRepresentativeAccount(@NonNull String accountId) {
     return ObjectifyService.run(() ->
         Optional
             .ofNullable(ofy().load().key(Key.create(RepresentativeAccountEntity.class, accountId)).now())
@@ -51,7 +51,7 @@ public class RepresentativeAccountRepository {
    *
    * @param accountEntity Representative Account
    */
-  public void saveBankConfiguration(@NonNull RepresentativeAccountEntity accountEntity) {
+  public void saveRepresentativeAccount(@NonNull RepresentativeAccountEntity accountEntity) {
     ObjectifyService.run(new VoidWork() {
       @Override
       public void vrun() {

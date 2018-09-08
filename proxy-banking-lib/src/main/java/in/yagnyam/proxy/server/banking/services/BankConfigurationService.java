@@ -65,7 +65,7 @@ public class BankConfigurationService {
       @NonNull BankConfigurationEntity configuration) {
     if (StringUtils.isValid(configuration.getRepresentativeAccountId())) {
       representativeAccountRepository
-          .getBankConfiguration(configuration.getRepresentativeAccountId())
+          .getRepresentativeAccount(configuration.getRepresentativeAccountId())
           .ifPresent(configuration::setRepresentativeAccount);
     }
     bankConfigurationRepository.saveBankConfiguration(configuration);
