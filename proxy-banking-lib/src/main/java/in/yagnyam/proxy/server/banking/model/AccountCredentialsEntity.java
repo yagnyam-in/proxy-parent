@@ -8,8 +8,8 @@ import lombok.NonNull;
 import lombok.ToString;
 
 /**
- * Entity to store credentials to access real account from the Bank. Extend this class to add fields
- * necessary to interact with Bank.
+ * Entity to store credentials to access real account from the Bank.
+ * Extend this class to add fields necessary to interact with Bank.
  */
 @Entity
 @Getter

@@ -5,7 +5,9 @@ import static com.googlecode.objectify.ObjectifyService.ofy;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.VoidWork;
+import in.yagnyam.proxy.server.banking.model.AccountCredentialsEntity;
 import in.yagnyam.proxy.server.banking.model.BankConfigurationEntity;
+import in.yagnyam.proxy.server.banking.model.RepresentativeAccountEntity;
 import java.util.List;
 import java.util.Optional;
 import lombok.Builder;
@@ -19,6 +21,8 @@ public class BankConfigurationRepository {
 
   static {
     ObjectifyService.register(BankConfigurationEntity.class);
+    ObjectifyService.register(AccountCredentialsEntity.class);
+    ObjectifyService.register(RepresentativeAccountEntity.class);
   }
 
   /**

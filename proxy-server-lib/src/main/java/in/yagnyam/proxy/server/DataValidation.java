@@ -10,14 +10,14 @@ public class DataValidation {
   public static void assertNotEmpty(String name, String value) throws BadRequestException {
     if (StringUtils.isEmpty(value)) {
       log.debug("{} can't be null/empty", name);
-      throw ServiceException.badRequest(name + " can't be null/empty");
+      badRequest(name + " can't be null/empty");
     }
   }
 
   public static void assertNotNull(String name, Object o) throws BadRequestException {
     if (o == null) {
       log.debug("{} can't be null/empty", name);
-      throw ServiceException.badRequest(name + " can't be null/empty");
+      badRequest(name + " can't be null/empty");
     }
   }
 
@@ -26,11 +26,20 @@ public class DataValidation {
     try {
       if (BigInteger.ONE.compareTo(new BigInteger(value)) > 0) {
         log.debug("{} is not a valid certificate number", value);
-        throw ServiceException.badRequest(value + " is not a valid certificate number");
+        badRequest(value + " is not a valid certificate number");
       }
     } catch (NumberFormatException e) {
       log.debug("{} is not a valid certificate number", value);
-      throw ServiceException.badRequest(value + " is not a valid certificate number", e);
+      badRequest(value + " is not a valid certificate number", e);
     }
   }
+
+  public static void badRequest(String error) throws BadRequestException {
+    throw ServiceException.badRequest(error);
+  }
+
+  public static void badRequest(String error, Throwable cause) throws BadRequestException {
+    throw ServiceException.badRequest(error, cause);
+  }
+
 }

@@ -5,10 +5,12 @@ import in.yagnyam.proxy.Proxy;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.server.ServiceException;
 import in.yagnyam.proxy.server.banking.db.BankConfigurationRepository;
+import in.yagnyam.proxy.server.banking.db.RepresentativeAccountRepository;
 import in.yagnyam.proxy.server.banking.model.BankConfigurationEntity;
 import in.yagnyam.proxy.server.model.PrivateKeyEntity;
 import in.yagnyam.proxy.server.services.PrivateKeyService;
 import in.yagnyam.proxy.services.CertificateService;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -34,6 +36,8 @@ public class BankConfigurationService {
   @NonNull
   private BankConfigurationRepository bankConfigurationRepository;
 
+  @NonNull
+  private RepresentativeAccountRepository representativeAccountRepository;
 
   /**
    * Fetch Default Bank Configuration
@@ -46,6 +50,17 @@ public class BankConfigurationService {
           log.error("Missing Setup: Couldn't find Configuration for " + defaultBankId);
           return ServiceException.internalServerError("Missing Setup");
         });
+  }
+
+  public BankConfigurationEntity saveBankConfiguration(
+      @NonNull BankConfigurationEntity configuration) {
+    if (StringUtils.isValid(configuration.getRepresentativeAccountId())) {
+      representativeAccountRepository
+          .getBankConfiguration(configuration.getRepresentativeAccountId())
+          .ifPresent(configuration::setRepresentativeAccount);
+    }
+    bankConfigurationRepository.saveBankConfiguration(configuration);
+    return configuration;
   }
 
   private BankConfigurationEntity enrichBankConfiguration(

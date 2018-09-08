@@ -37,6 +37,17 @@ public class ProxyAccountService {
   @NonNull
   private MessageSigningService messageSigningService;
 
+  /**
+   * Get Proxy Account for given Proxy Account Id
+   * @param proxyAccountId Proxy Account Id
+   * @return Proxy Account for given Id
+   * @throws in.yagnyam.proxy.server.BadRequestException if there is no Account for given Id
+   */
+  public ProxyAccountEntity getProxyAccountEntity(ProxyAccountId proxyAccountId) {
+    return proxyAccountRepository.fetchProxyAccount(proxyAccountId)
+        .orElseThrow(() -> ServiceException.badRequest("No Such account exists"));
+  }
+
   public SignedMessage<AccountBalanceResponse> fetchProxyAccountBalance(
       AccountBalanceRequest request) {
 
@@ -45,9 +56,7 @@ public class ProxyAccountService {
 
     ProxyAccountId proxyAccountId = request.proxyAccount.getMessage().getProxyAccountId();
 
-    ProxyAccountEntity proxyAccountEntity =
-        proxyAccountRepository.fetchProxyAccount(proxyAccountId)
-            .orElseThrow(() -> ServiceException.badRequest("No Such account exists"));
+    ProxyAccountEntity proxyAccountEntity = getProxyAccountEntity(proxyAccountId);
 
     AccountBalanceResponse response = AccountBalanceResponse.builder()
         .requestId(request.requestId())
