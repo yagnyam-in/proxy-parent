@@ -45,10 +45,8 @@ public class SignedMessage<T extends SignableMessage> {
 
   @JsonIgnore
   public boolean isValid() {
-    return message != null
-        && message.isValid()
+    return ((message != null && message.isValid()) || StringUtils.isValid(payload))
         && StringUtils.isValid(type)
-        && StringUtils.isValid(payload)
         && signatures != null
         && signatures.stream().allMatch(SignedMessageSignature::isValid);
   }

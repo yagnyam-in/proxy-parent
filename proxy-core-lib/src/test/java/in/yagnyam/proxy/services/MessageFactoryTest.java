@@ -150,7 +150,7 @@ public class MessageFactoryTest {
 
     @Override
     public ProxyId signer() {
-      return ProxyId.of("dummy");
+      return ProxyId.of("dummy", "SHA256");
     }
 
     @Override
@@ -172,7 +172,7 @@ public class MessageFactoryTest {
 
     @Override
     public ProxyId signer() {
-      return ProxyId.of("dummy");
+      return ProxyId.of("dummy", "SHA256");
     }
 
     @Override

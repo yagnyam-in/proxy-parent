@@ -30,9 +30,10 @@ public class MessageFactory {
   }
 
   public <T extends SignableMessage> SignedMessage<T> verifyAndPopulateSignedMessage(
-      SignedMessage signedMessage, Class<T> underlyingMessageClass) throws IOException, GeneralSecurityException {
+      SignedMessage signedMessage, Class<T> underlyingMessageClass)
+      throws IOException, GeneralSecurityException {
     log.debug("verifying signature for " + signedMessage);
-    SignedMessage extracted = verifyAndPopulateSignedMessage(signedMessage);
+    SignedMessage extracted = verifyAndPopulateSignedMessage(signedMessage, true);
     String underlyingMessageType = signedMessage.getType();
     if (underlyingMessageClass != null &&
         underlyingMessageClass.getSimpleName().equals(underlyingMessageType)) {
@@ -42,15 +43,39 @@ public class MessageFactory {
     return extracted;
   }
 
-
   public SignedMessage verifyAndPopulateSignedMessage(
       SignedMessage signedMessage) throws IOException, GeneralSecurityException {
+    return verifyAndPopulateSignedMessage(signedMessage, true);
+  }
+
+  public <T extends SignableMessage> SignedMessage<T> populateSignedMessage(
+      SignedMessage signedMessage, Class<T> underlyingMessageClass)
+      throws IOException, GeneralSecurityException {
+    log.debug("populating " + underlyingMessageClass);
+    SignedMessage extracted = verifyAndPopulateSignedMessage(signedMessage, false);
+    String underlyingMessageType = signedMessage.getType();
+    if (underlyingMessageClass != null &&
+        underlyingMessageClass.getSimpleName().equals(underlyingMessageType)) {
+      throw new IllegalArgumentException("Message type " + underlyingMessageType
+          + " from SignedMessage is not " + underlyingMessageClass);
+    }
+    return extracted;
+  }
+
+  public SignedMessage populateSignedMessage(SignedMessage signedMessage)
+      throws IOException, GeneralSecurityException {
+    return verifyAndPopulateSignedMessage(signedMessage, false);
+  }
+
+
+  private SignedMessage verifyAndPopulateSignedMessage(
+      SignedMessage signedMessage, boolean verify) throws IOException, GeneralSecurityException {
     log.debug("verifying signature for " + signedMessage);
     String underlyingMessageType = signedMessage.getType();
     try {
       Class messageClass = Class.forName(underlyingMessageType);
       SignableMessage underlyingMessage = buildSignableMessage(signedMessage.getPayload(),
-          messageClass);
+          messageClass, verify);
       if (!underlyingMessageType.equals(underlyingMessage.getMessageType())) {
         log.error("Message type " + underlyingMessageType
             + " from SignedMessage doesn't match Message type from Payload " + underlyingMessage
@@ -59,8 +84,14 @@ public class MessageFactory {
             + " from SignedMessage doesn't match Message type from Payload " + underlyingMessage
             .getMessageType());
       }
+      if (!underlyingMessage.isValid()) {
+        log.error("Invalid message: " + underlyingMessage);
+        throw new IllegalArgumentException("Invalid message");
+      }
       SignedMessage extracted = signedMessage.setMessage(underlyingMessage);
-      verificationService.verify(extracted);
+      if (verify) {
+        verificationService.verify(extracted);
+      }
       return extracted;
     } catch (ClassNotFoundException e) {
       log.error("Unknown message type " + underlyingMessageType, e);
@@ -70,7 +101,7 @@ public class MessageFactory {
 
 
   private <T extends SignableMessage> T buildSignableMessage(String signableMessage,
-      Class<T> messageClass) throws IOException, GeneralSecurityException {
+      Class<T> messageClass, boolean verify) throws IOException, GeneralSecurityException {
     log.debug("buildSignableMessage({}, {})", signableMessage, messageClass);
     T signableMessageObject = serializer.deserializeSignableMessage(signableMessage, messageClass);
     Field[] fields = signableMessageObject.getClass().getDeclaredFields();
@@ -80,7 +111,7 @@ public class MessageFactory {
         if (f.getType().isAssignableFrom(SignedMessage.class)) {
           log.debug("verifying field of type " + f.getType());
           SignedMessage signedMessage = (SignedMessage) f.get(signableMessageObject);
-          f.set(signableMessageObject, verifyAndPopulateSignedMessage(signedMessage));
+          f.set(signableMessageObject, verifyAndPopulateSignedMessage(signedMessage, verify));
         }
       }
       return signableMessageObject;
