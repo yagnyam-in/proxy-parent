@@ -30,4 +30,20 @@ public class Amount {
     return StringUtils.isValid(currency) && Currency.isValidCurrency(currency) && value >= 0;
   }
 
+  public Amount add(@NonNull Amount amount) {
+    if (!StringUtils.equals(currency, amount.currency)) {
+      throw new IllegalArgumentException("Currencies " + currency + ", " + amount.currency + " are not same");
+    }
+    return Amount.of(currency, value + amount.value);
+  }
+
+
+  public Amount subtract(@NonNull Amount amount) {
+    if (!StringUtils.equals(currency, amount.currency)) {
+      throw new IllegalArgumentException("Currencies " + currency + ", " + amount.currency + " are not same");
+    }
+    return Amount.of(currency, value - amount.value);
+  }
+
+
 }

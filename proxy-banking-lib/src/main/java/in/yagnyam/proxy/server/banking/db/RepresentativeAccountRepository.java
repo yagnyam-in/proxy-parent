@@ -5,6 +5,7 @@ import static com.googlecode.objectify.ObjectifyService.ofy;
 import com.googlecode.objectify.Key;
 import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.VoidWork;
+import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.server.banking.model.AccountCredentialsEntity;
 import in.yagnyam.proxy.server.banking.model.RepresentativeAccountEntity;
 import java.util.List;
@@ -41,7 +42,8 @@ public class RepresentativeAccountRepository {
   public Optional<RepresentativeAccountEntity> getRepresentativeAccount(@NonNull String accountId) {
     return ObjectifyService.run(() ->
         Optional
-            .ofNullable(ofy().load().key(Key.create(RepresentativeAccountEntity.class, accountId)).now())
+            .ofNullable(
+                ofy().load().key(Key.create(RepresentativeAccountEntity.class, accountId)).now())
     );
   }
 
@@ -58,6 +60,25 @@ public class RepresentativeAccountRepository {
         ofy().save().entity(accountEntity).now();
       }
     });
+  }
+
+
+  /**
+   * Deposit the given amount to Account
+   *
+   * @param accountEntity Representative Account
+   * @param amount Amount to deposit
+   */
+  public RepresentativeAccountEntity deposit(@NonNull RepresentativeAccountEntity accountEntity,
+      @NonNull Amount amount) {
+    return ObjectifyService.run(() -> ofy().transact(() -> {
+          RepresentativeAccountEntity latest = ofy().load()
+              .key(Key.create(RepresentativeAccountEntity.class, accountEntity.getAccountId())).now();
+          latest.setBalance(latest.getBalance().add(amount));
+          ofy().save().entity(latest);
+          return latest;
+        })
+    );
   }
 
 

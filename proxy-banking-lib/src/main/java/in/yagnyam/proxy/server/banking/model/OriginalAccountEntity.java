@@ -53,6 +53,7 @@ public class OriginalAccountEntity {
   private String currency;
 
   @NonNull
+  @Setter
   private Amount balance;
 
   @Load
