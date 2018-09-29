@@ -71,4 +71,69 @@ public class MessageSigningServiceTest {
     val s = service.sign(signableMessage, proxy);
     System.out.println(s);
   }
+
+
+  @Test(expected = IllegalStateException.class)
+  public void testSignWithDifferentSha() throws IOException, GeneralSecurityException {
+    ProxyId proxyId = ProxyId.of("dummy", "DifferentSha256");
+    Proxy proxy = Proxy.builder().id(proxyId).privateKey(samplePrivateKey())
+        .certificate(mock(Certificate.class)).build();
+
+    SignableMessage signableMessage = new SignableMessage() {
+      @Override
+      public ProxyId signer() {
+        return ProxyId.of("dummy", "SHA256");
+      }
+
+      @Override
+      public String toReadableString() {
+        return "dummy";
+      }
+
+      @Override
+      public boolean isValid() {
+        return true;
+      }
+    };
+    MessageSigningService service = MessageSigningService.builder()
+        .serializer(new MessageSerializerService())
+        .cryptographyService(cryptographyService)
+        .signatureAlgorithm("SHA256WithRSAEncryption")
+        .build();
+    val s = service.sign(signableMessage, proxy);
+    System.out.println(s);
+  }
+
+  @Test
+  public void testSignForProxyIdWithoutSha() throws IOException, GeneralSecurityException {
+    ProxyId proxyId = ProxyId.of("dummy", "DifferentSha256");
+    Proxy proxy = Proxy.builder().id(proxyId).privateKey(samplePrivateKey())
+        .certificate(mock(Certificate.class)).build();
+
+    SignableMessage signableMessage = new SignableMessage() {
+      @Override
+      public ProxyId signer() {
+        return ProxyId.of("dummy");
+      }
+
+      @Override
+      public String toReadableString() {
+        return "dummy";
+      }
+
+      @Override
+      public boolean isValid() {
+        return true;
+      }
+    };
+    MessageSigningService service = MessageSigningService.builder()
+        .serializer(new MessageSerializerService())
+        .cryptographyService(cryptographyService)
+        .signatureAlgorithm("SHA256WithRSAEncryption")
+        .build();
+    val s = service.sign(signableMessage, proxy);
+    System.out.println(s);
+  }
+
+
 }
