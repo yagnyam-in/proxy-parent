@@ -47,6 +47,10 @@ public class MessageVerificationService {
       log.error("At least one signature algorithm is required");
       throw new IllegalStateException("At least one signature algorithm is required");
     }
+    if (!message.signer().isParentOrEqualsOf(message.getSignedBy())) {
+      throw new IllegalStateException("Message: " + message + " can only be signed by "
+          + message.signer() + ", but signed by " + message.getSignedBy());
+    }
     Proxy proxy = getSignerProxy(message);
     for (String algorithm : signatureAlgorithms) {
       SignedMessageSignature signature = findSignature(message, algorithm);

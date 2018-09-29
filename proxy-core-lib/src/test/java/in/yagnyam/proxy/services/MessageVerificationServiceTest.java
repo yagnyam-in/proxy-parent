@@ -53,14 +53,17 @@ public class MessageVerificationServiceTest {
         .type(DummySignableMessage.class.getName())
         .payload("Dummy")
         .signature(SignedMessageSignature.of("def", "dummy"))
+        .signedBy(ProxyId.of("dummy"))
         .build();
     MessageVerificationService.findSignature(signedMessage, "abc");
   }
 
   @Test
   public void testFindSignature() {
+    DummySignableMessage signableMessage = new DummySignableMessage();
     SignedMessage<DummySignableMessage> signedMessage = SignedMessage.<DummySignableMessage>builder()
-        .message(new DummySignableMessage())
+        .message(signableMessage)
+        .signedBy(signableMessage.signer())
         .type(DummySignableMessage.class.getName())
         .payload("Dummy")
         .signature(SignedMessageSignature.of("abc", "dummy"))
@@ -76,6 +79,7 @@ public class MessageVerificationServiceTest {
         .type(DummySignableMessage.class.getName())
         .payload("Dummy")
         .signature(SignedMessageSignature.of("abc", "dummy"))
+        .signedBy(ProxyId.of("dummy"))
         .build();
     verificationService(proxyResolver).getSignerProxy(signedMessage);
   }
@@ -85,10 +89,12 @@ public class MessageVerificationServiceTest {
   public void testGetSignerProxy_InvalidProxy() {
     ProxyResolver proxyResolver = mock(ProxyResolver.class);
     when(proxyResolver.resolveProxy(any())).thenReturn(Collections.emptyList());
+    DummySignableMessage signableMessage = new DummySignableMessage();
     SignedMessage<DummySignableMessage> signedMessage = SignedMessage.<DummySignableMessage>builder()
         .type(DummySignableMessage.class.getName())
-        .message(new DummySignableMessage())
+        .message(signableMessage)
         .payload("Dummy")
+        .signedBy(signableMessage.signer())
         .signature(SignedMessageSignature.of("abc", "dummy"))
         .build();
     verificationService(proxyResolver).getSignerProxy(signedMessage);
@@ -99,9 +105,11 @@ public class MessageVerificationServiceTest {
   public void testGetSignerProxy_AmbiguousProxy() {
     ProxyResolver proxyResolver = mock(ProxyResolver.class);
     when(proxyResolver.resolveProxy(any())).thenReturn(Arrays.asList(mock(Proxy.class), mock(Proxy.class)));
+    DummySignableMessage signableMessage = new DummySignableMessage();
     SignedMessage<DummySignableMessage> signedMessage = SignedMessage.<DummySignableMessage>builder()
         .type(DummySignableMessage.class.getName())
-        .message(new DummySignableMessage())
+        .message(signableMessage)
+        .signedBy(signableMessage.signer())
         .payload("Dummy")
         .signature(SignedMessageSignature.of("abc", "dummy"))
         .build();
@@ -113,9 +121,11 @@ public class MessageVerificationServiceTest {
   public void testGetSignerProxy_UniqueProxy() {
     ProxyResolver proxyResolver = mock(ProxyResolver.class);
     when(proxyResolver.resolveProxy(any())).thenReturn(Collections.singletonList(mock(Proxy.class)));
+    DummySignableMessage signableMessage = new DummySignableMessage();
     SignedMessage<DummySignableMessage> signedMessage = SignedMessage.<DummySignableMessage>builder()
         .type(DummySignableMessage.class.getName())
-        .message(new DummySignableMessage())
+        .message(signableMessage)
+        .signedBy(signableMessage.signer())
         .payload("Dummy")
         .signature(SignedMessageSignature.of("abc", "dummy"))
         .build();

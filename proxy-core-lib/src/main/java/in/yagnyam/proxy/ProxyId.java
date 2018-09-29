@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.utils.StringUtils;
 import java.util.Objects;
 import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,6 +12,7 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Setter(AccessLevel.PRIVATE)
+@EqualsAndHashCode(of = {"id", "sha256Thumbprint"})
 public class ProxyId {
 
   private String id;
@@ -36,24 +38,10 @@ public class ProxyId {
     return of(certificate.getId(), certificate.getSha256Thumbprint());
   }
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    ProxyId proxyId = (ProxyId) o;
-    return Objects.equals(id, proxyId.id)
-        && (StringUtils.isEmpty(sha256Thumbprint)
-        || StringUtils.isEmpty(proxyId.sha256Thumbprint)
-        || sha256Thumbprint.equals(proxyId.sha256Thumbprint));
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(id);
+  @JsonIgnore
+  public boolean isParentOrEqualsOf(ProxyId proxyId) {
+    return Objects.equals(id, proxyId.id) &&
+        (sha256Thumbprint == null || sha256Thumbprint.equals(proxyId.sha256Thumbprint));
   }
 
   @JsonIgnore

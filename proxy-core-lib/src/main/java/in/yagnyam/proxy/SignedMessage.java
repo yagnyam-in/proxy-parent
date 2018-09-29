@@ -29,6 +29,9 @@ public class SignedMessage<T extends SignableMessage> {
   private String payload;
 
   @NonNull
+  private ProxyId signedBy;
+
+  @NonNull
   @Singular
   private List<SignedMessageSignature> signatures;
 
@@ -46,6 +49,7 @@ public class SignedMessage<T extends SignableMessage> {
   @JsonIgnore
   public boolean isValid() {
     return ((message != null && message.isValid()) || StringUtils.isValid(payload))
+        && (signedBy != null && signedBy.isValid())
         && StringUtils.isValid(type)
         && signatures != null
         && signatures.stream().allMatch(SignedMessageSignature::isValid);

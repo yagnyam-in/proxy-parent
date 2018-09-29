@@ -44,12 +44,13 @@ public class MessageSigningService {
     if (!message.isValid()) {
       throw new IllegalStateException("Invalid message: " + message);
     }
-    if (!message.signer().equals(signer.getId())) {
+    if (!message.signer().isParentOrEqualsOf(signer.getId())) {
       throw new IllegalStateException("Message: " + message + " can only be signed by "
           + message.signer() + ", but trying to sign by " + signer.getId());
     }
     String payload = serializer.serializeSignableMessage(message);
     SignedMessage.SignedMessageBuilder<T> builder = SignedMessage.<T>builder()
+        .signedBy(signer.getId())
         .message(message)
         .type(message.getMessageType())
         .payload(payload);

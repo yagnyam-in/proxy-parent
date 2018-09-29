@@ -111,6 +111,7 @@ public class MessageFactory {
         if (f.getType().isAssignableFrom(SignedMessage.class)) {
           log.debug("verifying field of type " + f.getType());
           SignedMessage signedMessage = (SignedMessage) f.get(signableMessageObject);
+          // TODO: Use Setter instead of directly setting the field
           f.set(signableMessageObject, verifyAndPopulateSignedMessage(signedMessage, verify));
         }
       }
