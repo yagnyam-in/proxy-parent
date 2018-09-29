@@ -20,14 +20,14 @@ import lombok.NonNull;
 import lombok.ToString;
 
 /**
- * Direct Payment to the payee
+ * Payment to the payee or payee account
  */
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @Getter
 @ToString
-@EqualsAndHashCode(of = {"requestId"})
+@EqualsAndHashCode(of = {"paymentId"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class Payment implements SignableRequestMessage, AddressableMessage {
 
@@ -35,14 +35,14 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
   public SignedMessage<ProxyAccount> proxyAccount;
 
   @NonNull
-  private String requestId;
+  private String paymentId;
 
   @NonNull
   private Amount amount;
 
-  private ProxyAccountId receivingProxyAccountId;
+  private ProxyAccountId payeeAccountId;
 
-  private NonProxyAccount receivingNonProxyAccount;
+  private ProxyId payeeId;
 
   @Override
   public ProxyId signer() {
@@ -57,10 +57,11 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
   @Override
   @JsonIgnore
   public boolean isValid() {
-    return StringUtils.isValid(requestId)
+    return StringUtils.isValid(paymentId)
         && proxyAccount != null && proxyAccount.isValid()
-        && (receivingProxyAccountId != null && receivingProxyAccountId.isValid()
-        || receivingNonProxyAccount != null && receivingNonProxyAccount.isValid());
+        && (payeeId != null || payeeAccountId != null)
+        && (payeeId == null || payeeId.isValid())
+        && (payeeAccountId == null || payeeAccountId.isValid());
   }
 
   @Override
@@ -70,6 +71,6 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
 
   @Override
   public String requestId() {
-    return requestId;
+    return paymentId;
   }
 }
