@@ -18,7 +18,7 @@ import lombok.NonNull;
 @Data
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(staticName = "of")
-public class Amount {
+public class Amount implements Comparable<Amount> {
 
   @NonNull
   private String currency;
@@ -46,4 +46,11 @@ public class Amount {
   }
 
 
+  @Override
+  public int compareTo(@SuppressWarnings("NullableProblems") Amount amount) {
+    if (!StringUtils.equals(currency, amount.currency)) {
+      throw new IllegalArgumentException("Currencies " + currency + ", " + amount.currency + " are not same");
+    }
+    return Double.compare(value, amount.value);
+  }
 }

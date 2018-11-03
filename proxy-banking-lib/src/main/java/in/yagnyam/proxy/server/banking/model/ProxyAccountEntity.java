@@ -105,4 +105,8 @@ public class ProxyAccountEntity {
         .build();
   }
 
+  public Amount getBalance() {
+    return originalAccountEntity != null ? originalAccountEntity.getBalance() : null;
+  }
+
 }

@@ -73,4 +73,10 @@ public class ProxyAccount implements SignableMessage, AddressableMessage {
   public ProxyId address() {
     return proxyId;
   }
+
+  @JsonIgnore
+  public String bankId() {
+    return proxyAccountId != null ? proxyAccountId.getBankId() : null;
+  }
+
 }

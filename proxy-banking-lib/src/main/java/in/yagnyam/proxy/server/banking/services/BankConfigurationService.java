@@ -11,6 +11,7 @@ import in.yagnyam.proxy.server.model.PrivateKeyEntity;
 import in.yagnyam.proxy.server.services.PrivateKeyService;
 import in.yagnyam.proxy.services.CertificateService;
 import in.yagnyam.proxy.utils.StringUtils;
+import java.util.function.Supplier;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -48,15 +49,24 @@ public class BankConfigurationService {
   }
 
   /**
-   * Fetch Default Bank Configuration
+   * Fetch Bank Configuration for given Bank Id
    * @return Bank Configuration
    */
   public BankConfigurationEntity getBankConfiguration(@NonNull String bankId) {
+    return getBankConfigurationOrThrow(bankId, () -> ServiceException.internalServerError("Missing Setup"));
+  }
+
+
+  /**
+   * Fetch Bank Configuration for given Bank Id
+   * @return Bank Configuration
+   */
+  public BankConfigurationEntity getBankConfigurationOrThrow(@NonNull String bankId, Supplier<ServiceException> exceptionSupplier) {
     return bankConfigurationRepository.getBankConfiguration(bankId)
         .map(this::enrichBankConfiguration)
         .orElseThrow(() -> {
           log.error("Missing Setup: Couldn't find Configuration for " + bankId);
-          return ServiceException.internalServerError("Missing Setup");
+          return exceptionSupplier.get();
         });
   }
 

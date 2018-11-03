@@ -2,12 +2,9 @@ package in.yagnyam.proxy.messages.payments;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
-import in.yagnyam.proxy.messages.banking.Amount;
-import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,7 +14,7 @@ import lombok.NonNull;
 import lombok.ToString;
 
 /**
- * Payment Encashment by Payee
+ * Payment Status update by Bank
  */
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -25,17 +22,26 @@ import lombok.ToString;
 @Getter
 @ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PaymentEncashment implements SignableMessage, AddressableMessage {
+public class PaymentUpdateByBank implements SignableMessage {
+
+  public enum PaymentStatus {
+    Registered,
+    InsufficientFunds,
+    CancelledByPayer,
+    CancleedByPayee,
+    Expired,
+    Processed
+  }
 
   @NonNull
   public SignedMessage<Payment> payment;
 
   @NonNull
-  private ProxyAccountId payeeAccountId;
+  private PaymentStatus status;
 
   @Override
   public ProxyId signer() {
-    return payment.getMessage().getPayeeId();
+    return payment.getMessage().getProxyAccount().signer();
   }
 
   @Override
@@ -47,9 +53,7 @@ public class PaymentEncashment implements SignableMessage, AddressableMessage {
   @JsonIgnore
   public boolean isValid() {
     return payment != null && payment.isValid()
-        && payment.getMessage().getPayeeId() != null
-        && payment.getMessage().getPayeeAccountId() == null
-        && payeeAccountId != null && payeeAccountId.isValid();
+        && status != null;
   }
 
   @JsonIgnore
@@ -57,18 +61,4 @@ public class PaymentEncashment implements SignableMessage, AddressableMessage {
     return payment != null && payment.getMessage() != null ? payment.getMessage().bankId() : null;
   }
 
-  @Override
-  public ProxyId address() {
-    return payment.getMessage().getProxyAccount().signer();
-  }
-
-  @JsonIgnore
-  public String getPaymentId() {
-    return payment != null && payment.getMessage() != null ? payment.getMessage().getPaymentId() : null;
-  }
-
-  @JsonIgnore
-  public Amount getAmount() {
-    return payment != null && payment.getMessage() != null ? payment.getMessage().getAmount() : null;
-  }
 }
