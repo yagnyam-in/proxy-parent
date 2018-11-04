@@ -66,7 +66,11 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
 
   @Override
   public ProxyId address() {
-    return proxyAccount.signer();
+    if (payeeAccountId == null) {
+      return payeeId;
+    } else {
+      return proxyAccount.getSignedBy();
+    }
   }
 
   @Override

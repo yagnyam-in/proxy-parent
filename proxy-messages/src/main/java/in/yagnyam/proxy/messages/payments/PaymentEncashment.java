@@ -59,7 +59,7 @@ public class PaymentEncashment implements SignableMessage, AddressableMessage {
 
   @Override
   public ProxyId address() {
-    return payment.getMessage().getProxyAccount().signer();
+    return payment.getMessage().getProxyAccount().getSignedBy();
   }
 
   @JsonIgnore

@@ -41,7 +41,7 @@ public class PaymentUpdateByBank implements SignableMessage {
 
   @Override
   public ProxyId signer() {
-    return payment.getMessage().getProxyAccount().signer();
+    return payment.getMessage().getProxyAccount().getSignedBy();
   }
 
   @Override

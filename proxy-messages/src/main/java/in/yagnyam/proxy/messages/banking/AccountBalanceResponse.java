@@ -34,7 +34,7 @@ public class AccountBalanceResponse implements SignableMessage, AddressableMessa
 
   @Override
   public ProxyId address() {
-    return proxyAccount.signer();
+    return proxyAccount.getSignedBy();
   }
 
   @Override

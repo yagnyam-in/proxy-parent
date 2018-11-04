@@ -45,7 +45,7 @@ public class DepositLinkResponse implements SignableMessage, AddressableMessage 
 
   @Override
   public ProxyId signer() {
-    return proxyAccount.signer();
+    return proxyAccount.getSignedBy();
   }
 
   @Override

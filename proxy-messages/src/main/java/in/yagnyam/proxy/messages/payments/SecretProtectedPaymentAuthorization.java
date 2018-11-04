@@ -45,7 +45,7 @@ public class SecretProtectedPaymentAuthorization implements SignableMessage {
 
   @Override
   public ProxyId signer() {
-    return proxyAccount.signer();
+    return proxyAccount.getMessage().getProxyId();
   }
 
   @Override

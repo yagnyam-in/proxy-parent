@@ -47,9 +47,9 @@ public class MessageVerificationService {
       log.error("At least one signature algorithm is required");
       throw new IllegalStateException("At least one signature algorithm is required");
     }
-    if (!message.signer().isParentOrEqualsOf(message.getSignedBy())) {
+    if (!message.cabBeSignedBy(message.getSignedBy())) {
       throw new IllegalStateException("Message: " + message + " can only be signed by "
-          + message.signer() + ", but signed by " + message.getSignedBy());
+          + message.validSigners() + ", but signed by " + message.getSignedBy());
     }
     Proxy proxy = getSignerProxy(message);
     for (String algorithm : signatureAlgorithms) {
@@ -100,7 +100,7 @@ public class MessageVerificationService {
       throw new IllegalStateException(
           "SignedMessage must be de-serialized before verifying signature");
     }
-    List<Proxy> proxies = proxyResolver.resolveProxy(message.signer());
+    List<Proxy> proxies = proxyResolver.resolveProxy(message.getSignedBy());
     if (proxies.isEmpty()) {
       log.error("Invalid Signer/Proxy Id. No proxies found.");
       throw new IllegalArgumentException("Invalid Signer/Proxy Id. No proxies found.");
@@ -111,5 +111,6 @@ public class MessageVerificationService {
       return proxies.get(0);
     }
   }
+
 
 }

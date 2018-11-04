@@ -41,7 +41,7 @@ public class DepositLinkRequest implements SignableRequestMessage, AddressableMe
 
   @Override
   public ProxyId address() {
-    return proxyAccount.signer();
+    return proxyAccount.getSignedBy();
   }
 
   @Override

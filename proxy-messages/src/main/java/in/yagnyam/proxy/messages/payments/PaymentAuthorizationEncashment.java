@@ -64,7 +64,7 @@ public class PaymentAuthorizationEncashment implements SignableRequestMessage, A
 
   @Override
   public ProxyId address() {
-    return paymentAuthorization.getMessage().getProxyAccount().signer();
+    return paymentAuthorization.getMessage().getProxyAccount().getSignedBy();
   }
 
   @Override

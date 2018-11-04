@@ -3,6 +3,7 @@ package in.yagnyam.proxy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.utils.StringUtils;
 import java.util.List;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -35,8 +36,13 @@ public class SignedMessage<T extends SignableMessage> {
   @Singular
   private List<SignedMessageSignature> signatures;
 
-  public ProxyId signer() {
-    return message.signer();
+
+  /**
+   * Signers that can sign the underlying message.
+   * @return Set of Proxies that can sign this message
+   */
+  public Set<ProxyId> validSigners() {
+    return message.validSigners();
   }
 
   @JsonIgnore
@@ -55,5 +61,13 @@ public class SignedMessage<T extends SignableMessage> {
         && signatures.stream().allMatch(SignedMessageSignature::isValid);
   }
 
+  /**
+   * Test if the Signer can sign this message
+   * @param signerId Signer Proxy Id
+   * @return true if signer can sign this message
+   */
+  public boolean cabBeSignedBy(ProxyId signerId) {
+    return message.cabBeSignedBy(signerId);
+  }
 
 }

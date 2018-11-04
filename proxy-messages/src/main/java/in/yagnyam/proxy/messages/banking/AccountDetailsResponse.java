@@ -34,7 +34,7 @@ public class AccountDetailsResponse implements SignableMessage, AddressableMessa
 
   @Override
   public ProxyId address() {
-    return proxyAccount.signer();
+    return proxyAccount.getSignedBy();
   }
 
   @Override

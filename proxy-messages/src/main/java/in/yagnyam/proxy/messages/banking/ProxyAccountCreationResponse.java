@@ -48,7 +48,7 @@ public class ProxyAccountCreationResponse implements SignableMessage, Addressabl
 
   @Override
   public ProxyId signer() {
-    return proxyAccount.signer();
+    return proxyAccount.getSignedBy();
   }
 
   @Override

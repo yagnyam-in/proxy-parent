@@ -44,9 +44,9 @@ public class MessageSigningService {
     if (!message.isValid()) {
       throw new IllegalStateException("Invalid message: " + message);
     }
-    if (!message.signer().isParentOrEqualsOf(signer.getId())) {
+    if (!message.cabBeSignedBy(signer.getId())) {
       throw new IllegalStateException("Message: " + message + " can only be signed by "
-          + message.signer() + ", but trying to sign by " + signer.getId());
+          + message.validSigners() + ", but trying to sign by " + signer.getId());
     }
     String payload = serializer.serializeSignableMessage(message);
     SignedMessage.SignedMessageBuilder<T> builder = SignedMessage.<T>builder()
@@ -61,5 +61,6 @@ public class MessageSigningService {
     }
     return builder.build();
   }
+
 }
 

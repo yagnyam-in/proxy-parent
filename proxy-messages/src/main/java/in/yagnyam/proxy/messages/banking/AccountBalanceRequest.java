@@ -31,7 +31,7 @@ public class AccountBalanceRequest implements SignableRequestMessage, Addressabl
 
   @Override
   public ProxyId address() {
-    return proxyAccount.signer();
+    return proxyAccount.getSignedBy();
   }
 
   @Override

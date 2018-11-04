@@ -1,7 +1,10 @@
 package in.yagnyam.proxy;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.services.MessageSerializerService;
+import java.util.Collections;
+import java.util.Set;
 
 /**
  * Message that can be signed by Proxy.
@@ -20,6 +23,14 @@ public interface SignableMessage {
   ProxyId signer();
 
   /**
+   * Signers that can sign this message.
+   * @return Set of Proxies that can sign this message
+   */
+  default Set<ProxyId> validSigners() {
+    return Collections.singleton(signer());
+  }
+
+  /**
    * Return this message in human readable format
    *
    * @return Message in Human readable format
@@ -31,6 +42,7 @@ public interface SignableMessage {
    *
    * @return true if message is valid, false otherwise
    */
+  @JsonIgnore
   boolean isValid();
 
   /**
@@ -53,4 +65,14 @@ public interface SignableMessage {
           "Invalid Type " + type + ". It must be " + getMessageType());
     }
   }
+
+  /**
+   * Test if the Signer can sign this message
+   * @param signerId Signer Proxy Id
+   * @return true if signer can sign this message
+   */
+  default boolean cabBeSignedBy(ProxyId signerId) {
+    return validSigners().stream().anyMatch(s -> s.isParentOrEqualsOf(signerId));
+  }
+
 }
