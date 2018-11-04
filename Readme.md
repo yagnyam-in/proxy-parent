@@ -3,5 +3,5 @@ Contains Objects required by all Proxy Modules
 
 # Install Locally
 ```
-mvn clean install
+./mvnw clean source:jar install
 ```
