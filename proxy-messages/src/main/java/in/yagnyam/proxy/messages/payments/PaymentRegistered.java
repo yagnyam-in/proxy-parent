@@ -14,7 +14,7 @@ import lombok.NonNull;
 import lombok.ToString;
 
 /**
- * Confirmation that Payment is registered for processing
+ * Payment Registered confirmation by bank
  */
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -29,7 +29,7 @@ public class PaymentRegistered implements SignableMessage {
 
   @Override
   public ProxyId signer() {
-    return payment.getMessage().proxyAccount.getMessage().getProxyId();
+    return payment.getMessage().getProxyAccount().getSignedBy();
   }
 
   @Override

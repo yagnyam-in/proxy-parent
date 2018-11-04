@@ -14,7 +14,7 @@ import lombok.NonNull;
 import lombok.ToString;
 
 /**
- * Payment Status update by Bank
+ * Payment Status Response
  */
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -22,7 +22,7 @@ import lombok.ToString;
 @Getter
 @ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PaymentUpdateByBank implements SignableMessage {
+public class PaymentStatusResponse implements SignableMessage {
 
   public enum PaymentStatus {
     Registered,
@@ -35,6 +35,9 @@ public class PaymentUpdateByBank implements SignableMessage {
 
   @NonNull
   public SignedMessage<Payment> payment;
+
+  @NonNull
+  private String requestId;
 
   @NonNull
   private PaymentStatus status;
@@ -53,12 +56,8 @@ public class PaymentUpdateByBank implements SignableMessage {
   @JsonIgnore
   public boolean isValid() {
     return payment != null && payment.isValid()
+        && requestId != null
         && status != null;
-  }
-
-  @JsonIgnore
-  public String bankId() {
-    return payment != null && payment.getMessage() != null ? payment.getMessage().bankId() : null;
   }
 
 }
