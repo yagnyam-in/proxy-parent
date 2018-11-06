@@ -40,9 +40,11 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
   @NonNull
   private Amount amount;
 
-  private ProxyAccountId payeeAccountId;
-
+  @NonNull
+  // This can be optional, but notification becomes challenge
   private ProxyId payeeId;
+
+  private ProxyAccountId payeeAccountId;
 
   @Override
   public ProxyId signer() {
@@ -59,8 +61,7 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
   public boolean isValid() {
     return StringUtils.isValid(paymentId)
         && proxyAccount != null && proxyAccount.isValid()
-        && (payeeId != null || payeeAccountId != null)
-        && (payeeId == null || payeeId.isValid())
+        && (payeeId != null && payeeId.isValid())
         && (payeeAccountId == null || payeeAccountId.isValid());
   }
 
@@ -79,8 +80,13 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
   }
 
   @JsonIgnore
-  public String bankId() {
-    return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().bankId() : null;
+  public ProxyId getPayerId() {
+    return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().getProxyId() : null;
+  }
+
+  @JsonIgnore
+  public ProxyAccountId getPayerAccountId() {
+    return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().getProxyAccountId() : null;
   }
 
 }

@@ -52,11 +52,6 @@ public class PaymentEncashment implements SignableMessage, AddressableMessage {
         && payeeAccountId != null && payeeAccountId.isValid();
   }
 
-  @JsonIgnore
-  public String bankId() {
-    return payment != null && payment.getMessage() != null ? payment.getMessage().bankId() : null;
-  }
-
   @Override
   public ProxyId address() {
     return payment.getMessage().getProxyAccount().getSignedBy();
@@ -71,4 +66,20 @@ public class PaymentEncashment implements SignableMessage, AddressableMessage {
   public Amount getAmount() {
     return payment != null && payment.getMessage() != null ? payment.getMessage().getAmount() : null;
   }
+
+  @JsonIgnore
+  public ProxyId getPayeeId() {
+    return payment != null && payment.getMessage() != null ? payment.getMessage().getPayeeId() : null;
+  }
+
+  @JsonIgnore
+  public ProxyId getPayerId() {
+    return payment != null && payment.getMessage() != null ? payment.getMessage().getPayerId() : null;
+  }
+
+  @JsonIgnore
+  public ProxyAccountId getPayerAccountId() {
+    return payment != null && payment.getMessage() != null ? payment.getMessage().getPayerAccountId() : null;
+  }
+
 }
