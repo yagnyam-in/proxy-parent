@@ -30,7 +30,8 @@ public class PaymentStatusResponse implements SignableMessage {
     CancelledByPayer,
     CancleedByPayee,
     Expired,
-    Processed
+    Processed,
+    Error
   }
 
   @NonNull
@@ -58,6 +59,11 @@ public class PaymentStatusResponse implements SignableMessage {
     return payment != null && payment.isValid()
         && requestId != null
         && status != null;
+  }
+
+  @JsonIgnore
+  public String getPaymentId() {
+    return payment != null && payment.getMessage() != null ? payment.getMessage().getPaymentId() : null;
   }
 
 }

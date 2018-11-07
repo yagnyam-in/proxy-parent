@@ -70,4 +70,9 @@ public class PaymentStatusRequest implements SignableRequestMessage, Addressable
   public ProxyId address() {
     return payment.getMessage().getProxyAccount().getSignedBy();
   }
+
+  @JsonIgnore
+  public String getPaymentId() {
+    return payment != null && payment.getMessage() != null ? payment.getMessage().getPaymentId() : null;
+  }
 }
