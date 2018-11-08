@@ -2,6 +2,8 @@ package in.yagnyam.proxy.messages.registration;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import in.yagnyam.proxy.AddressableMessage;
+import in.yagnyam.proxy.Constants;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.utils.StringUtils;
@@ -24,7 +26,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ProxyCustomerUpdateRequest implements SignableRequestMessage {
+public class ProxyCustomerUpdateRequest implements SignableRequestMessage, AddressableMessage {
 
   @NonNull
   private String requestId;
@@ -63,4 +65,10 @@ public class ProxyCustomerUpdateRequest implements SignableRequestMessage {
   public String requestId() {
     return requestId;
   }
+
+  @Override
+  public ProxyId address() {
+    return ProxyId.of(Constants.PROXY_CENTRAL);
+  }
+
 }

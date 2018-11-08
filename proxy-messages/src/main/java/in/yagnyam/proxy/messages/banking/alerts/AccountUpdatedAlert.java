@@ -1,4 +1,4 @@
-package in.yagnyam.proxy.messages.alerts;
+package in.yagnyam.proxy.messages.banking.alerts;
 
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
@@ -32,11 +32,11 @@ public class AccountUpdatedAlert implements SignableMessage, AddressableMessage 
   private ProxyAccountId proxyAccountId;
 
   @NonNull
-  private ProxyId proxyId;
+  private ProxyId receiverId;
 
   @Override
   public ProxyId address() {
-    return proxyId;
+    return receiverId;
   }
 
   @Override
@@ -53,6 +53,6 @@ public class AccountUpdatedAlert implements SignableMessage, AddressableMessage 
   public boolean isValid() {
     return StringUtils.isValid(eventId)
         && proxyAccountId != null && proxyAccountId.isValid()
-        && proxyId != null && proxyId.isValid();
+        && receiverId != null && receiverId.isValid();
   }
 }
