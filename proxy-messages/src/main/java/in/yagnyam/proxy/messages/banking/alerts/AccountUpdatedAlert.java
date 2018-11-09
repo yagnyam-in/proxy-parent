@@ -1,10 +1,11 @@
 package in.yagnyam.proxy.messages.banking.alerts;
 
-import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
-import in.yagnyam.proxy.SignableMessage;
+import in.yagnyam.proxy.SignableAlertMessage;
 import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import in.yagnyam.proxy.utils.StringUtils;
+import java.util.Collections;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,22 +23,24 @@ import lombok.ToString;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
-@EqualsAndHashCode(of = {"eventId"})
-public class AccountUpdatedAlert implements SignableMessage, AddressableMessage {
+@EqualsAndHashCode(of = {"alertId"})
+public class AccountUpdatedAlert implements SignableAlertMessage {
+
+  public enum DataFields {
+    Type,
+    AlertId,
+    AccountId,
+    BankId
+  }
 
   @NonNull
-  private String eventId;
+  private String alertId;
 
   @NonNull
   private ProxyAccountId proxyAccountId;
 
   @NonNull
   private ProxyId receiverId;
-
-  @Override
-  public ProxyId address() {
-    return receiverId;
-  }
 
   @Override
   public ProxyId signer() {
@@ -51,8 +54,19 @@ public class AccountUpdatedAlert implements SignableMessage, AddressableMessage 
 
   @Override
   public boolean isValid() {
-    return StringUtils.isValid(eventId)
+    return StringUtils.isValid(alertId)
         && proxyAccountId != null && proxyAccountId.isValid()
         && receiverId != null && receiverId.isValid();
   }
+
+  @Override
+  public String alertId() {
+    return alertId;
+  }
+
+  @Override
+  public List<ProxyId> receivers() {
+    return Collections.singletonList(receiverId);
+  }
+
 }
