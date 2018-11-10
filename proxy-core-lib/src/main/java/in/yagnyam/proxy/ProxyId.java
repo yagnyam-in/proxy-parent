@@ -38,10 +38,15 @@ public class ProxyId {
     return of(certificate.getId(), certificate.getSha256Thumbprint());
   }
 
+  public static ProxyId any() {
+    return of("any", "any");
+  }
+
   @JsonIgnore
   public boolean isParentOrEqualsOf(ProxyId proxyId) {
-    return Objects.equals(id, proxyId.id) &&
-        (sha256Thumbprint == null || sha256Thumbprint.equals(proxyId.sha256Thumbprint));
+    return this.equals(any())
+        || (Objects.equals(id, proxyId.id)
+            && (sha256Thumbprint == null || sha256Thumbprint.equals(proxyId.sha256Thumbprint)));
   }
 
   @JsonIgnore

@@ -4,6 +4,7 @@ import com.googlecode.objectify.Ref;
 import com.googlecode.objectify.annotation.Entity;
 import com.googlecode.objectify.annotation.Id;
 import com.googlecode.objectify.annotation.Ignore;
+import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Load;
 import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.OnSave;
@@ -41,6 +42,10 @@ public class ProxyAccountEntity {
   @NonNull
   private String bankId;
 
+  @Index
+  @NonNull
+  private String originalAccountId;
+
   @NonNull
   private ProxyId proxyId;
 
@@ -73,6 +78,7 @@ public class ProxyAccountEntity {
   public void fetchOriginalAccountEntity() {
     if (originalAccountEntityRef != null) {
       originalAccountEntity = originalAccountEntityRef.get();
+      originalAccountId = originalAccountEntityRef.getKey().getName();
     }
   }
 
@@ -81,6 +87,7 @@ public class ProxyAccountEntity {
   public void setOriginalAccountEntityRef() {
     if (this.originalAccountEntity != null) {
       this.originalAccountEntityRef = Ref.create(originalAccountEntity);
+      this.originalAccountId = originalAccountEntity.getAccountId();
     } else {
       this.originalAccountEntityRef = null;
     }

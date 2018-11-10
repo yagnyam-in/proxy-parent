@@ -84,6 +84,7 @@ public class ProxyAccountRepositoryTest extends RepositoryTestHelper {
         .expiryDate(DateUtils.afterYears(1))
         .maximumAmountPerTransaction(Amount.of("EUR", 100))
         .originalAccountEntity(underlyingAccount)
+        .originalAccountId(underlyingAccount.getAccountId())
         .build();
   }
 }
