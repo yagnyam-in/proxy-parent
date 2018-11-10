@@ -10,6 +10,7 @@ import in.yagnyam.proxy.server.banking.model.AccountCredentialsEntity;
 import in.yagnyam.proxy.server.banking.model.OriginalAccountEntity;
 import in.yagnyam.proxy.server.banking.model.ProxyAccountEntity;
 import in.yagnyam.proxy.utils.StringUtils;
+import java.util.List;
 import java.util.Optional;
 import lombok.Builder;
 import lombok.NonNull;
@@ -55,6 +56,20 @@ public class ProxyAccountRepository {
       return Optional.ofNullable(result)
           .filter(a -> StringUtils.equals(a.getBankId(), proxyAccountId.getBankId()));
     });
+  }
+
+  /**
+   * Fetch Linked Proxy Accounts associated with given Original/Underlying Account Id
+   *
+   * @param originalAccountId Original/Underlying Account Id
+   * @return Proxy Accounts associated with given original account id
+   */
+  public List<ProxyAccountEntity> fetchProxyAccountsByOriginalAccountId(@NonNull String originalAccountId) {
+    return ObjectifyService.run(() -> ofy().load()
+        .type(ProxyAccountEntity.class)
+        .filter("originalAccountId", originalAccountId)
+        .list()
+    );
   }
 
 
