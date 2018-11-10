@@ -9,7 +9,6 @@ import com.google.api.client.http.HttpContent;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.common.net.MediaType;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,7 +26,7 @@ public class NetworkService {
     @Getter
     private final int statusCode;
 
-    public HttpException(int statusCode, String errorMessage) {
+    HttpException(int statusCode, String errorMessage) {
       super(errorMessage);
       this.statusCode = statusCode;
     }
@@ -115,10 +114,20 @@ public class NetworkService {
     return postValueWithHeaders(url, Collections.emptyMap(), request, resultClass);
   }
 
+  public <I> void postValue(String url, I request)
+      throws IOException, HttpException {
+    try (HttpResponse httpResponse = postValueWithHeaders(url, Collections.emptyMap(), request)) {
+      if (httpResponse.getStatusCode() < 200 || httpResponse.getStatusCode() >= 300) {
+        throw new  HttpException(httpResponse.getStatusCode(), httpResponse.getContent());
+      }
+    }
+  }
+
+
   private <T> HttpResponse postValueWithHeaders(String url, Map<String, String> headers, T request)
       throws IOException {
     byte[] requestBytes = new ObjectMapper().writeValueAsBytes(request);
-    HttpContent httpContent = new ByteArrayContent(MediaType.JSON_UTF_8.toString(), requestBytes);
+    HttpContent httpContent = new ByteArrayContent("application/json", requestBytes);
     return HttpResponse.of(url, httpRequestFactory(headers)
         .buildPostRequest(new GenericUrl(url), httpContent)
         .setLoggingEnabled(true)
@@ -130,7 +139,11 @@ public class NetworkService {
   public <I, O> O postValueWithHeaders(String url, Map<String, String> headers, I request,
       Class<O> resultClass) throws IOException, HttpException {
     try (HttpResponse httpResponse = postValueWithHeaders(url, headers, request)) {
-      return httpResponse.getValue(resultClass);
+      if (httpResponse.getStatusCode() < 200 || httpResponse.getStatusCode() >= 300) {
+        throw new  HttpException(httpResponse.getStatusCode(), httpResponse.getContent());
+      } else {
+        return httpResponse.getValue(resultClass);
+      }
     }
   }
 
