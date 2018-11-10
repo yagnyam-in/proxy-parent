@@ -12,6 +12,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.Singular;
 import lombok.ToString;
 
 /**
@@ -43,6 +44,7 @@ public class PaymentUpdatedAlert implements SignableAlertMessage {
   private ProxyAccountId payerAccountId;
 
   @NonNull
+  @Singular
   private List<ProxyId> receivers;
 
   @Override
