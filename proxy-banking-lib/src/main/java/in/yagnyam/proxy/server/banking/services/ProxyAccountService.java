@@ -119,6 +119,7 @@ public class ProxyAccountService {
         .expiryDate(DateUtils.afterYears(1))
         .maximumAmountPerTransaction(Amount.of(request.getCurrency(), 100))
         .originalAccountEntity(underlyingAccount)
+        .originalAccountId(accountId)
         .build();
 
     proxyAccountRepository.saveProxyAccountWithLinkedAccount(proxyAccountEntity, underlyingAccount);
