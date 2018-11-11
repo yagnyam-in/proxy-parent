@@ -34,12 +34,12 @@ public class AccountBalanceResponse implements SignableMessage, AddressableMessa
 
   @Override
   public ProxyId address() {
-    return proxyAccount.getSignedBy();
+    return proxyAccount.getMessage().getProxyId();
   }
 
   @Override
   public ProxyId signer() {
-    return proxyAccount.getMessage().getProxyId();
+    return proxyAccount.getSignedBy();
   }
 
   @Override
