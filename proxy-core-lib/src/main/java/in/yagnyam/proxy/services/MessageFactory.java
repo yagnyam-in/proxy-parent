@@ -23,11 +23,19 @@ public class MessageFactory {
   @NonNull
   private MessageVerificationService verificationService;
 
-  SignedMessage buildSignedMessage(String signedMessage)
+  SignedMessage buildAndVerifySignedMessage(String signedMessage)
       throws IOException, GeneralSecurityException {
     SignedMessage signedMessageObject = serializer.deserializeSignedMessage(signedMessage);
     return verifyAndPopulateSignedMessage(signedMessageObject);
   }
+
+  public <T extends SignableMessage> SignedMessage<T> buildSignedMessage(
+      String signedMessage, Class<T> underlyingMessageClass)
+      throws IOException, GeneralSecurityException {
+    SignedMessage signedMessageObject = serializer.deserializeSignedMessage(signedMessage);
+    return populateSignedMessage(signedMessageObject, underlyingMessageClass);
+  }
+
 
   public <T extends SignableMessage> SignedMessage<T> verifyAndPopulateSignedMessage(
       SignedMessage signedMessage, Class<T> underlyingMessageClass)

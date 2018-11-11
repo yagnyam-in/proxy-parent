@@ -110,7 +110,7 @@ public class MessageFactoryTest {
         .cryptographyService(cryptographyService)
         .build();
 
-    SignedMessage<ComplexSignableMessage> result = messageFactory.buildSignedMessage(signedText);
+    SignedMessage<ComplexSignableMessage> result = messageFactory.buildAndVerifySignedMessage(signedText);
     System.out.println(result);
     System.out.println(result.getMessage().internalObject);
     assertNotNull(result.getMessage());
