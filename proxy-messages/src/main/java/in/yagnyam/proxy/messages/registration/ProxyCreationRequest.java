@@ -34,6 +34,12 @@ public class ProxyCreationRequest implements RequestMessage {
   private ProxyId proxyId;
 
   /**
+   * Pass phrase to de-activate a given Proxy
+   */
+  @NonNull
+  private String revocationPassPhrase;
+
+  /**
    * Valid Certificate Request for Subject requestId. This is to prevent misusing un-protected
    * endpoint to get new PID
    */

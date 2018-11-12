@@ -35,6 +35,16 @@ public class BankConfigurationRepository {
   }
 
   /**
+   * Fetch all Bank Configurations for given Currency
+   * @param currency Currency
+   * @return All Bank Configurations for given Currency
+   */
+  public List<BankConfigurationEntity> fetchBankConfigurationsForCurrency(String currency) {
+    return ObjectifyService.run(() -> ofy().load().type(BankConfigurationEntity.class).filter("currency", currency).list());
+  }
+
+
+  /**
    * Fetch Bank configuration matching given bankId
    *
    * @param bankId Bank Id

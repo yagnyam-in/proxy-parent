@@ -11,7 +11,9 @@ import in.yagnyam.proxy.server.model.PrivateKeyEntity;
 import in.yagnyam.proxy.server.services.PrivateKeyService;
 import in.yagnyam.proxy.services.CertificateService;
 import in.yagnyam.proxy.utils.StringUtils;
+import java.util.List;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -24,9 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Slf4j
 public class BankConfigurationService {
-
-  @NonNull
-  private String defaultBankId;
 
   @NonNull
   private PrivateKeyService privateKeyService;
@@ -44,9 +43,21 @@ public class BankConfigurationService {
    * Fetch Default Bank Configuration
    * @return Bank Configuration
    */
-  public BankConfigurationEntity getDefaultBankConfiguration() {
-    return getBankConfiguration(defaultBankId);
+  public BankConfigurationEntity getDefaultBankConfigurationForCurrency(String currency) {
+    List<BankConfigurationEntity> matching = bankConfigurationRepository.fetchBankConfigurationsForCurrency(currency).stream()
+        .filter(BankConfigurationEntity::isActive)
+        .collect(Collectors.toList());
+    if (matching.isEmpty()) {
+      log.error("Missing Setup for currency {}", currency);
+      throw ServiceException.internalServerError("Missing Setup");
+    } else if (matching.size() > 1) {
+      log.error("Too many bank configurations ({}) found for currency {}", matching.size(), currency);
+      throw ServiceException.internalServerError("Wrong Setup");
+    } else {
+      return matching.get(0);
+    }
   }
+
 
   /**
    * Fetch Bank Configuration for given Bank Id
@@ -90,11 +101,11 @@ public class BankConfigurationService {
           log.error("Missing Setup: Couldn't find Private Key for " + bankConfiguration);
           return ServiceException.internalServerError("Missing Setup");
         });
-    bankConfiguration.setProxy(fromPrivateKey(privateKey));
+    bankConfiguration.setProxy(privateKeyToProxy(privateKey));
     return bankConfiguration;
   }
 
-  private Proxy fromPrivateKey(PrivateKeyEntity privateKeyEntity) {
+  private Proxy privateKeyToProxy(PrivateKeyEntity privateKeyEntity) {
     Certificate certificate = certificateService
         .getCertificateBySerialNumber(privateKeyEntity.getCertificateSerialNumber())
         .orElseThrow(() -> {
