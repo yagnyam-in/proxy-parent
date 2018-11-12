@@ -54,7 +54,7 @@ public class ProxyAccountService {
     ProxyAccountId proxyAccountId = request.proxyAccount.getMessage().getProxyAccountId();
 
     BankConfigurationEntity bankConfiguration =
-        bankConfigurationService.getBankConfiguration(proxyAccountId.getBankId());
+        bankConfigurationService.getBankConfigurationById(proxyAccountId.getBankId());
 
     ProxyAccountEntity proxyAccountEntity = getProxyAccountEntity(proxyAccountId);
 
@@ -73,7 +73,7 @@ public class ProxyAccountService {
     assertValidRequest(request);
 
     BankConfigurationEntity bankConfiguration =
-        bankConfigurationService.getBankConfiguration(request.getCurrency());
+        bankConfigurationService.getDefaultBankConfigurationForCurrency(request.getCurrency());
 
     ProxyAccountEntity accountEntity = createAccount(request, bankConfiguration);
 

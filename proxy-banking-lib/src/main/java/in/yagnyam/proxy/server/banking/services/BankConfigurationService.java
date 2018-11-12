@@ -46,6 +46,7 @@ public class BankConfigurationService {
   public BankConfigurationEntity getDefaultBankConfigurationForCurrency(String currency) {
     List<BankConfigurationEntity> matching = bankConfigurationRepository.fetchBankConfigurationsForCurrency(currency).stream()
         .filter(BankConfigurationEntity::isActive)
+        .map(this::enrichBankConfiguration)
         .collect(Collectors.toList());
     if (matching.isEmpty()) {
       log.error("Missing Setup for currency {}", currency);
@@ -63,8 +64,8 @@ public class BankConfigurationService {
    * Fetch Bank Configuration for given Bank Id
    * @return Bank Configuration
    */
-  public BankConfigurationEntity getBankConfiguration(@NonNull String bankId) {
-    return getBankConfigurationOrThrow(bankId, () -> ServiceException.internalServerError("Missing Setup"));
+  public BankConfigurationEntity getBankConfigurationById(@NonNull String bankId) {
+    return getBankConfigurationByIdOrThrow(bankId, () -> ServiceException.internalServerError("Missing Setup"));
   }
 
 
@@ -72,7 +73,7 @@ public class BankConfigurationService {
    * Fetch Bank Configuration for given Bank Id
    * @return Bank Configuration
    */
-  public BankConfigurationEntity getBankConfigurationOrThrow(@NonNull String bankId, Supplier<ServiceException> exceptionSupplier) {
+  public BankConfigurationEntity getBankConfigurationByIdOrThrow(@NonNull String bankId, Supplier<ServiceException> exceptionSupplier) {
     return bankConfigurationRepository.getBankConfiguration(bankId)
         .map(this::enrichBankConfiguration)
         .orElseThrow(() -> {
