@@ -27,6 +27,21 @@ import lombok.ToString;
 @EqualsAndHashCode(of = {"requestId"})
 public class DepositLinkRequest implements SignableRequestMessage, AddressableMessage {
 
+  @Builder
+  @NoArgsConstructor(access = AccessLevel.PRIVATE)
+  @AllArgsConstructor(access = AccessLevel.PRIVATE)
+  @Getter
+  @ToString
+  public static class RequestingCustomer {
+
+    private String name;
+
+    private String phone;
+
+    private String email;
+
+  }
+
   @NonNull
   private String requestId;
 
@@ -38,6 +53,10 @@ public class DepositLinkRequest implements SignableRequestMessage, AddressableMe
 
   @NonNull
   private Amount amount;
+
+  private String message;
+
+  private RequestingCustomer requestingCustomer;
 
   @Override
   public ProxyId address() {

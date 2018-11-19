@@ -127,7 +127,13 @@ public class NetworkService {
   private <T> HttpResponse postValueWithHeaders(String url, Map<String, String> headers, T request)
       throws IOException {
     byte[] requestBytes = new ObjectMapper().writeValueAsBytes(request);
-    HttpContent httpContent = new ByteArrayContent("application/json", requestBytes);
+    return postValueWithHeaders(url, headers, "application/json", requestBytes);
+  }
+
+
+  private HttpResponse postValueWithHeaders(String url, Map<String, String> headers, String type, byte[] requestBytes)
+      throws IOException {
+    HttpContent httpContent = new ByteArrayContent(type, requestBytes);
     return HttpResponse.of(url, httpRequestFactory(headers)
         .buildPostRequest(new GenericUrl(url), httpContent)
         .setLoggingEnabled(true)
@@ -136,9 +142,21 @@ public class NetworkService {
         .execute());
   }
 
+
   public <I, O> O postValueWithHeaders(String url, Map<String, String> headers, I request,
       Class<O> resultClass) throws IOException, HttpException {
     try (HttpResponse httpResponse = postValueWithHeaders(url, headers, request)) {
+      if (httpResponse.getStatusCode() < 200 || httpResponse.getStatusCode() >= 300) {
+        throw new  HttpException(httpResponse.getStatusCode(), httpResponse.getContent());
+      } else {
+        return httpResponse.getValue(resultClass);
+      }
+    }
+  }
+
+  public <O> O postWithHeaders(String url, Map<String, String> headers, String type, byte[] requestBytes,
+      Class<O> resultClass) throws IOException, HttpException {
+    try (HttpResponse httpResponse = postValueWithHeaders(url, headers, type, requestBytes)) {
       if (httpResponse.getStatusCode() < 200 || httpResponse.getStatusCode() >= 300) {
         throw new  HttpException(httpResponse.getStatusCode(), httpResponse.getContent());
       } else {

@@ -349,11 +349,11 @@
     <pluginManagement>
       <plugins>
         <!-- Compiler -->
-        <!--plugin>
+        <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
             <version>${maven-compiler-plugin}</version>
-            <configuration>
+            <!--configuration>
                 <fork>false</fork>
                 <compilerId>javac-with-errorprone</compilerId>
                 <forceJavacCompilerUse>true</forceJavacCompilerUse>
@@ -374,8 +374,8 @@
                     <artifactId>error_prone_core</artifactId>
                     <version>${error_prone_core}</version>
                 </dependency>
-            </dependencies>
-        </plugin-->
+            </dependencies-->
+        </plugin>
 
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
