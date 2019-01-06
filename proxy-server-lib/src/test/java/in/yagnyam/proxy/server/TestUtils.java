@@ -42,6 +42,7 @@ public final class TestUtils {
   public static PrivateKeyEntity samplePrivateKeyEntity(String id) {
     return PrivateKeyEntity.builder()
         .id(id)
+        .revocationPassPhrase("password")
         .email("email")
         .phoneNumber("phone")
         .build();

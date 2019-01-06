@@ -35,6 +35,9 @@ public class PrivateKeyEntity {
   @NonNull
   private String id;
 
+  @NonNull
+  private String revocationPassPhrase;
+
   private String name;
 
   private String email;
