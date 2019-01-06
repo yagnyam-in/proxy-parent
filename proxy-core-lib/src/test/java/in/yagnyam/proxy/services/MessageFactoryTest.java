@@ -52,7 +52,10 @@ public class MessageFactoryTest {
 
   private Proxy sampleProxy() {
     ProxyId proxyId = ProxyId.of("dummy", "SHA256");
-    return Proxy.builder().id(proxyId).privateKey(samplePrivateKey())
+    return Proxy.builder()
+        .id(proxyId)
+        .privateKey(samplePrivateKey())
+        .certificateSerialNumber("123456")
         .certificate(mock(Certificate.class)).build();
   }
 

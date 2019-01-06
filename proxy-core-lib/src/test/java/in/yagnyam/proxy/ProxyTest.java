@@ -14,7 +14,10 @@ public class ProxyTest {
   @Test
   public void testGetUniqueId() {
     ProxyId proxyId = ProxyId.of("abc", "123");
-    Proxy proxy = Proxy.builder().id(proxyId).certificate(mock(Certificate.class)).build();
+    Proxy proxy = Proxy.builder()
+        .id(proxyId)
+        .certificateSerialNumber("123")
+        .certificate(mock(Certificate.class)).build();
     assertEquals("abc#123", proxy.getUniqueId());
   }
 

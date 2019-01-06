@@ -1,7 +1,7 @@
 package in.yagnyam.proxy.messages.registration;
 
-import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.RequestMessage;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -31,7 +31,7 @@ public class ProxyCreationRequest implements RequestMessage {
    * Unique Proxy Id
    */
   @NonNull
-  private ProxyId proxyId;
+  private String proxyId;
 
   /**
    * Pass phrase to de-activate a given Proxy (sha256(proxyId#passPhrase))
@@ -49,5 +49,12 @@ public class ProxyCreationRequest implements RequestMessage {
   @Override
   public String requestId() {
     return requestId;
+  }
+
+  public boolean isValid() {
+    return StringUtils.isValid(requestId)
+        && StringUtils.isValid(proxyId)
+        && StringUtils.isValid(revocationPassPhraseSha256)
+        && StringUtils.isValid(certificateRequestEncoded);
   }
 }

@@ -1,6 +1,7 @@
 package in.yagnyam.proxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import in.yagnyam.proxy.utils.StringUtils;
 import java.security.PrivateKey;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,7 +11,7 @@ import lombok.ToString;
 
 @Builder
 @Getter
-@ToString(of = {"id", "name"})
+@ToString(of = {"id", "name", "certificateSerialNumber"})
 public class Proxy {
 
   @NonNull
@@ -18,6 +19,7 @@ public class Proxy {
 
   private String name;
 
+  @NonNull
   private String certificateSerialNumber;
 
   @NonNull
@@ -43,5 +45,11 @@ public class Proxy {
 
   public String getUniqueId() {
     return id.uniqueId();
+  }
+
+  public boolean isValid() {
+    return id != null && id.isValid()
+        && StringUtils.isValid(certificateSerialNumber)
+        && certificate != null && certificate.isValid();
   }
 }

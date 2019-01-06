@@ -44,7 +44,10 @@ public class MessageSigningServiceTest {
   @Test
   public void testSign() throws IOException, GeneralSecurityException {
     ProxyId proxyId = ProxyId.of("dummy", "SHA256");
-    Proxy proxy = Proxy.builder().id(proxyId).privateKey(samplePrivateKey())
+    Proxy proxy = Proxy.builder()
+        .id(proxyId)
+        .certificateSerialNumber("1234")
+        .privateKey(samplePrivateKey())
         .certificate(mock(Certificate.class)).build();
 
     SignableMessage signableMessage = new SignableMessage() {
@@ -76,7 +79,10 @@ public class MessageSigningServiceTest {
   @Test(expected = IllegalStateException.class)
   public void testSignWithDifferentSha() throws IOException, GeneralSecurityException {
     ProxyId proxyId = ProxyId.of("dummy", "DifferentSha256");
-    Proxy proxy = Proxy.builder().id(proxyId).privateKey(samplePrivateKey())
+    Proxy proxy = Proxy.builder()
+        .id(proxyId)
+        .certificateSerialNumber("123456")
+        .privateKey(samplePrivateKey())
         .certificate(mock(Certificate.class)).build();
 
     SignableMessage signableMessage = new SignableMessage() {
@@ -107,7 +113,10 @@ public class MessageSigningServiceTest {
   @Test
   public void testSignForProxyIdWithoutSha() throws IOException, GeneralSecurityException {
     ProxyId proxyId = ProxyId.of("dummy", "DifferentSha256");
-    Proxy proxy = Proxy.builder().id(proxyId).privateKey(samplePrivateKey())
+    Proxy proxy = Proxy.builder()
+        .id(proxyId)
+        .certificateSerialNumber("12345")
+        .privateKey(samplePrivateKey())
         .certificate(mock(Certificate.class)).build();
 
     SignableMessage signableMessage = new SignableMessage() {
