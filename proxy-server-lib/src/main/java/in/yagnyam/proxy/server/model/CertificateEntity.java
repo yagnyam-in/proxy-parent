@@ -41,4 +41,8 @@ public class CertificateEntity {
 
   private String certificateEncoded;
 
+  private String issuerSerialNumber;
+
+  private String issuerSha256Thumbprint;
+
 }

@@ -47,6 +47,10 @@ public class Certificate {
   @NonNull
   private String certificateEncoded;
 
+  private String issuerSerialNumber;
+
+  private String issuerSha256Thumbprint;
+
   @JsonIgnore
   @Setter
   private X509Certificate certificate;

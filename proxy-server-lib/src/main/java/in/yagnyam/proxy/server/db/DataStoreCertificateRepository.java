@@ -40,6 +40,8 @@ public class DataStoreCertificateRepository implements CertificateRepository {
         .validFrom(certificate.getValidFrom())
         .validTill(certificate.getValidTill())
         .certificateEncoded(certificate.getCertificateEncoded())
+        .issuerSerialNumber(certificate.getIssuerSerialNumber())
+        .issuerSha256Thumbprint(certificate.getIssuerSha256Thumbprint())
         .build();
   }
 
@@ -112,6 +114,8 @@ public class DataStoreCertificateRepository implements CertificateRepository {
         .validFrom(certificateEntity.getValidFrom())
         .validTill(certificateEntity.getValidTill())
         .certificateEncoded(certificateEntity.getCertificateEncoded())
+        .issuerSerialNumber(certificateEntity.getIssuerSerialNumber())
+        .issuerSha256Thumbprint(certificateEntity.getIssuerSha256Thumbprint())
         .build();
     return CertificateUtils.enrichCertificate(certificate, pemService);
   }
