@@ -1,6 +1,8 @@
 package in.yagnyam.proxy;
 
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import in.yagnyam.proxy.utils.DateUtils;
 import java.io.ByteArrayInputStream;
@@ -100,4 +102,33 @@ public class TestUtils {
       }
     }
   }
+
+
+  public static Certificate sampleCertificateForSerialNumber(String serialNumber, String sha256) {
+    return Certificate.builder()
+        .alias(serialNumber)
+        .certificateEncoded(serialNumber + " encoded with sha256: " + sha256)
+        .owner(serialNumber)
+        .serialNumber(serialNumber)
+        .sha256Thumbprint(sha256)
+        .subject("CN=" + serialNumber)
+        .validFrom(DateUtils.now())
+        .validTill(DateUtils.afterYears(1))
+        .build();
+  }
+
+  public static Certificate sampleCertificateForId(String id, String sha256) {
+    return Certificate.builder()
+        .alias(id)
+        .certificateEncoded(id + " encoded with sha256: " + sha256)
+        .owner(id)
+        .serialNumber(id)
+        .sha256Thumbprint(sha256)
+        .subject("CN=" + id)
+        .validFrom(DateUtils.now())
+        .validTill(DateUtils.afterYears(1))
+        .build();
+  }
+
+
 }

@@ -14,9 +14,10 @@ public interface CertificateRepository {
    * Fetch the certificate from Database
    *
    * @param serialNumber Certificate Serial Number
+   * @param sha256Thumbprint Certificate Sha 256
    * @return Certificate with given Serial Number
    */
-  Optional<Certificate> getCertificateBySerialNumber(@NonNull String serialNumber);
+  Optional<Certificate> getCertificateBySerialNumber(@NonNull String serialNumber, String sha256Thumbprint);
 
   /**
    * Fetch the certificate from Database using SHA256 Thumbprint
@@ -30,9 +31,10 @@ public interface CertificateRepository {
    * Fetch the certificate from Database using Certificate Id
    *
    * @param certificateId Certificate Id
+   * @param sha256Thumbprint Certificate Sha 256
    * @return Certificates matching Id
    */
-  List<Certificate> getCertificatesById(@NonNull String certificateId);
+  List<Certificate> getCertificatesById(@NonNull String certificateId, String sha256Thumbprint);
 
   /**
    * Save the Certificate along with Certificate Request

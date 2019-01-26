@@ -7,6 +7,7 @@ import in.yagnyam.proxy.services.CertificateService;
 import in.yagnyam.proxy.services.PemService;
 import in.yagnyam.proxy.services.RemoteCertificateService;
 import in.yagnyam.proxy.utils.CertificateUtils;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -38,11 +39,17 @@ public class DbBackedCertificateService implements CertificateService {
   /**
    * {@inheritDoc}
    */
-  public Optional<Certificate> getCertificateBySerialNumber(@NonNull String serialNumber) {
+  public Optional<Certificate> getCertificate(@NonNull String certificateId,
+      String sha256Thumbprint) {
     Optional<Certificate> certificate = certificateRepository
-        .getCertificateBySerialNumber(serialNumber);
+        .getCertificatesById(certificateId, sha256Thumbprint).stream()
+        .findFirst();
     if (!certificate.isPresent()) {
-      certificate = remoteCertificateService.getCertificateBySerialNumber(serialNumber);
+      certificate = certificateRepository
+          .getCertificateBySerialNumber(certificateId, sha256Thumbprint);
+    }
+    if (!certificate.isPresent()) {
+      certificate = remoteCertificateService.getCertificate(certificateId, sha256Thumbprint);
       certificate.ifPresent(certificateRepository::saveCertificate);
     }
     return certificate.map(c -> CertificateUtils.enrichCertificate(c, pemService));
@@ -52,10 +59,17 @@ public class DbBackedCertificateService implements CertificateService {
    * {@inheritDoc}
    */
   @Override
-  public List<Certificate> getCertificatesById(String certificateId) {
-    List<Certificate> certificates = certificateRepository.getCertificatesById(certificateId);
+  public List<Certificate> getCertificates(@NonNull String certificateId, String sha256Thumbprint) {
+    List<Certificate> certificates = certificateRepository
+        .getCertificatesById(certificateId, sha256Thumbprint);
     if (certificates.isEmpty()) {
-      certificates = remoteCertificateService.getCertificatesById(certificateId);
+      certificates = certificateRepository
+          .getCertificateBySerialNumber(certificateId, sha256Thumbprint)
+          .map(Collections::singletonList)
+          .orElse(Collections.emptyList());
+    }
+    if (certificates.isEmpty()) {
+      certificates = remoteCertificateService.getCertificates(certificateId, sha256Thumbprint);
       certificates.forEach(certificateRepository::saveCertificate);
     }
     return certificates.stream().map(c -> CertificateUtils.enrichCertificate(c, pemService))
@@ -63,9 +77,10 @@ public class DbBackedCertificateService implements CertificateService {
   }
 
   @Override
-  public Optional<CertificateChain> getCertificateChain(String certificateId) {
+  public Optional<CertificateChain> getCertificateChain(@NonNull String certificateId,
+      String sha256Thumbprint) {
     // TODO: Use DB as Cache
-    return remoteCertificateService.getCertificateChain(certificateId);
+    return remoteCertificateService.getCertificateChain(certificateId, sha256Thumbprint);
   }
 
 

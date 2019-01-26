@@ -6,6 +6,7 @@ import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.SignedMessageSignature;
 import java.security.GeneralSecurityException;
 import java.util.List;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -100,16 +101,13 @@ public class MessageVerificationService {
       throw new IllegalStateException(
           "SignedMessage must be de-serialized before verifying signature");
     }
-    List<Proxy> proxies = proxyResolver.resolveProxy(message.getSignedBy());
-    if (proxies.isEmpty()) {
-      log.error("Invalid Signer/Proxy Id. No proxies found.");
-      throw new IllegalArgumentException("Invalid Signer/Proxy Id. No proxies found.");
-    } else if (proxies.size() != 1) {
-      log.error("Incomplete Signer/Proxy Id. Multiple proxies found.");
-      throw new IllegalArgumentException("Incomplete Signer/Proxy Id. Multiple proxies found.");
-    } else {
-      return proxies.get(0);
+
+    Optional<Proxy> proxy = proxyResolver.resolveProxy(message.getSignedBy());
+    if (!proxy.isPresent()) {
+      log.error("Invalid Signer/Proxy Id. No proxy found.");
+      throw new IllegalArgumentException("Invalid Signer/Proxy Id. No proxy found.");
     }
+    return proxy.get();
   }
 
 

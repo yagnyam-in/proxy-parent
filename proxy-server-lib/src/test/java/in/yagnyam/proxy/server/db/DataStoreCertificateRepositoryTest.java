@@ -46,13 +46,13 @@ public class DataStoreCertificateRepositoryTest extends RepositoryTestHelper {
   @Test
   public void testGetCertificate_InvalidArguments() {
     thrown.expect(NullPointerException.class);
-    certificateRepository.getCertificateBySerialNumber(null);
+    certificateRepository.getCertificateBySerialNumber(null, "sha256");
   }
 
 
   @Test
   public void testGetCertificate_NotExists() {
-    assertFalse(certificateRepository.getCertificateBySerialNumber("1").isPresent());
+    assertFalse(certificateRepository.getCertificateBySerialNumber("1", null).isPresent());
   }
 
 
@@ -65,8 +65,8 @@ public class DataStoreCertificateRepositoryTest extends RepositoryTestHelper {
         ofy().save().entity(DataStoreCertificateRepository.toEntity(certificate)).now();
       }
     });
-    assertTrue(certificateRepository.getCertificateBySerialNumber("2").isPresent());
-    assertEquals(certificateRepository.getCertificateBySerialNumber("2").get(), certificate);
+    assertTrue(certificateRepository.getCertificateBySerialNumber("2", null).isPresent());
+    assertEquals(certificateRepository.getCertificateBySerialNumber("2", null).get(), certificate);
   }
 
 

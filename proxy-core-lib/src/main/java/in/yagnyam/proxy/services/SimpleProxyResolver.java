@@ -2,8 +2,7 @@ package in.yagnyam.proxy.services;
 
 import in.yagnyam.proxy.Proxy;
 import in.yagnyam.proxy.ProxyId;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 import lombok.Builder;
 import lombok.NonNull;
 
@@ -22,9 +21,8 @@ public class SimpleProxyResolver implements ProxyResolver {
    * @param proxyId Proxy Id
    * @return Proxy if available, otherwise None
    */
-  public List<Proxy> resolveProxy(@NonNull ProxyId proxyId) {
-    return certificateService.getCertificatesById(proxyId.uniqueId()).stream()
-        .map(Proxy::of)
-        .collect(Collectors.toList());
+  public Optional<Proxy> resolveProxy(@NonNull ProxyId proxyId) {
+    return certificateService.getCertificate(proxyId.getId(), proxyId.getSha256Thumbprint())
+        .map(Proxy::of);
   }
 }

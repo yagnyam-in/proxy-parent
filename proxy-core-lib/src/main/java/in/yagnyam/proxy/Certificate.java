@@ -6,7 +6,6 @@ import in.yagnyam.proxy.utils.DateUtils;
 import in.yagnyam.proxy.utils.StringUtils;
 import java.security.cert.X509Certificate;
 import java.util.Date;
-import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -52,52 +51,8 @@ public class Certificate {
   @Setter
   private X509Certificate certificate;
 
-  public static String extractOnlyId(String certificateUniqueId) {
-    if (StringUtils.isEmpty(certificateUniqueId)) {
-      throw new IllegalArgumentException("Invalid certificate Id");
-    }
-    String[] tokens = certificateUniqueId.split("#");
-    if (tokens.length <= 2) {
-      return tokens[0];
-    } else {
-      throw new IllegalArgumentException("Invalid certificate Id" + certificateUniqueId);
-    }
-  }
-
-  public static Optional<String> extractSha256Thumbprint(String certificateUniqueId) {
-    if (StringUtils.isEmpty(certificateUniqueId)) {
-      throw new IllegalArgumentException("Invalid certificate Id");
-    }
-    String[] tokens = certificateUniqueId.split("#");
-    if (tokens.length < 2) {
-      return Optional.empty();
-    } else if (tokens.length == 2) {
-      return Optional.of(tokens[1]);
-    } else {
-      throw new IllegalArgumentException("Invalid certificate Id" + certificateUniqueId);
-    }
-  }
-
   public String getId() {
     return owner;
-  }
-
-  public String getUniqueId() {
-    return owner + "#" + sha256Thumbprint;
-  }
-
-  public boolean matchesId(@NonNull String certificateId) {
-    if (owner.equals(extractOnlyId(certificateId))) {
-      Optional<String> sha256 = extractSha256Thumbprint(certificateId);
-      return !sha256.isPresent() || sha256Thumbprint.equals(sha256.get());
-    }
-    return false;
-  }
-
-  public boolean matchesId(ProxyId proxyId) {
-    return proxyId != null && proxyId.getId().equals(owner)
-        && (proxyId.getSha256Thumbprint() == null || StringUtils
-        .equals(proxyId.getSha256Thumbprint(), sha256Thumbprint));
   }
 
   @JsonIgnore

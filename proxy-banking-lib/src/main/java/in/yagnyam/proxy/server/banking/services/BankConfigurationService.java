@@ -1,8 +1,7 @@
 package in.yagnyam.proxy.server.banking.services;
 
-import in.yagnyam.proxy.Certificate;
-import in.yagnyam.proxy.Proxy;
 import in.yagnyam.proxy.ProxyId;
+import in.yagnyam.proxy.ProxyKey;
 import in.yagnyam.proxy.server.ServiceException;
 import in.yagnyam.proxy.server.banking.db.BankConfigurationRepository;
 import in.yagnyam.proxy.server.banking.db.RepresentativeAccountRepository;
@@ -41,10 +40,12 @@ public class BankConfigurationService {
 
   /**
    * Fetch Default Bank Configuration
+   *
    * @return Bank Configuration
    */
   public BankConfigurationEntity getDefaultBankConfigurationForCurrency(String currency) {
-    List<BankConfigurationEntity> matching = bankConfigurationRepository.fetchBankConfigurationsForCurrency(currency).stream()
+    List<BankConfigurationEntity> matching = bankConfigurationRepository
+        .fetchBankConfigurationsForCurrency(currency).stream()
         .filter(BankConfigurationEntity::isActive)
         .map(this::enrichBankConfiguration)
         .collect(Collectors.toList());
@@ -52,7 +53,8 @@ public class BankConfigurationService {
       log.error("Missing Setup for currency {}", currency);
       throw ServiceException.internalServerError("Missing Setup");
     } else if (matching.size() > 1) {
-      log.error("Too many bank configurations ({}) found for currency {}", matching.size(), currency);
+      log.error("Too many bank configurations ({}) found for currency {}", matching.size(),
+          currency);
       throw ServiceException.internalServerError("Wrong Setup");
     } else {
       return matching.get(0);
@@ -62,18 +64,22 @@ public class BankConfigurationService {
 
   /**
    * Fetch Bank Configuration for given Bank Id
+   *
    * @return Bank Configuration
    */
   public BankConfigurationEntity getBankConfigurationById(@NonNull String bankId) {
-    return getBankConfigurationByIdOrThrow(bankId, () -> ServiceException.internalServerError("Missing Setup"));
+    return getBankConfigurationByIdOrThrow(bankId,
+        () -> ServiceException.internalServerError("Missing Setup"));
   }
 
 
   /**
    * Fetch Bank Configuration for given Bank Id
+   *
    * @return Bank Configuration
    */
-  public BankConfigurationEntity getBankConfigurationByIdOrThrow(@NonNull String bankId, Supplier<ServiceException> exceptionSupplier) {
+  public BankConfigurationEntity getBankConfigurationByIdOrThrow(@NonNull String bankId,
+      Supplier<ServiceException> exceptionSupplier) {
     return bankConfigurationRepository.getBankConfiguration(bankId)
         .map(this::enrichBankConfiguration)
         .orElseThrow(() -> {
@@ -102,25 +108,18 @@ public class BankConfigurationService {
           log.error("Missing Setup: Couldn't find Private Key for " + bankConfiguration);
           return ServiceException.internalServerError("Missing Setup");
         });
-    bankConfiguration.setProxy(privateKeyToProxy(privateKey));
+    bankConfiguration.setProxyKey(privateKeyToProxyKey(privateKey));
     return bankConfiguration;
   }
 
-  private Proxy privateKeyToProxy(PrivateKeyEntity privateKeyEntity) {
-    Certificate certificate = certificateService
-        .getCertificateBySerialNumber(privateKeyEntity.getCertificateSerialNumber())
-        .orElseThrow(() -> {
-          log.error("Missing Setup: No certificate found for " + privateKeyEntity);
-          return ServiceException.internalServerError("Missing Setup");
-        });
-
-    return Proxy.builder()
-        .privateKey(privateKeyEntity.getPrivateKey())
-        .id(ProxyId.of(privateKeyEntity.getId(), certificate.getSha256Thumbprint()))
-        .certificateSerialNumber(privateKeyEntity.getCertificateSerialNumber())
+  private ProxyKey privateKeyToProxyKey(PrivateKeyEntity privateKeyEntity) {
+    return ProxyKey.builder()
+        .id(ProxyId.of(privateKeyEntity.getId(), privateKeyEntity.getCertificateSha256Thumbprint()))
         .name(privateKeyEntity.getName())
-        .certificate(certificate)
+        .privateKey(privateKeyEntity.getPrivateKey())
+        .privateKeyEncoded(privateKeyEntity.getPrivateKeyEncoded())
         .build();
   }
+
 
 }

@@ -11,11 +11,8 @@ import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.SignedMessageSignature;
-import java.security.GeneralSecurityException;
 import java.security.Security;
-import java.util.Arrays;
-import java.util.Collections;
-import lombok.ToString;
+import java.util.Optional;
 import lombok.val;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Test;
@@ -88,29 +85,13 @@ public class MessageVerificationServiceTest {
   @Test(expected = IllegalArgumentException.class)
   public void testGetSignerProxy_InvalidProxy() {
     ProxyResolver proxyResolver = mock(ProxyResolver.class);
-    when(proxyResolver.resolveProxy(any())).thenReturn(Collections.emptyList());
+    when(proxyResolver.resolveProxy(any())).thenReturn(Optional.empty());
     DummySignableMessage signableMessage = new DummySignableMessage();
     SignedMessage<DummySignableMessage> signedMessage = SignedMessage.<DummySignableMessage>builder()
         .type(DummySignableMessage.class.getName())
         .message(signableMessage)
         .payload("Dummy")
         .signedBy(signableMessage.signer())
-        .signature(SignedMessageSignature.of("abc", "dummy"))
-        .build();
-    verificationService(proxyResolver).getSignerProxy(signedMessage);
-  }
-
-
-  @Test(expected = IllegalArgumentException.class)
-  public void testGetSignerProxy_AmbiguousProxy() {
-    ProxyResolver proxyResolver = mock(ProxyResolver.class);
-    when(proxyResolver.resolveProxy(any())).thenReturn(Arrays.asList(mock(Proxy.class), mock(Proxy.class)));
-    DummySignableMessage signableMessage = new DummySignableMessage();
-    SignedMessage<DummySignableMessage> signedMessage = SignedMessage.<DummySignableMessage>builder()
-        .type(DummySignableMessage.class.getName())
-        .message(signableMessage)
-        .signedBy(signableMessage.signer())
-        .payload("Dummy")
         .signature(SignedMessageSignature.of("abc", "dummy"))
         .build();
     verificationService(proxyResolver).getSignerProxy(signedMessage);
@@ -120,7 +101,7 @@ public class MessageVerificationServiceTest {
   @Test
   public void testGetSignerProxy_UniqueProxy() {
     ProxyResolver proxyResolver = mock(ProxyResolver.class);
-    when(proxyResolver.resolveProxy(any())).thenReturn(Collections.singletonList(mock(Proxy.class)));
+    when(proxyResolver.resolveProxy(any())).thenReturn(Optional.of(mock(Proxy.class)));
     DummySignableMessage signableMessage = new DummySignableMessage();
     SignedMessage<DummySignableMessage> signedMessage = SignedMessage.<DummySignableMessage>builder()
         .type(DummySignableMessage.class.getName())
@@ -131,7 +112,6 @@ public class MessageVerificationServiceTest {
         .build();
     assertNotNull(verificationService(proxyResolver).getSignerProxy(signedMessage));
   }
-
 
 
   private MessageVerificationService verificationService(ProxyResolver proxyResolver) {

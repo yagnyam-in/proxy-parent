@@ -11,7 +11,7 @@ import com.googlecode.objectify.annotation.Index;
 import com.googlecode.objectify.annotation.Load;
 import com.googlecode.objectify.annotation.OnLoad;
 import com.googlecode.objectify.annotation.OnSave;
-import in.yagnyam.proxy.Proxy;
+import in.yagnyam.proxy.ProxyKey;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -49,7 +49,7 @@ public class BankConfigurationEntity {
 
   @Ignore
   @JsonIgnore
-  private Proxy proxy;
+  private ProxyKey proxyKey;
 
   @Ignore
   @JsonIgnore

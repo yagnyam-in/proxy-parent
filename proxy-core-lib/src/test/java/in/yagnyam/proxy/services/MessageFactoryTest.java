@@ -10,6 +10,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.Certificate;
 import in.yagnyam.proxy.Proxy;
 import in.yagnyam.proxy.ProxyId;
+import in.yagnyam.proxy.ProxyKey;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import java.io.IOException;
@@ -42,26 +43,26 @@ public class MessageFactoryTest {
 
   private CryptographyService cryptographyService = BcCryptographyService.builder().build();
 
+  private ProxyId sampleProxyId() {
+    return ProxyId.of("dummy", "SHA256");
+  }
+
   @SneakyThrows
-  private PrivateKey samplePrivateKey() {
+  private ProxyKey sampleProxyKey() {
     KeyPairGenerator generator = KeyPairGenerator
         .getInstance("RSA", BouncyCastleProvider.PROVIDER_NAME);
     generator.initialize(2048, new SecureRandom());
-    return generator.generateKeyPair().getPrivate();
-  }
-
-  private Proxy sampleProxy() {
-    ProxyId proxyId = ProxyId.of("dummy", "SHA256");
-    return Proxy.builder()
-        .id(proxyId)
-        .privateKey(samplePrivateKey())
-        .certificateSerialNumber("123456")
-        .certificate(mock(Certificate.class)).build();
+    PrivateKey privateKey = generator.generateKeyPair().getPrivate();
+    return ProxyKey.builder()
+        .id(sampleProxyId())
+        .privateKey(privateKey)
+        .privateKeyEncoded("PKE")
+        .build();
   }
 
   @Test
   public void testVerifyAndBuildSignedMessage() throws IOException, GeneralSecurityException {
-    Proxy proxy = sampleProxy();
+    ProxyKey proxyKey = sampleProxyKey();
 
     MessageVerificationService verificationService = mock(MessageVerificationService.class);
     doAnswer(invocation -> null).when(verificationService).verify(any(SignedMessage.class));
@@ -72,7 +73,7 @@ public class MessageFactoryTest {
         .signatureAlgorithm("SHA256WithRSAEncryption")
         .build();
     SimpleSignableMessage signableMessage = new SimpleSignableMessage();
-    SignedMessage<SimpleSignableMessage> signedMessage = service.sign(signableMessage, proxy);
+    SignedMessage<SimpleSignableMessage> signedMessage = service.sign(signableMessage, proxyKey);
 
     MessageFactory messageFactory = MessageFactory.builder()
         .serializer(messageSerializerService)
@@ -86,7 +87,7 @@ public class MessageFactoryTest {
   @Test
   public void testVerifyAndBuildSignedMessage_InnerObject()
       throws IOException, GeneralSecurityException {
-    Proxy proxy = sampleProxy();
+    ProxyKey proxyKey = sampleProxyKey();
 
     MessageVerificationService verificationService = mock(MessageVerificationService.class);
     doAnswer(invocation -> null).when(verificationService).verify(any(SignedMessage.class));
@@ -98,12 +99,13 @@ public class MessageFactoryTest {
         .build();
 
     SimpleSignableMessage simpleMessage = new SimpleSignableMessage();
-    SignedMessage<SimpleSignableMessage> signedSimpleMessage = service.sign(simpleMessage, proxy);
+    SignedMessage<SimpleSignableMessage> signedSimpleMessage = service
+        .sign(simpleMessage, proxyKey);
 
     ComplexSignableMessage complexMessage = new ComplexSignableMessage();
     complexMessage.internalObject = signedSimpleMessage;
     SignedMessage<ComplexSignableMessage> signedComplexMessage = service
-        .sign(complexMessage, proxy);
+        .sign(complexMessage, proxyKey);
     String signedText = messageSerializerService.serializeSignedMessage(signedComplexMessage);
     System.out.println("signedText: " + signedText);
 
@@ -113,7 +115,8 @@ public class MessageFactoryTest {
         .cryptographyService(cryptographyService)
         .build();
 
-    SignedMessage<ComplexSignableMessage> result = messageFactory.buildAndVerifySignedMessage(signedText);
+    SignedMessage<ComplexSignableMessage> result = messageFactory
+        .buildAndVerifySignedMessage(signedText);
     System.out.println(result);
     System.out.println(result.getMessage().internalObject);
     assertNotNull(result.getMessage());
@@ -122,7 +125,7 @@ public class MessageFactoryTest {
   @Test
   public void testVerifyAndBuildSignedMessage_InvalidMessage()
       throws IOException, GeneralSecurityException {
-    Proxy proxy = sampleProxy();
+    ProxyKey proxyKey = sampleProxyKey();
     thrown.expect(IllegalArgumentException.class);
 
     MessageVerificationService verificationService = mock(MessageVerificationService.class);
@@ -135,7 +138,7 @@ public class MessageFactoryTest {
         .signatureAlgorithm("SHA256WithRSAEncryption")
         .build();
     SimpleSignableMessage signableMessage = new SimpleSignableMessage();
-    SignedMessage<SimpleSignableMessage> signedMessage = service.sign(signableMessage, proxy);
+    SignedMessage<SimpleSignableMessage> signedMessage = service.sign(signableMessage, proxyKey);
 
     MessageFactory messageFactory = MessageFactory.builder()
         .serializer(messageSerializerService)

@@ -32,7 +32,7 @@ public class VerificationKeyResolverAdapter implements VerificationKeyResolver {
       log.info("Header " + KEY_ID + " not present in the JWS in " + jws);
       throw new IllegalArgumentException("Header " + KEY_ID + " not present in the JWS");
     }
-    return certificateService.getCertificateBySerialNumber(serialNumber)
+    return certificateService.getCertificate(serialNumber, null)
         .orElseThrow(
             () -> new UnresolvableKeyException("Unable fetch the certificate " + serialNumber))
         .getCertificate()

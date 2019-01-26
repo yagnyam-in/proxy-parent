@@ -7,6 +7,7 @@ import com.googlecode.objectify.ObjectifyService;
 import com.googlecode.objectify.VoidWork;
 import in.yagnyam.proxy.Certificate;
 import in.yagnyam.proxy.server.model.CertificateEntity;
+import in.yagnyam.proxy.services.CertificateService;
 import in.yagnyam.proxy.services.PemService;
 import in.yagnyam.proxy.utils.CertificateUtils;
 import java.util.List;
@@ -46,11 +47,13 @@ public class DataStoreCertificateRepository implements CertificateRepository {
    * {@inheritDoc}
    */
   @Override
-  public Optional<Certificate> getCertificateBySerialNumber(@NonNull String serialNumber) {
+  public Optional<Certificate> getCertificateBySerialNumber(@NonNull String serialNumber, String sha256Thumbprint) {
     return ObjectifyService.run(() -> {
           CertificateEntity entity = ofy().load().key(Key.create(CertificateEntity.class, serialNumber))
               .now();
-          return Optional.ofNullable(entity).map(this::fromEntity);
+          return Optional.ofNullable(entity)
+              .map(this::fromEntity)
+              .filter(CertificateService.sha256MatcherForCertificate(sha256Thumbprint));
         }
     );
   }
@@ -71,14 +74,13 @@ public class DataStoreCertificateRepository implements CertificateRepository {
    * {@inheritDoc}
    */
   @Override
-  public List<Certificate> getCertificatesById(String certificateId) {
-    String owner = Certificate.extractOnlyId(certificateId);
+  public List<Certificate> getCertificatesById(@NonNull String certificateId, String sha256Thumbprint) {
     return ObjectifyService.run(() -> ofy().load()
         .type(CertificateEntity.class)
-        .filter("owner", owner)
+        .filter("owner", certificateId)
         .list().stream()
         .map(this::fromEntity)
-        .filter((c) -> c.matchesId(certificateId))
+        .filter(CertificateService.sha256MatcherForCertificate(sha256Thumbprint))
         .collect(Collectors.toList())
     );
   }

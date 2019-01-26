@@ -1,6 +1,6 @@
 package in.yagnyam.proxy.server.banking.services;
 
-import in.yagnyam.proxy.Proxy;
+import in.yagnyam.proxy.ProxyKey;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.messages.banking.AccountBalanceRequest;
@@ -64,7 +64,7 @@ public class ProxyAccountService {
         .balance(proxyAccountEntity.getOriginalAccountEntity().getBalance())
         .build();
 
-    return sign(response, bankConfiguration.getProxy());
+    return sign(response, bankConfiguration.getProxyKey());
   }
 
   public SignedMessage<ProxyAccountCreationResponse> createProxyAccount(
@@ -82,10 +82,10 @@ public class ProxyAccountService {
         .accountNumber(accountEntity.getOriginalAccountEntity().getAccountId())
         .bankName(accountEntity.getOriginalAccountEntity().getBank())
         .balance(accountEntity.getOriginalAccountEntity().getBalance())
-        .proxyAccount(sign(accountEntity.asProxyAccount(), bankConfiguration.getProxy()))
+        .proxyAccount(sign(accountEntity.asProxyAccount(), bankConfiguration.getProxyKey()))
         .build();
 
-    return sign(response, bankConfiguration.getProxy());
+    return sign(response, bankConfiguration.getProxyKey());
   }
 
   private String randomAccountId() {
@@ -128,7 +128,7 @@ public class ProxyAccountService {
 
   }
 
-  private <T extends SignableMessage> SignedMessage<T> sign(T message, Proxy signer) {
+  private <T extends SignableMessage> SignedMessage<T> sign(T message, ProxyKey signer) {
     try {
       return messageSigningService.sign(message, signer);
     } catch (IOException | GeneralSecurityException e) {

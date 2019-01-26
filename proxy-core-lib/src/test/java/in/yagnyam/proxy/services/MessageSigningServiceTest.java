@@ -1,10 +1,7 @@
 package in.yagnyam.proxy.services;
 
-import static org.mockito.Mockito.mock;
-
-import in.yagnyam.proxy.Certificate;
-import in.yagnyam.proxy.Proxy;
 import in.yagnyam.proxy.ProxyId;
+import in.yagnyam.proxy.ProxyKey;
 import in.yagnyam.proxy.SignableMessage;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -44,11 +41,11 @@ public class MessageSigningServiceTest {
   @Test
   public void testSign() throws IOException, GeneralSecurityException {
     ProxyId proxyId = ProxyId.of("dummy", "SHA256");
-    Proxy proxy = Proxy.builder()
+    ProxyKey proxyKey = ProxyKey.builder()
         .id(proxyId)
-        .certificateSerialNumber("1234")
         .privateKey(samplePrivateKey())
-        .certificate(mock(Certificate.class)).build();
+        .privateKeyEncoded("PKE")
+        .build();
 
     SignableMessage signableMessage = new SignableMessage() {
       @Override
@@ -71,7 +68,7 @@ public class MessageSigningServiceTest {
         .cryptographyService(cryptographyService)
         .signatureAlgorithm("SHA256WithRSAEncryption")
         .build();
-    val s = service.sign(signableMessage, proxy);
+    val s = service.sign(signableMessage, proxyKey);
     System.out.println(s);
   }
 
@@ -79,11 +76,11 @@ public class MessageSigningServiceTest {
   @Test(expected = IllegalStateException.class)
   public void testSignWithDifferentSha() throws IOException, GeneralSecurityException {
     ProxyId proxyId = ProxyId.of("dummy", "DifferentSha256");
-    Proxy proxy = Proxy.builder()
+    ProxyKey proxyKey = ProxyKey.builder()
         .id(proxyId)
-        .certificateSerialNumber("123456")
         .privateKey(samplePrivateKey())
-        .certificate(mock(Certificate.class)).build();
+        .privateKeyEncoded("PKE")
+        .build();
 
     SignableMessage signableMessage = new SignableMessage() {
       @Override
@@ -106,18 +103,18 @@ public class MessageSigningServiceTest {
         .cryptographyService(cryptographyService)
         .signatureAlgorithm("SHA256WithRSAEncryption")
         .build();
-    val s = service.sign(signableMessage, proxy);
+    val s = service.sign(signableMessage, proxyKey);
     System.out.println(s);
   }
 
   @Test
   public void testSignForProxyIdWithoutSha() throws IOException, GeneralSecurityException {
     ProxyId proxyId = ProxyId.of("dummy", "DifferentSha256");
-    Proxy proxy = Proxy.builder()
+    ProxyKey proxyKey = ProxyKey.builder()
         .id(proxyId)
-        .certificateSerialNumber("12345")
         .privateKey(samplePrivateKey())
-        .certificate(mock(Certificate.class)).build();
+        .privateKeyEncoded("PKE")
+        .build();
 
     SignableMessage signableMessage = new SignableMessage() {
       @Override
@@ -140,7 +137,7 @@ public class MessageSigningServiceTest {
         .cryptographyService(cryptographyService)
         .signatureAlgorithm("SHA256WithRSAEncryption")
         .build();
-    val s = service.sign(signableMessage, proxy);
+    val s = service.sign(signableMessage, proxyKey);
     System.out.println(s);
   }
 

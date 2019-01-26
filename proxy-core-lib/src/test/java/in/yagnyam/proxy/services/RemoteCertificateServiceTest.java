@@ -1,5 +1,7 @@
 package in.yagnyam.proxy.services;
 
+import static in.yagnyam.proxy.TestUtils.sampleCertificateForId;
+import static in.yagnyam.proxy.TestUtils.sampleCertificateForSerialNumber;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -10,7 +12,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import in.yagnyam.proxy.Certificate;
-import in.yagnyam.proxy.CertificateChain;
 import in.yagnyam.proxy.Certificates;
 import in.yagnyam.proxy.services.NetworkService.HttpException;
 import java.io.IOException;
@@ -29,37 +30,33 @@ public class RemoteCertificateServiceTest {
   public ExpectedException thrown = ExpectedException.none();
 
   @Test
-  public void testGetCertificateBySerialNumber_InvalidArguments() {
+  public void testGetCertificate_InvalidArguments() {
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(mock(NetworkService.class))
         .pemService(mock(PemService.class))
-        .certificatesByIdUrlTemplate("dummy")
-        .certificateBySerialNumberUrlTemplate("dummy")
+        .caCertificateRoot("dummy")
         .build();
     thrown.expect(NullPointerException.class);
-    certificateService.getCertificateBySerialNumber(null);
+    certificateService.getCertificate(null, null);
   }
 
   @Test
-  public void testCertificateBySerialNumber_NetworkError() throws IOException, HttpException {
+  public void testCertificate_NetworkError() throws IOException, HttpException {
     NetworkService networkService = mock(NetworkService.class);
     when(networkService.get(anyString())).thenThrow(new IOException("Error"));
 
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(networkService)
         .pemService(mock(PemService.class))
-        .certificatesByIdUrlTemplate("dummy")
-        .certificateBySerialNumberUrlTemplate("dummy")
+        .caCertificateRoot("dummy")
         .build();
-    assertFalse(certificateService.getCertificateBySerialNumber("1").isPresent());
+    assertFalse(certificateService.getCertificate("1", null).isPresent());
   }
 
   @Test
-  public void testCertificateBySerialNumber_InvalidCertificate()
+  public void testCertificate_InvalidCertificate()
       throws IOException, GeneralSecurityException, HttpException {
-    Certificate certificate = mock(Certificate.class);
-    when(certificate.getSerialNumber()).thenReturn("1");
-    when(certificate.getCertificateEncoded()).thenReturn("Certificate");
+    Certificate certificate = sampleCertificateForSerialNumber("1", "sha256");
 
     NetworkService networkService = mock(NetworkService.class);
     when(networkService.getValue(anyString(), any())).thenReturn(certificate);
@@ -71,19 +68,16 @@ public class RemoteCertificateServiceTest {
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(networkService)
         .pemService(pemService)
-        .certificatesByIdUrlTemplate("dummy")
-        .certificateBySerialNumberUrlTemplate("dummy")
+        .caCertificateRoot("dummy")
         .build();
-    assertFalse(certificateService.getCertificateBySerialNumber("1").isPresent());
+    assertFalse(certificateService.getCertificate("1", null).isPresent());
   }
 
 
   @Test
-  public void testCertificateBySerialNumber_ValidCertificate()
+  public void testCertificate_ValidCertificate()
       throws IOException, GeneralSecurityException, HttpException {
-    Certificate certificate = mock(Certificate.class);
-    when(certificate.getSerialNumber()).thenReturn("1");
-    when(certificate.getCertificateEncoded()).thenReturn("Certificate");
+    Certificate certificate = sampleCertificateForSerialNumber("1", "sha256");
 
     NetworkService networkService = mock(NetworkService.class);
     when(networkService.getValue(anyString(), any()))
@@ -95,45 +89,40 @@ public class RemoteCertificateServiceTest {
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(networkService)
         .pemService(pemService)
-        .certificatesByIdUrlTemplate("dummy")
-        .certificateBySerialNumberUrlTemplate("dummy")
+        .caCertificateRoot("dummy")
         .build();
-    assertTrue(certificateService.getCertificateBySerialNumber("1").isPresent());
+    assertTrue(certificateService.getCertificate("1", null).isPresent());
   }
 
 
   @Test
-  public void testGetCertificatesById_InvalidArguments() {
+  public void testGetCertificates_InvalidArguments() {
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(mock(NetworkService.class))
         .pemService(mock(PemService.class))
-        .certificatesByIdUrlTemplate("dummy")
-        .certificateBySerialNumberUrlTemplate("dummy")
+        .caCertificateRoot("dummy")
         .build();
     thrown.expect(NullPointerException.class);
-    certificateService.getCertificatesById(null);
+    certificateService.getCertificates(null, null);
   }
 
   @Test
-  public void testCertificatesById_NetworkError() throws IOException, HttpException {
+  public void testCertificates_NetworkError() throws IOException, HttpException {
     NetworkService networkService = mock(NetworkService.class);
     when(networkService.get(anyString())).thenThrow(new IOException("Error"));
 
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(networkService)
         .pemService(mock(PemService.class))
-        .certificatesByIdUrlTemplate("dummy")
-        .certificateBySerialNumberUrlTemplate("dummy")
+        .caCertificateRoot("dummy")
         .build();
-    assertTrue(certificateService.getCertificatesById("1").isEmpty());
+    assertTrue(certificateService.getCertificates("1", null).isEmpty());
   }
 
   @Test
-  public void testCertificatesById_InvalidCertificate()
+  public void testCertificates_InvalidCertificate()
       throws IOException, GeneralSecurityException, HttpException {
-    Certificate certificate = mock(Certificate.class);
-    when(certificate.getSerialNumber()).thenReturn("1");
-    when(certificate.getCertificateEncoded()).thenReturn("Certificate");
+    Certificate certificate = sampleCertificateForId("1", "sha256");
 
     NetworkService networkService = mock(NetworkService.class);
     when(networkService.getValue(anyString(), any())).thenReturn(certificate);
@@ -145,20 +134,16 @@ public class RemoteCertificateServiceTest {
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(networkService)
         .pemService(pemService)
-        .certificatesByIdUrlTemplate("dummy")
-        .certificateBySerialNumberUrlTemplate("dummy")
+        .caCertificateRoot("dummy")
         .build();
-    assertTrue(certificateService.getCertificatesById("1").isEmpty());
+    assertTrue(certificateService.getCertificates("1", null).isEmpty());
   }
 
 
   @Test
-  public void testCertificatesById_ValidCertificate()
+  public void testCertificates_ValidCertificate()
       throws IOException, GeneralSecurityException, HttpException {
-    Certificate certificate = mock(Certificate.class);
-    when(certificate.getSerialNumber()).thenReturn("1");
-    when(certificate.getCertificateEncoded()).thenReturn("Certificate");
-    when(certificate.matchesId(anyString())).thenReturn(true);
+    Certificate certificate = sampleCertificateForSerialNumber("1", "sha256");
 
     NetworkService networkService = mock(NetworkService.class);
     when(networkService.getValue(anyString(), any()))
@@ -170,10 +155,9 @@ public class RemoteCertificateServiceTest {
     CertificateService certificateService = RemoteCertificateService.builder()
         .networkService(networkService)
         .pemService(pemService)
-        .certificatesByIdUrlTemplate("dummy")
-        .certificateBySerialNumberUrlTemplate("dummy")
+        .caCertificateRoot("dummy")
         .build();
-    assertEquals(1, certificateService.getCertificatesById("1").size());
+    assertEquals(1, certificateService.getCertificates("1", null).size());
   }
 
 

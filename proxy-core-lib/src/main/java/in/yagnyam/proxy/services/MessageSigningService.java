@@ -1,6 +1,6 @@
 package in.yagnyam.proxy.services;
 
-import in.yagnyam.proxy.Proxy;
+import in.yagnyam.proxy.ProxyKey;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.SignedMessageSignature;
@@ -36,7 +36,7 @@ public class MessageSigningService {
    * @return Signed Message
    * @throws IOException Any Signing related issues while signing
    */
-  public <T extends SignableMessage> SignedMessage<T> sign(T message, Proxy signer)
+  public <T extends SignableMessage> SignedMessage<T> sign(T message, ProxyKey signer)
       throws IOException, GeneralSecurityException {
     if (signatureAlgorithms.isEmpty()) {
       throw new IllegalStateException("At least one signature algorithm is required");

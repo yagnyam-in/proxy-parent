@@ -4,7 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
-import in.yagnyam.proxy.Proxy;
+import in.yagnyam.proxy.ProxyKey;
 import in.yagnyam.proxy.server.banking.model.BankConfigurationEntity;
 import java.util.List;
 import java.util.Optional;
@@ -56,7 +56,7 @@ public class BankConfigurationRepositoryTest extends RepositoryTestHelper {
     entity.setBankId(bankId);
     entity.setBankName("Bank");
     entity.setPrivateKeyId("pk");
-    entity.setProxy(mock(Proxy.class));
+    entity.setProxyKey(mock(ProxyKey.class));
     return entity;
   }
 

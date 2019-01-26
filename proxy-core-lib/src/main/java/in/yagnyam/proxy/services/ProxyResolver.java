@@ -2,19 +2,19 @@ package in.yagnyam.proxy.services;
 
 import in.yagnyam.proxy.Proxy;
 import in.yagnyam.proxy.ProxyId;
-import java.util.List;
+import java.util.Optional;
 import lombok.NonNull;
 
 /**
- * Certificate Service to fetch certificates
+ * Service to fetch proxy for given proxy id
  */
 public interface ProxyResolver {
 
   /**
-   * Fetch proxies for given Proxy Id
+   * Fetch proxy for given Proxy Id
    *
    * @param proxyId Proxy Id
-   * @return Proxies if available, otherwise Empty List
+   * @return Proxy if available, otherwise None
    */
-  List<Proxy> resolveProxy(@NonNull ProxyId proxyId);
+  Optional<Proxy> resolveProxy(@NonNull ProxyId proxyId);
 }

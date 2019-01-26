@@ -1,6 +1,5 @@
 package in.yagnyam.proxy.server.services;
 
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -33,7 +32,7 @@ public class VerificationKeyResolverAdapterTest {
   @Test(expected = UnresolvableKeyException.class)
   public void testResolveKey_NoCertificate() throws UnresolvableKeyException {
     CertificateService certificateService = mock(CertificateService.class);
-    when(certificateService.getCertificateBySerialNumber(eq("KID"))).thenReturn(Optional.empty());
+    when(certificateService.getCertificate("KID", null)).thenReturn(Optional.empty());
 
     JsonWebSignature jws = mock(JsonWebSignature.class);
     when(jws.getKeyIdHeaderValue()).thenReturn("KID");
@@ -55,7 +54,7 @@ public class VerificationKeyResolverAdapterTest {
     when(certificate.getCertificate()).thenReturn(x509Certificate);
 
     CertificateService certificateService = mock(CertificateService.class);
-    when(certificateService.getCertificateBySerialNumber(eq("KID")))
+    when(certificateService.getCertificate("KID", null))
         .thenReturn(Optional.of(certificate));
 
     JsonWebSignature jws = mock(JsonWebSignature.class);

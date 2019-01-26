@@ -5,9 +5,12 @@ import com.google.common.cache.CacheBuilder;
 import in.yagnyam.proxy.Certificate;
 import in.yagnyam.proxy.CertificateChain;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -17,19 +20,12 @@ public class CacheBackedCertificateService implements CertificateService {
 
   private final CertificateService certificateService;
 
-  private final Cache<String, Certificate> certificateCacheBySerialNumber;
-
-  private final Cache<String, List<Certificate>> certificateCacheById;
+  private final Cache<String, Set<Certificate>> certificateCache;
 
   private CacheBackedCertificateService(CertificateService certificateService,
       long cacheSize, long cacheTimeout, TimeUnit cacheTimeoutUnit) {
     this.certificateService = certificateService;
-    this.certificateCacheBySerialNumber = CacheBuilder.newBuilder()
-        .maximumSize(cacheSize)
-        .expireAfterWrite(cacheTimeout, cacheTimeoutUnit)
-        .build();
-
-    this.certificateCacheById = CacheBuilder.newBuilder()
+    this.certificateCache = CacheBuilder.newBuilder()
         .maximumSize(cacheSize)
         .expireAfterWrite(cacheTimeout, cacheTimeoutUnit)
         .build();
@@ -42,21 +38,28 @@ public class CacheBackedCertificateService implements CertificateService {
   /**
    * Get Certificate for given Serial Number
    *
-   * @param serialNumber Certificate Serial Number
+   * @param certificateId Certificate Serial Number
    * @return Certificate associated with given Serial Number
    */
   @Override
-  public Optional<Certificate> getCertificateBySerialNumber(@NonNull String serialNumber) {
+  public Optional<Certificate> getCertificate(@NonNull String certificateId, String sha256Thumbprint) {
     try {
-      @Nullable Certificate cached = certificateCacheBySerialNumber.getIfPresent(serialNumber);
+      @Nullable Set<Certificate> cached = certificateCache.getIfPresent(certificateId);
       if (cached != null) {
-        return Optional.of(cached);
+        List<Certificate> result = cached.stream().
+            filter(CertificateService.sha256MatcherForCertificate(sha256Thumbprint))
+            .collect(Collectors.toList());
+        if (result.size() == 1) {
+          return Optional.of(result.get(0));
+        } else if (result.size() > 1) {
+          throw new RuntimeException("Serial Number " + certificateId + " isn't Unique");
+        }
       }
-      Optional<Certificate> result = certificateService.getCertificateBySerialNumber(serialNumber);
-      result.ifPresent((c) -> certificateCacheBySerialNumber.put(serialNumber, c));
+      Optional<Certificate> result = certificateService.getCertificate(certificateId, sha256Thumbprint);
+      result.ifPresent(this::addToCache);
       return result;
     } catch (Exception e) {
-      log.error("Unable to fetch certificate for Serial number " + serialNumber, e);
+      log.error("Unable to fetch certificate for Serial number " + certificateId, e);
       return Optional.empty();
     }
   }
@@ -68,15 +71,19 @@ public class CacheBackedCertificateService implements CertificateService {
    * @return Certificate associated with given Certificate Id
    */
   @Override
-  public List<Certificate> getCertificatesById(@NonNull String certificateId) {
+  public List<Certificate> getCertificates(@NonNull String certificateId, String sha256Thumbprint) {
     try {
-      @Nullable List<Certificate> result = certificateCacheById.getIfPresent(certificateId);
-      if (result == null || result.isEmpty()) {
-        result = certificateService.getCertificatesById(certificateId);
+      @Nullable Set<Certificate> cached = certificateCache.getIfPresent(certificateId);
+      if (cached != null) {
+        List<Certificate> result = cached.stream().
+            filter(CertificateService.sha256MatcherForCertificate(sha256Thumbprint))
+            .collect(Collectors.toList());
         if (!result.isEmpty()) {
-          certificateCacheById.put(certificateId, result);
+          return result;
         }
       }
+      List<Certificate> result = certificateService.getCertificates(certificateId, sha256Thumbprint);
+      result.forEach(this::addToCache);
       return result;
     } catch (Exception e) {
       log.error("Unable to fetch certificate for Id " + certificateId, e);
@@ -85,9 +92,25 @@ public class CacheBackedCertificateService implements CertificateService {
   }
 
   @Override
-  public Optional<CertificateChain> getCertificateChain(String certificateId) {
+  public Optional<CertificateChain> getCertificateChain(String certificateId, String sha256Thumbprint) {
     // TODO: Implement Cache
-    return certificateService.getCertificateChain(certificateId);
+    return certificateService.getCertificateChain(certificateId, sha256Thumbprint);
+  }
+
+  private void addToCache(Certificate certificate) {
+    addToCacheForKey(certificate.getId(), certificate);
+    addToCacheForKey(certificate.getSerialNumber(), certificate);
+  }
+
+  private void addToCacheForKey(String key, Certificate certificate) {
+    Set<Certificate> existing = certificateCache.getIfPresent(key);
+    if (existing == null) {
+      existing = new HashSet<>();
+      existing.add(certificate);
+      certificateCache.put(key, existing);
+    } else {
+      existing.add(certificate);
+    }
   }
 
   public static class Builder {

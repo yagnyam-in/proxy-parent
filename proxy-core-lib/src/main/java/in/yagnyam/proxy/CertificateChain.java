@@ -27,17 +27,20 @@ public class CertificateChain {
   @JsonInclude(JsonInclude.Include.NON_NULL)
   private String certificateId;
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private String certificateSha256Thumbprint;
+
   @Singular
   private List<Certificate> certificates;
 
   @JsonIgnore
-  public Optional<Certificate> getCertificateWithId() {
-    return certificates.stream().filter(c -> c.matchesId(certificateId)).findFirst();
-  }
-
-  @JsonIgnore
-  public Optional<Certificate> getCertificateWithSerial() {
-    return certificates.stream().filter(c -> c.getSerialNumber().equals(certificateSerial))
+  public Optional<Certificate> getCertificate() {
+    return certificates.stream()
+        .filter(c -> StringUtils.isEmpty(certificateSerial) || certificateSerial
+            .equals(c.getSerialNumber()))
+        .filter(c -> StringUtils.isEmpty(certificateId) || certificateId.equals(c.getOwner()))
+        .filter(c -> StringUtils.isEmpty(certificateSha256Thumbprint) || certificateSha256Thumbprint
+            .equals(c.getSha256Thumbprint()))
         .findFirst();
   }
 
