@@ -48,12 +48,4 @@ public final class TestUtils {
         .build();
   }
 
-  public static KeyPair generateKeyPair() throws GeneralSecurityException {
-
-    KeyPairGenerator generator = KeyPairGenerator
-        .getInstance(cryptographyService.getKeyGenerationAlgorithm());
-    generator.initialize(1024, new SecureRandom());
-    return generator.generateKeyPair();
-  }
-
 }

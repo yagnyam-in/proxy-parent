@@ -16,7 +16,6 @@ public class ProxyTest {
     ProxyId proxyId = ProxyId.of("abc", "123");
     Proxy proxy = Proxy.builder()
         .id(proxyId)
-        .certificateSerialNumber("123")
         .certificate(mock(Certificate.class)).build();
     assertEquals("abc#123", proxy.getUniqueId());
   }
@@ -32,7 +31,6 @@ public class ProxyTest {
     ProxyId proxyId = ProxyId.of("abc", "123");
     Proxy proxy = Proxy.of(certificate);
     assertEquals(proxyId, proxy.getId());
-    assertEquals("456", proxy.getCertificateSerialNumber());
     assertEquals("owner", proxy.getName());
   }
 }

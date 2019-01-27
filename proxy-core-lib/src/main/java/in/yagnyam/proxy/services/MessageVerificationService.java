@@ -4,15 +4,17 @@ import in.yagnyam.proxy.Proxy;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.SignedMessageSignature;
+import in.yagnyam.proxy.config.ProxyVersion;
 import java.security.GeneralSecurityException;
-import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Singular;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -31,8 +33,8 @@ public class MessageVerificationService {
   private ProxyResolver proxyResolver;
 
   @NonNull
-  @Singular
-  private List<String> signatureAlgorithms;
+  @Default
+  private ProxyVersion proxyVersion = ProxyVersion.latestVersion();
 
   /**
    * Verify Signature on Singed Messages
@@ -44,16 +46,29 @@ public class MessageVerificationService {
    */
   public <T extends SignableMessage> void verify(@NonNull SignedMessage<T> message)
       throws GeneralSecurityException {
-    if (signatureAlgorithms.isEmpty()) {
-      log.error("At least one signature algorithm is required");
-      throw new IllegalStateException("At least one signature algorithm is required");
+    if (!message.isValid()) {
+      log.info("Message validation failed for {}", message);
+      throw new IllegalArgumentException("Message validation failed");
+    }
+    if (message.getSignatures().isEmpty()) {
+      log.info("No signatures found in {}", message);
+      throw new IllegalArgumentException("No signatures found");
+    }
+    Set<String> signatureAlgorithmSet = message.getSignatures().stream()
+        .map(SignedMessageSignature::getAlgorithm)
+        .collect(Collectors.toSet());
+    if (!ProxyVersion.latestVersion().getValidSignatureAlgorithmSets()
+        .contains(signatureAlgorithmSet)) {
+      log.info("Un-recognised signature algorithms {} in {}", signatureAlgorithmSet, message);
+      throw new IllegalArgumentException(
+          "Un-recognised signature algorithms " + signatureAlgorithmSet);
     }
     if (!message.cabBeSignedBy(message.getSignedBy())) {
       throw new IllegalStateException("Message: " + message + " can only be signed by "
           + message.validSigners() + ", but signed by " + message.getSignedBy());
     }
     Proxy proxy = getSignerProxy(message);
-    for (String algorithm : signatureAlgorithms) {
+    for (String algorithm : signatureAlgorithmSet) {
       SignedMessageSignature signature = findSignature(message, algorithm);
       if (!cryptographyService.verifySignature(algorithm,
           proxy.getCertificate().getCertificate(),

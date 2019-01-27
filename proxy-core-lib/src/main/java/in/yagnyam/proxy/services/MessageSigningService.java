@@ -4,12 +4,12 @@ import in.yagnyam.proxy.ProxyKey;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.SignedMessageSignature;
+import in.yagnyam.proxy.config.ProxyVersion;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.List;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.NonNull;
-import lombok.Singular;
 
 /**
  * Service to sign the message
@@ -24,8 +24,8 @@ public class MessageSigningService {
   private CryptographyService cryptographyService;
 
   @NonNull
-  @Singular
-  private List<String> signatureAlgorithms;
+  @Default
+  private ProxyVersion proxyVersion = ProxyVersion.latestVersion();
 
   /**
    * Sign the message and produce signed message using the given Proxy
@@ -38,7 +38,7 @@ public class MessageSigningService {
    */
   public <T extends SignableMessage> SignedMessage<T> sign(T message, ProxyKey signer)
       throws IOException, GeneralSecurityException {
-    if (signatureAlgorithms.isEmpty()) {
+    if (proxyVersion.getPreferredSignatureAlgorithmSet().isEmpty()) {
       throw new IllegalStateException("At least one signature algorithm is required");
     }
     if (!message.isValid()) {
@@ -54,7 +54,7 @@ public class MessageSigningService {
         .message(message)
         .type(message.getMessageType())
         .payload(payload);
-    for (String signatureAlgorithm : signatureAlgorithms) {
+    for (String signatureAlgorithm : proxyVersion.getPreferredSignatureAlgorithmSet()) {
       String signature = cryptographyService
           .getSignature(signatureAlgorithm, signer.getPrivateKey(), payload);
       builder.signature(SignedMessageSignature.of(signatureAlgorithm, signature));

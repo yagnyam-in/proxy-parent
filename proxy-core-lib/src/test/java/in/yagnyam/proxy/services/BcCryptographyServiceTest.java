@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import in.yagnyam.proxy.TestUtils;
+import in.yagnyam.proxy.config.ProxyVersion;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
@@ -19,10 +20,13 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class BcCryptographyServiceTest {
 
+  private final ProxyVersion proxyVersion = ProxyVersion.latestVersion();
+
   @Test
   public void testGenerateKeyPair() throws GeneralSecurityException {
     BcCryptographyService cryptographyService = BcCryptographyService.builder().build();
-    assertNotNull(cryptographyService.generateKeyPair());
+    assertNotNull(cryptographyService
+        .generateKeyPair(proxyVersion.getKeyGenerationAlgorithm(), proxyVersion.getKeySize()));
   }
 
   @Test
@@ -30,8 +34,9 @@ public class BcCryptographyServiceTest {
       throws GeneralSecurityException, IOException, OperatorCreationException {
     BcCryptographyService cryptographyService = BcCryptographyService.builder().build();
 
-    String signatureAlgorithm = cryptographyService.getDefaultSignatureAlgorithm();
-    KeyPair keyPair = cryptographyService.generateKeyPair();
+    String signatureAlgorithm = ProxyVersion.latestVersion().getCertificateSignatureAlgorithm();
+    KeyPair keyPair = cryptographyService
+        .generateKeyPair(proxyVersion.getKeyGenerationAlgorithm(), proxyVersion.getKeySize());
     Certificate certificate = TestUtils.createCertificate(keyPair);
     String inputData = "Dummy data";
 
@@ -49,18 +54,18 @@ public class BcCryptographyServiceTest {
       throws GeneralSecurityException, IOException, OperatorCreationException {
     BcCryptographyService cryptographyService = BcCryptographyService.builder().build();
 
-    KeyPair keyPair = cryptographyService.generateKeyPair();
+    KeyPair keyPair = cryptographyService
+        .generateKeyPair(proxyVersion.getKeyGenerationAlgorithm(), proxyVersion.getKeySize());
     Certificate certificate = TestUtils.createCertificate(keyPair);
     String inputData = "Dummy data";
+    String encryptionAlgorithm = ProxyVersion.latestVersion().getPreferredEncryptionAlgorithm();
 
-    String cipher = cryptographyService
-        .encrypt(cryptographyService.getDefaultEncryptionAlgorithm(), certificate, inputData);
+    String cipher = cryptographyService.encrypt(encryptionAlgorithm, certificate, inputData);
     System.out.println("Cipher: " + cipher);
-    assertNotEquals(cipher, cryptographyService
-        .encrypt(cryptographyService.getDefaultEncryptionAlgorithm(), certificate, inputData));
-    assertEquals("Dummy data", cryptographyService
-        .decrypt(cryptographyService.getDefaultEncryptionAlgorithm(), keyPair.getPrivate(),
-            cipher));
+    assertNotEquals(cipher,
+        cryptographyService.encrypt(encryptionAlgorithm, certificate, inputData));
+    assertEquals("Dummy data",
+        cryptographyService.decrypt(encryptionAlgorithm, keyPair.getPrivate(), cipher));
   }
 
 }

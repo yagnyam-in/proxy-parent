@@ -11,49 +11,24 @@ import java.security.cert.Certificate;
 public interface CryptographyService {
 
   /**
-   * Key Generation Algorithm
+   * Get the Cryptographic Hash of given message
    *
-   * @return Default Key Generation Algorithm
+   * @param message Original Message to compute hash
+   * @param hashAlgorithm Hashing Algorithm
+   * @return Hash
    */
-  default String getKeyGenerationAlgorithm() {
-    return "RSA";
-  }
-
-  /**
-   * Default Signature algorithm
-   *
-   * @return Default signature algorithm
-   */
-  default String getDefaultSignatureAlgorithm() {
-    return "SHA256WithRSAEncryption";
-  }
-
-  /**
-   * Default Algorithm for Encrypting data
-   *
-   * @return Default Encryption Algorithm
-   */
-  default String getDefaultEncryptionAlgorithm() {
-    return "RSA/NONE/OAEPwithSHA-256andMGF1Padding";
-  }
-
-  /**
-   * Default Key size
-   *
-   * @return Key Size
-   */
-  default int getKeySize() {
-    return 2048;
-  }
-
+  String getHash(String message, String hashAlgorithm) throws GeneralSecurityException;
 
   /**
    * Create Cryptographic Key Pair
    *
+   * @param keyGenerationAlgorithm Key Generation Algorithm
+   * @param keySize Key Size
    * @return New Key Pair
    * @throws GeneralSecurityException if any error while generating Key Pair
    */
-  KeyPair generateKeyPair() throws GeneralSecurityException;
+  KeyPair generateKeyPair(String keyGenerationAlgorithm, int keySize)
+      throws GeneralSecurityException;
 
 
   /**

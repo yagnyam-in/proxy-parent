@@ -7,8 +7,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import in.yagnyam.proxy.Certificate;
-import in.yagnyam.proxy.Proxy;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.ProxyKey;
 import in.yagnyam.proxy.SignableMessage;
@@ -70,7 +68,6 @@ public class MessageFactoryTest {
     MessageSigningService service = MessageSigningService.builder()
         .serializer(messageSerializerService)
         .cryptographyService(cryptographyService)
-        .signatureAlgorithm("SHA256WithRSAEncryption")
         .build();
     SimpleSignableMessage signableMessage = new SimpleSignableMessage();
     SignedMessage<SimpleSignableMessage> signedMessage = service.sign(signableMessage, proxyKey);
@@ -95,7 +92,6 @@ public class MessageFactoryTest {
     MessageSigningService service = MessageSigningService.builder()
         .serializer(messageSerializerService)
         .cryptographyService(cryptographyService)
-        .signatureAlgorithm("SHA256WithRSAEncryption")
         .build();
 
     SimpleSignableMessage simpleMessage = new SimpleSignableMessage();
@@ -135,7 +131,6 @@ public class MessageFactoryTest {
     MessageSigningService service = MessageSigningService.builder()
         .serializer(messageSerializerService)
         .cryptographyService(cryptographyService)
-        .signatureAlgorithm("SHA256WithRSAEncryption")
         .build();
     SimpleSignableMessage signableMessage = new SimpleSignableMessage();
     SignedMessage<SimpleSignableMessage> signedMessage = service.sign(signableMessage, proxyKey);

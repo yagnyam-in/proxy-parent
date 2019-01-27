@@ -1,10 +1,12 @@
 package in.yagnyam.proxy.services;
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
@@ -43,11 +45,19 @@ public class BcCryptographyService implements CryptographyService {
   }
 
   @Override
-  public KeyPair generateKeyPair() throws GeneralSecurityException {
+  public KeyPair generateKeyPair(String keyGenerationAlgorithm, int keySize)
+      throws GeneralSecurityException {
     KeyPairGenerator generator = KeyPairGenerator
-        .getInstance(getKeyGenerationAlgorithm(), BC_PROVIDER);
-    generator.initialize(getKeySize(), new SecureRandom());
+        .getInstance(keyGenerationAlgorithm, BC_PROVIDER);
+    generator.initialize(keySize, new SecureRandom());
     return generator.generateKeyPair();
+  }
+
+  @Override
+  public String getHash(String message, String hashAlgorithm) throws GeneralSecurityException {
+    MessageDigest digest = MessageDigest.getInstance("SHA-256");
+    byte[] hash = digest.digest(message.getBytes(StandardCharsets.UTF_8));
+    return Base64.toBase64String(hash);
   }
 
   @Override

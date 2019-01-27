@@ -66,7 +66,6 @@ public class MessageSigningServiceTest {
     MessageSigningService service = MessageSigningService.builder()
         .serializer(new MessageSerializerService())
         .cryptographyService(cryptographyService)
-        .signatureAlgorithm("SHA256WithRSAEncryption")
         .build();
     val s = service.sign(signableMessage, proxyKey);
     System.out.println(s);
@@ -101,7 +100,6 @@ public class MessageSigningServiceTest {
     MessageSigningService service = MessageSigningService.builder()
         .serializer(new MessageSerializerService())
         .cryptographyService(cryptographyService)
-        .signatureAlgorithm("SHA256WithRSAEncryption")
         .build();
     val s = service.sign(signableMessage, proxyKey);
     System.out.println(s);
@@ -135,7 +133,6 @@ public class MessageSigningServiceTest {
     MessageSigningService service = MessageSigningService.builder()
         .serializer(new MessageSerializerService())
         .cryptographyService(cryptographyService)
-        .signatureAlgorithm("SHA256WithRSAEncryption")
         .build();
     val s = service.sign(signableMessage, proxyKey);
     System.out.println(s);

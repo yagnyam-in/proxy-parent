@@ -118,7 +118,6 @@ public class MessageVerificationServiceTest {
     return MessageVerificationService.builder()
         .cryptographyService(mock(CryptographyService.class))
         .proxyResolver(proxyResolver)
-        .signatureAlgorithm("dummy")
         .build();
   }
 
