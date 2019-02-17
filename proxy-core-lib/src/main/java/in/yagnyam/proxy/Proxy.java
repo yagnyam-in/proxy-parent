@@ -1,5 +1,6 @@
 package in.yagnyam.proxy;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -26,10 +27,12 @@ public class Proxy {
         .build();
   }
 
+  @JsonIgnore
   public String getUniqueId() {
     return id.uniqueId();
   }
 
+  @JsonIgnore
   public boolean isValid() {
     return id != null && id.isValid()
         && certificate != null && certificate.isValid();

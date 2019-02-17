@@ -1,5 +1,6 @@
 package in.yagnyam.proxy;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import in.yagnyam.proxy.utils.DateUtils;
@@ -39,9 +40,11 @@ public class Certificate {
   private String subject;
 
   @NonNull
+  @JsonFormat(shape = JsonFormat.Shape.STRING)
   private Date validFrom;
 
   @NonNull
+  @JsonFormat(shape = JsonFormat.Shape.STRING)
   private Date validTill;
 
   @NonNull
