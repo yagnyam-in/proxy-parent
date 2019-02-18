@@ -32,9 +32,9 @@ public class RemoteCertificateService implements CertificateService {
   @Override
   public Optional<Certificate> getCertificate(@NonNull String certificateId, String sha256Thumbprint) {
     String certificateUrl = singleCertificateUrl(certificateId, sha256Thumbprint);
+    log.debug("getCertificate for {} with {}", certificateId, certificateUrl);
     try {
       return Optional.ofNullable(networkService.getValue(certificateUrl, Certificate.class))
-          .filter(c -> c.getSerialNumber().equals(certificateId))
           .map(c -> CertificateUtils.enrichCertificate(c, pemService));
     } catch (Exception e) {
       log.error("Unable to fetch certificate " + certificateUrl, e);
@@ -49,6 +49,7 @@ public class RemoteCertificateService implements CertificateService {
   @Override
   public List<Certificate> getCertificates(@NonNull String certificateId, String sha256Thumbprint) {
     String certificateUrl = multipleCertificatesUrl(certificateId, sha256Thumbprint);
+    log.debug("getCertificates for {} with {}", certificateId, certificateUrl);
     try {
       return networkService.getValue(certificateUrl, Certificates.class)
           .getCertificates().stream()
@@ -63,6 +64,7 @@ public class RemoteCertificateService implements CertificateService {
   @Override
   public Optional<CertificateChain> getCertificateChain(@NonNull String certificateId, String sha256Thumbprint) {
     String certificateUrl = singleCertificateChainUrl(certificateId, sha256Thumbprint);
+    log.debug("getCertificateChain for {} with {}", certificateId, certificateUrl);
     try {
       CertificateChain certificateChain = networkService
           .getValue(certificateUrl, CertificateChain.class);

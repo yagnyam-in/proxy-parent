@@ -31,6 +31,7 @@ public class DbBackedCertificateService implements CertificateService {
   private DbBackedCertificateService(@NonNull RemoteCertificateService remoteCertificateService,
       @NonNull DataStoreCertificateRepository certificateRepository,
       @NonNull PemService pemService) {
+    log.debug("new DbBackedCertificateService()");
     this.remoteCertificateService = remoteCertificateService;
     this.certificateRepository = certificateRepository;
     this.pemService = pemService;
@@ -41,14 +42,17 @@ public class DbBackedCertificateService implements CertificateService {
    */
   public Optional<Certificate> getCertificate(@NonNull String certificateId,
       String sha256Thumbprint) {
+    log.debug("getCertificate: certificateId: {}, sha256Thumbprint: {}", certificateId, sha256Thumbprint);
     Optional<Certificate> certificate = certificateRepository
         .getCertificatesById(certificateId, sha256Thumbprint).stream()
         .findFirst();
     if (!certificate.isPresent()) {
+      log.debug("{} not found by Id", certificateId);
       certificate = certificateRepository
           .getCertificateBySerialNumber(certificateId, sha256Thumbprint);
     }
     if (!certificate.isPresent()) {
+      log.debug("{} not found by serial number", certificateId);
       certificate = remoteCertificateService.getCertificate(certificateId, sha256Thumbprint);
       certificate.ifPresent(certificateRepository::saveCertificate);
     }
@@ -60,15 +64,18 @@ public class DbBackedCertificateService implements CertificateService {
    */
   @Override
   public List<Certificate> getCertificates(@NonNull String certificateId, String sha256Thumbprint) {
+    log.debug("getCertificates: certificateId: {}, sha256Thumbprint: {}", certificateId, sha256Thumbprint);
     List<Certificate> certificates = certificateRepository
         .getCertificatesById(certificateId, sha256Thumbprint);
     if (certificates.isEmpty()) {
+      log.debug("{} not found by Id", certificateId);
       certificates = certificateRepository
           .getCertificateBySerialNumber(certificateId, sha256Thumbprint)
           .map(Collections::singletonList)
           .orElse(Collections.emptyList());
     }
     if (certificates.isEmpty()) {
+      log.debug("{} not found by serial number", certificateId);
       certificates = remoteCertificateService.getCertificates(certificateId, sha256Thumbprint);
       certificates.forEach(certificateRepository::saveCertificate);
     }
@@ -80,6 +87,7 @@ public class DbBackedCertificateService implements CertificateService {
   public Optional<CertificateChain> getCertificateChain(@NonNull String certificateId,
       String sha256Thumbprint) {
     // TODO: Use DB as Cache
+    log.debug("getCertificateChain: certificateId: {}, sha256Thumbprint: {}", certificateId, sha256Thumbprint);
     return remoteCertificateService.getCertificateChain(certificateId, sha256Thumbprint);
   }
 
