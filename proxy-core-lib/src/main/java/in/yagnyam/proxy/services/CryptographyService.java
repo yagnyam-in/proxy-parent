@@ -17,7 +17,7 @@ public interface CryptographyService {
    * @param hashAlgorithm Hashing Algorithm
    * @return Hash
    */
-  String getHash(String message, String hashAlgorithm) throws GeneralSecurityException;
+  String getHash(String hashAlgorithm, String message) throws GeneralSecurityException;
 
   /**
    * Create Cryptographic Key Pair
