@@ -72,7 +72,7 @@ public interface SignableMessage {
    * @return true if signer can sign this message
    */
   default boolean cabBeSignedBy(ProxyId signerId) {
-    return validSigners().stream().anyMatch(s -> s.isParentOrEqualsOf(signerId));
+    return validSigners().stream().anyMatch(signerId::canSignOnBehalfOf);
   }
 
 }

@@ -10,9 +10,7 @@ import in.yagnyam.proxy.server.model.PrivateKeyEntity;
 import in.yagnyam.proxy.server.services.PrivateKeyService;
 import in.yagnyam.proxy.services.CertificateService;
 import in.yagnyam.proxy.utils.StringUtils;
-import java.util.List;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -43,22 +41,17 @@ public class BankConfigurationService {
    *
    * @return Bank Configuration
    */
-  public BankConfigurationEntity getDefaultBankConfigurationForCurrency(String currency) {
-    List<BankConfigurationEntity> matching = bankConfigurationRepository
-        .fetchBankConfigurationsForCurrency(currency).stream()
+  public BankConfigurationEntity getDefaultBankConfigurationForCurrency(String bankId,
+      String currency) {
+    return bankConfigurationRepository
+        .getBankConfiguration(bankId)
         .filter(BankConfigurationEntity::isActive)
+        .filter(b -> b.getCurrencies().contains(currency))
         .map(this::enrichBankConfiguration)
-        .collect(Collectors.toList());
-    if (matching.isEmpty()) {
-      log.error("Missing Setup for currency {}", currency);
-      throw ServiceException.internalServerError("Missing Setup");
-    } else if (matching.size() > 1) {
-      log.error("Too many bank configurations ({}) found for currency {}", matching.size(),
-          currency);
-      throw ServiceException.internalServerError("Wrong Setup");
-    } else {
-      return matching.get(0);
-    }
+        .orElseThrow(() -> {
+          log.error("Missing Setup for currency {}", currency);
+          return ServiceException.internalServerError("Missing Setup");
+        });
   }
 
 

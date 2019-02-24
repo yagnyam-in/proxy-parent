@@ -54,7 +54,7 @@ public class PaymentEncashment implements SignableMessage, AddressableMessage {
         && payeeAccountId != null && payeeAccountId.isValid();
     if (!valid) return false;
     if (payment.getMessage().getPayeeId() != null) {
-      valid = payment.getMessage().getPayeeId().isParentOrEqualsOf(payeeId);
+      valid = payeeId.canSignOnBehalfOf(payment.getMessage().getPayeeId());
     }
     if (payment.getMessage().getPayeeAccountId() != null) {
       valid = valid && payment.getMessage().getPayeeAccountId().equals(payeeAccountId);

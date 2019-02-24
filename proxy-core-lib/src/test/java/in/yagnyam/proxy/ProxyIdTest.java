@@ -20,9 +20,12 @@ public class ProxyIdTest {
 
   @Test
   public void testIsParentOrEqualsOf() {
-    assertTrue(ProxyId.of("p1").isParentOrEqualsOf(ProxyId.of("p1")));
-    assertTrue(ProxyId.of("p1").isParentOrEqualsOf(ProxyId.of("p1", "sha256")));
-    assertTrue(ProxyId.of("p1", "sha256").isParentOrEqualsOf(ProxyId.of("p1", "sha256")));
+    assertTrue(ProxyId.of("p1").canSignOnBehalfOf(ProxyId.of("p1")));
+    assertFalse(ProxyId.of("p1").canSignOnBehalfOf(ProxyId.of("p1", "sha256")));
+    assertTrue(ProxyId.of("p1", "sha256").canSignOnBehalfOf(ProxyId.of("p1")));
+    assertTrue(ProxyId.of("p1", "sha256").canSignOnBehalfOf(ProxyId.any()));
+    assertTrue(ProxyId.of("p1", "sha256").canSignOnBehalfOf(ProxyId.of("p1", "sha256")));
+    assertTrue(ProxyId.of("p1", "sha256").canSignOnBehalfOf(ProxyId.any()));
   }
 
 }

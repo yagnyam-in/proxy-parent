@@ -7,8 +7,8 @@ import in.yagnyam.proxy.messages.banking.AccountBalanceRequest;
 import in.yagnyam.proxy.messages.banking.AccountBalanceResponse;
 import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.messages.banking.Currency;
-import in.yagnyam.proxy.messages.banking.ProxyAccountCreationRequest;
-import in.yagnyam.proxy.messages.banking.ProxyAccountCreationResponse;
+import in.yagnyam.proxy.messages.banking.wallet.ProxyWalletCreationRequest;
+import in.yagnyam.proxy.messages.banking.wallet.ProxyWalletCreationResponse;
 import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import in.yagnyam.proxy.server.ServiceException;
 import in.yagnyam.proxy.server.banking.db.ProxyAccountRepository;
@@ -39,6 +39,7 @@ public class ProxyAccountService {
 
   /**
    * Get Proxy Account for given Proxy Account Id
+   *
    * @param proxyAccountId Proxy Account Id
    * @return Proxy Account for given Id
    * @throws in.yagnyam.proxy.server.BadRequestException if there is no Account for given Id
@@ -67,22 +68,21 @@ public class ProxyAccountService {
     return sign(response, bankConfiguration.getProxyKey());
   }
 
-  public SignedMessage<ProxyAccountCreationResponse> createProxyAccount(
-      ProxyAccountCreationRequest request) {
+  public SignedMessage<ProxyWalletCreationResponse> createProxyAccount(
+      SignedMessage<ProxyWalletCreationRequest> request) {
 
-    assertValidRequest(request);
+    assertValidRequest(request.getMessage());
 
     BankConfigurationEntity bankConfiguration =
-        bankConfigurationService.getDefaultBankConfigurationForCurrency(request.getCurrency());
+        bankConfigurationService
+            .getDefaultBankConfigurationForCurrency(request.getMessage().getBankId().getId(),
+                request.getMessage().getCurrency());
 
-    ProxyAccountEntity accountEntity = createAccount(request, bankConfiguration);
+    ProxyAccountEntity accountEntity = createAccount(request.getMessage(), bankConfiguration);
 
-    ProxyAccountCreationResponse response = ProxyAccountCreationResponse.builder()
-        .requestId(request.requestId())
-        .accountNumber(accountEntity.getOriginalAccountEntity().getAccountId())
-        .bankName(accountEntity.getOriginalAccountEntity().getBank())
-        .balance(accountEntity.getOriginalAccountEntity().getBalance())
+    ProxyWalletCreationResponse response = ProxyWalletCreationResponse.builder()
         .proxyAccount(sign(accountEntity.asProxyAccount(), bankConfiguration.getProxyKey()))
+        .request(request)
         .build();
 
     return sign(response, bankConfiguration.getProxyKey());
@@ -96,7 +96,7 @@ public class ProxyAccountService {
     return accountId;
   }
 
-  private ProxyAccountEntity createAccount(ProxyAccountCreationRequest request,
+  private ProxyAccountEntity createAccount(ProxyWalletCreationRequest request,
       BankConfigurationEntity bankConfiguration) {
 
     String accountId = randomAccountId();
@@ -138,7 +138,7 @@ public class ProxyAccountService {
   }
 
 
-  static void assertValidRequest(ProxyAccountCreationRequest request) {
+  static void assertValidRequest(ProxyWalletCreationRequest request) {
     if (!Currency.isValidCurrency(request.getCurrency())) {
       throw ServiceException.badRequest("Invalid currency " + request.getCurrency());
     }

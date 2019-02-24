@@ -1,10 +1,10 @@
-package in.yagnyam.proxy.messages.banking;
+package in.yagnyam.proxy.messages.banking.wallet;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
-import in.yagnyam.proxy.SignableMessage;
-import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.SignableRequestMessage;
+import in.yagnyam.proxy.messages.banking.Currency;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -15,8 +15,9 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.ToString;
 
+
 /**
- * Response message for Proxy Account Creation
+ * Message to create new Proxy Wallet
  */
 @Builder
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -24,45 +25,47 @@ import lombok.ToString;
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"requestId"})
-public class ProxyAccountCreationResponse implements SignableMessage, AddressableMessage {
+public class ProxyWalletCreationRequest implements SignableRequestMessage, AddressableMessage {
 
   @NonNull
   private String requestId;
 
   @NonNull
-  public SignedMessage<ProxyAccount> proxyAccount;
+  private ProxyId proxyId;
 
   @NonNull
-  private String bankName;
+  private ProxyId bankId;
 
   @NonNull
-  private String accountNumber;
-
-  @NonNull
-  private Amount balance;
+  private String currency;
 
   @Override
-  public ProxyId address() {
-    return proxyAccount.getMessage().getProxyId();
+  public String requestId() {
+    return requestId;
   }
 
   @Override
   public ProxyId signer() {
-    return proxyAccount.getSignedBy();
+    return proxyId;
   }
 
   @Override
   public String toReadableString() {
-    return null;
+    return String.format(
+        "With request %s, create new %s wallet for proxy id %s ", requestId, currency, proxyId);
   }
 
   @Override
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(requestId)
-        && proxyAccount != null && proxyAccount.isValid()
-        && StringUtils.isValid(bankName)
-        && StringUtils.isValid(accountNumber)
-        && balance != null && balance.isValid();
+        && proxyId != null && proxyId.isValid()
+        && bankId != null && bankId.isValid()
+        && Currency.isValidCurrency(currency);
+  }
+
+  @Override
+  public ProxyId address() {
+    return bankId;
   }
 }

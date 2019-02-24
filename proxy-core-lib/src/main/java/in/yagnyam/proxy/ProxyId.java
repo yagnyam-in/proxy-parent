@@ -43,11 +43,19 @@ public class ProxyId {
   }
 
   @JsonIgnore
-  public boolean isParentOrEqualsOf(ProxyId proxyId) {
-    return this.equals(any())
-        || (Objects.equals(id, proxyId.id)
-            && (sha256Thumbprint == null || sha256Thumbprint.equals(proxyId.sha256Thumbprint)));
+  public boolean canSignOnBehalfOf(ProxyId other) {
+    if (other == null) {
+      return false;
+    }
+    if (other.equals(ProxyId.any())) {
+      return true;
+    }
+    if (other.id.equals(id) && other.sha256Thumbprint == null) {
+      return true;
+    }
+    return equals(other);
   }
+
 
   @JsonIgnore
   public String uniqueId() {
