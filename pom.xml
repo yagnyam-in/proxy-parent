@@ -68,7 +68,6 @@
     <module>proxy-core-lib</module>
     <module>proxy-messages</module>
     <module>proxy-server-lib</module>
-    <module>proxy-banking-lib</module>
   </modules>
 
   <dependencyManagement>
