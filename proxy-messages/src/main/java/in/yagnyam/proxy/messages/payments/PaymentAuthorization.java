@@ -7,6 +7,7 @@ import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.messages.banking.ProxyAccount;
+import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import in.yagnyam.proxy.utils.DateUtils;
 import in.yagnyam.proxy.utils.StringUtils;
 import java.util.Date;
@@ -93,6 +94,12 @@ public class PaymentAuthorization implements SignableRequestMessage, Addressable
   @Override
   public String requestId() {
     return requestId;
+  }
+
+
+  @JsonIgnore
+  public ProxyAccountId getPayerAccountId() {
+    return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().getProxyAccountId() : null;
   }
 
   @JsonIgnore

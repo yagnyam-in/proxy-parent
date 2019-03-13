@@ -10,6 +10,8 @@ import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
 import java.util.Set;
+
+import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -74,6 +76,11 @@ public class PaymentStatusRequest implements SignableRequestMessage, Addressable
   @JsonIgnore
   public String getPaymentId() {
     return payment != null && payment.getMessage() != null ? payment.getMessage().getPaymentId() : null;
+  }
+
+  @JsonIgnore
+  public ProxyAccountId getPayerAccountId() {
+    return payment != null && payment.getMessage() != null ? payment.getMessage().getPayerAccountId() : null;
   }
 
   @JsonIgnore

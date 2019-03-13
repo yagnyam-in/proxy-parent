@@ -7,6 +7,8 @@ import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.messages.banking.ProxyAccount;
 import java.util.Date;
+
+import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -57,6 +59,11 @@ public class SecretProtectedPaymentAuthorization implements SignableMessage {
   @JsonIgnore
   public boolean isValid() {
     return false;
+  }
+
+  @JsonIgnore
+  public ProxyAccountId getPayerAccountId() {
+    return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().getProxyAccountId() : null;
   }
 
   @JsonIgnore
