@@ -75,4 +75,9 @@ public class PaymentStatusRequest implements SignableRequestMessage, Addressable
   public String getPaymentId() {
     return payment != null && payment.getMessage() != null ? payment.getMessage().getPaymentId() : null;
   }
+
+  @JsonIgnore
+  public String getCurrency() {
+    return payment != null && payment.getMessage() != null ? payment.getMessage().getCurrency() : null;
+  }
 }

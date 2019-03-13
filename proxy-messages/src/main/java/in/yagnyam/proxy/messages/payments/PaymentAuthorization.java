@@ -94,4 +94,9 @@ public class PaymentAuthorization implements SignableRequestMessage, Addressable
   public String requestId() {
     return requestId;
   }
+
+  @JsonIgnore
+  public String getCurrency() {
+    return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().getCurrency() : null;
+  }
 }

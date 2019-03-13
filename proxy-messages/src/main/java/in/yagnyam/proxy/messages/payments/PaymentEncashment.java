@@ -87,4 +87,8 @@ public class PaymentEncashment implements SignableMessage, AddressableMessage {
     return payment != null && payment.getMessage() != null ? payment.getMessage().getPayerAccountId() : null;
   }
 
+  @JsonIgnore
+  public String getCurrency() {
+    return payment != null && payment.getMessage() != null ? payment.getMessage().getCurrency() : null;
+  }
 }

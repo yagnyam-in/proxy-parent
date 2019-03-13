@@ -59,4 +59,8 @@ public class SecretProtectedPaymentAuthorization implements SignableMessage {
     return false;
   }
 
+  @JsonIgnore
+  public String getCurrency() {
+    return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().getCurrency() : null;
+  }
 }

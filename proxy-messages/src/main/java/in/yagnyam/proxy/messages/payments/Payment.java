@@ -87,6 +87,11 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
     return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().getProxyAccountId() : null;
   }
 
+  @JsonIgnore
+  public String getCurrency() {
+    return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().getCurrency() : null;
+  }
+
   @Override
   public ProxyId address() {
     return payeeId != null ? payeeId : ProxyId.any();

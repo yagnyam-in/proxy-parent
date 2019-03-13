@@ -71,4 +71,9 @@ public class PaymentAuthorizationEncashment implements SignableRequestMessage, A
   public String requestId() {
     return requestId;
   }
+
+  @JsonIgnore
+  public String getCurrency() {
+    return paymentAuthorization != null && paymentAuthorization.getMessage() != null ? paymentAuthorization.getMessage().getCurrency() : null;
+  }
 }
