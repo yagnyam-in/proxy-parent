@@ -24,22 +24,24 @@ import lombok.ToString;
 public class AccountBalanceResponse implements SignableMessage, AddressableMessage {
 
   @NonNull
-  private String requestId;
-
-  @NonNull
-  public SignedMessage<ProxyAccount> proxyAccount;
+  public SignedMessage<AccountBalanceRequest> request;
 
   @NonNull
   private Amount balance;
 
   @Override
   public ProxyId address() {
-    return proxyAccount.getMessage().getProxyId();
+    return request.getSignedBy();
   }
 
   @Override
   public ProxyId signer() {
-    return proxyAccount.getSignedBy();
+    return request.getMessage().getProxyAccount().getSignedBy();
+  }
+
+  @JsonIgnore
+  public String getRequestId() {
+    return request != null && request.getMessage() != null ? request.getMessage().getRequestId() : null;
   }
 
   @Override
@@ -50,8 +52,7 @@ public class AccountBalanceResponse implements SignableMessage, AddressableMessa
   @Override
   @JsonIgnore
   public boolean isValid() {
-    return StringUtils.isValid(requestId)
-        && proxyAccount != null && proxyAccount.isValid()
+    return request != null && request.isValid()
         && balance != null && balance.isValid();
   }
 }

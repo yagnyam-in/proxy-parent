@@ -6,14 +6,7 @@ import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.ToString;
+import lombok.*;
 
 @Builder
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -23,35 +16,35 @@ import lombok.ToString;
 @EqualsAndHashCode(of = {"requestId"})
 public class AccountDetailsResponse implements SignableMessage, AddressableMessage {
 
-  @NonNull
-  private String requestId;
+    @NonNull
+    public SignedMessage<AccountDetailsRequest> request;
 
-  @NonNull
-  public SignedMessage<ProxyAccount> proxyAccount;
+    @NonNull
+    private String accountNumber;
 
-  @NonNull
-  private String accountNumber;
+    @Override
+    public ProxyId address() {
+        return request.getSignedBy();
+    }
 
-  @Override
-  public ProxyId address() {
-    return proxyAccount.getSignedBy();
-  }
+    @Override
+    public ProxyId signer() {
+        return request.getMessage().getProxyAccount().getSignedBy();
+    }
 
-  @Override
-  public ProxyId signer() {
-    return proxyAccount.getMessage().getProxyId();
-  }
+    @Override
+    public String toReadableString() {
+        return null;
+    }
 
-  @Override
-  public String toReadableString() {
-    return null;
-  }
+    @Override
+    @JsonIgnore
+    public boolean isValid() {
+        return request != null && request.isValid()
+                && StringUtils.isValid(accountNumber);
+    }
 
-  @Override
-  @JsonIgnore
-  public boolean isValid() {
-    return StringUtils.isValid(requestId)
-        && proxyAccount != null && proxyAccount.isValid()
-        && StringUtils.isValid(accountNumber);
-  }
+    public String getRequestId() {
+        return request != null && request.getMessage() != null ? request.getMessage().getRequestId() : null;
+    }
 }
