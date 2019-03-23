@@ -8,8 +8,8 @@ import org.junit.Test;
 public class RandomUtilsTest {
 
   @Test
-  public void testRandomString() {
-    assertNotNull(RandomUtils.randomString());
-    assertNotEquals(RandomUtils.randomString(), RandomUtils.randomString());
+  public void testRandomId() {
+    assertNotNull(RandomUtils.randomId());
+    assertNotEquals(RandomUtils.randomId(), RandomUtils.randomId());
   }
 }

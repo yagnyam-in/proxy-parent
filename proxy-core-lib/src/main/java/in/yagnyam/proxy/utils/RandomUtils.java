@@ -1,16 +1,20 @@
 package in.yagnyam.proxy.utils;
 
-import java.math.BigInteger;
-import java.util.Random;
+import java.util.UUID;
 
 public class RandomUtils {
 
   /**
-   * Simple Random String generator
-   * @return Random String
+   * Simple Random Id generator
+   *
+   * @return Random Id
    */
-  public static String randomString() {
-    return new BigInteger(64, new Random()).toString(32);
+  public static String randomId() {
+    String id;
+    do {
+      id = UUID.randomUUID().toString().substring(19);
+    } while(!Character.isAlphabetic(id.charAt(0)));
+    return id;
   }
 
 }
