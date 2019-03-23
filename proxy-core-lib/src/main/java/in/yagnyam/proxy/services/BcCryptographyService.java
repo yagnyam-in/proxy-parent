@@ -54,7 +54,7 @@ public class BcCryptographyService implements CryptographyService {
   }
 
   @Override
-  public String getHash(String message, String hashAlgorithm) throws GeneralSecurityException {
+  public String getHash(String hashAlgorithm, String message) throws GeneralSecurityException {
     MessageDigest digest = MessageDigest.getInstance(hashAlgorithm);
     byte[] hash = digest.digest(message.getBytes(StandardCharsets.UTF_8));
     return Base64.toBase64String(hash);
