@@ -63,7 +63,7 @@ public class PaymentAuthorization implements SignableRequestMessage, Addressable
 
   @Override
   public ProxyId signer() {
-    return proxyAccount.getMessage().getProxyId();
+    return proxyAccount.getMessage().getOwnerProxyId();
   }
 
   @Override

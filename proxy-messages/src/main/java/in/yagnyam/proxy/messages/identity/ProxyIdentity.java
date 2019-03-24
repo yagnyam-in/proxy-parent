@@ -25,7 +25,7 @@ import lombok.ToString;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
-@EqualsAndHashCode(of = {"issuerId", "proxyId"})
+@EqualsAndHashCode(of = {"issuerId", "ownerProxyId"})
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonRootName("in.yagnyam.proxy.messages.identity.ProxyIdentity")
 public class ProxyIdentity implements SignableMessage, AddressableMessage {

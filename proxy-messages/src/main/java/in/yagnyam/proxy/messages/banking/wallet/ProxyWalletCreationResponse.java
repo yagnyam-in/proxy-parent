@@ -34,7 +34,7 @@ public class ProxyWalletCreationResponse implements SignableMessage, Addressable
 
   @Override
   public ProxyId address() {
-    return proxyAccount.getMessage().getProxyId();
+    return proxyAccount.getMessage().getOwnerProxyId();
   }
 
   @Override

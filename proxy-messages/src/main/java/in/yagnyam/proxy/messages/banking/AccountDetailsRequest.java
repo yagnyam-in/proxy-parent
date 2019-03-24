@@ -41,7 +41,7 @@ public class AccountDetailsRequest implements SignableRequestMessage, Addressabl
 
   @Override
   public ProxyId signer() {
-    return proxyAccount.getMessage().getProxyId();
+    return proxyAccount.getMessage().getOwnerProxyId();
   }
 
   @Override

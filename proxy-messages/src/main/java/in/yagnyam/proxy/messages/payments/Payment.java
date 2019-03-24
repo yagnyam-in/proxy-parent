@@ -48,7 +48,7 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
 
   @Override
   public ProxyId signer() {
-    return proxyAccount.getMessage().getProxyId();
+    return proxyAccount.getMessage().getOwnerProxyId();
   }
 
   @Override
@@ -79,7 +79,7 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
 
   @JsonIgnore
   public ProxyId getPayerId() {
-    return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().getProxyId() : null;
+    return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().getOwnerProxyId() : null;
   }
 
   @JsonIgnore

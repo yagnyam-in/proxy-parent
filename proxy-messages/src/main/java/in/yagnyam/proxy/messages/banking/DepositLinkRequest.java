@@ -70,7 +70,7 @@ public class DepositLinkRequest implements SignableRequestMessage, AddressableMe
 
   @Override
   public ProxyId signer() {
-    return proxyAccount.getMessage().getProxyId();
+    return proxyAccount.getMessage().getOwnerProxyId();
   }
 
   @Override
@@ -85,5 +85,15 @@ public class DepositLinkRequest implements SignableRequestMessage, AddressableMe
         && proxyAccount != null && proxyAccount.isValid()
         && StringUtils.isValid(accountName)
         && amount != null && amount.isValid();
+  }
+
+  @JsonIgnore
+  public ProxyAccountId getProxyAccountId() {
+    return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().getProxyAccountId() : null;
+  }
+
+  @JsonIgnore
+  public ProxyId getOwnerProxyId() {
+    return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().getOwnerProxyId() : null;
   }
 }

@@ -23,14 +23,14 @@ import lombok.ToString;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
-@EqualsAndHashCode(of = {"proxyAccountId", "proxyId"})
+@EqualsAndHashCode(of = {"proxyAccountId", "ownerProxyId"})
 public class ProxyAccount implements SignableMessage, AddressableMessage {
 
   @NonNull
   private ProxyAccountId proxyAccountId;
 
   @NonNull
-  private ProxyId proxyId;
+  private ProxyId ownerProxyId;
 
   @NonNull
   private Date creationDate;
@@ -62,7 +62,7 @@ public class ProxyAccount implements SignableMessage, AddressableMessage {
   public boolean isValid() {
     return proxyAccountId != null
         && proxyAccountId.isValid()
-        && proxyId != null && proxyId.isValid()
+        && ownerProxyId != null && ownerProxyId.isValid()
         && DateUtils.isValid(creationDate)
         && DateUtils.isValid(expiryDate)
         && currency != null
@@ -71,7 +71,7 @@ public class ProxyAccount implements SignableMessage, AddressableMessage {
 
   @Override
   public ProxyId address() {
-    return proxyId;
+    return ownerProxyId;
   }
 
   @JsonIgnore

@@ -34,7 +34,7 @@ public class ProxyCreationRequest implements RequestMessage {
   private String proxyId;
 
   /**
-   * Pass phrase to de-activate a given Proxy (sha256(proxyId#passPhrase))
+   * Pass phrase to de-activate a given Proxy (sha256(ownerProxyId#passPhrase))
    */
   @NonNull
   private String revocationPassPhraseSha256;

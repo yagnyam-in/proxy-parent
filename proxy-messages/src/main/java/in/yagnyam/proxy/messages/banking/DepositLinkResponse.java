@@ -9,7 +9,6 @@ import in.yagnyam.proxy.utils.StringUtils;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -20,32 +19,22 @@ import lombok.ToString;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
-@EqualsAndHashCode(of = {"requestId"})
 public class DepositLinkResponse implements SignableMessage, AddressableMessage {
 
   @NonNull
-  private String requestId;
-
-  @NonNull
-  public SignedMessage<ProxyAccount> proxyAccount;
-
-  @NonNull
-  private String accountName;
-
-  @NonNull
-  private Amount amount;
+  public SignedMessage<DepositLinkRequest> request;
 
   @NonNull
   private String depositLink;
 
   @Override
   public ProxyId address() {
-    return proxyAccount.getMessage().getProxyId();
+    return request.getMessage().getOwnerProxyId();
   }
 
   @Override
   public ProxyId signer() {
-    return proxyAccount.getSignedBy();
+    return request.getMessage().proxyAccount.getSignedBy();
   }
 
   @Override
@@ -56,10 +45,7 @@ public class DepositLinkResponse implements SignableMessage, AddressableMessage 
   @Override
   @JsonIgnore
   public boolean isValid() {
-    return StringUtils.isValid(requestId)
-        && proxyAccount != null && proxyAccount.isValid()
-        && StringUtils.isValid(accountName)
-        && amount != null && amount.isValid()
+    return request != null && request.isValid()
         && StringUtils.isValid(depositLink);
   }
 }
