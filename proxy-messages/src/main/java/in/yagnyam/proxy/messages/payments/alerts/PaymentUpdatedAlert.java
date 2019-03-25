@@ -5,6 +5,8 @@ import in.yagnyam.proxy.SignableAlertMessage;
 import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import in.yagnyam.proxy.utils.StringUtils;
 import java.util.List;
+import java.util.Map;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,13 +28,9 @@ import lombok.ToString;
 @EqualsAndHashCode(of = {"alertId"})
 public class PaymentUpdatedAlert implements SignableAlertMessage {
 
-  public enum DataFields {
-    Type,
-    AlertId,
-    PaymentId,
-    PayerAccountId,
-    PayerBankId
-  }
+  public static final String PAYMENT_ID = "paymentId";
+  public static final String PAYER_ACCOUNT_ID = "payerAccountId";
+  public static final String PAYER_BANK_ID = "payerBankId";
 
   @NonNull
   private String alertId;
@@ -73,4 +71,14 @@ public class PaymentUpdatedAlert implements SignableAlertMessage {
   public List<ProxyId> receivers() {
     return receivers;
   }
+
+  @Override
+  public Map<String, String> toFcmMap() {
+    Map<String, String> map = SignableAlertMessage.super.toFcmMap();
+    map.put(PAYMENT_ID, paymentId);
+    map.put(PAYER_ACCOUNT_ID, payerAccountId.getAccountId());
+    map.put(PAYER_BANK_ID, payerAccountId.getBankId());
+    return map;
+  }
+
 }

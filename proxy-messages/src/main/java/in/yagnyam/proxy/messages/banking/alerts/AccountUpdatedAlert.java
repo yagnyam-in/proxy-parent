@@ -6,6 +6,8 @@ import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import in.yagnyam.proxy.utils.StringUtils;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,12 +28,8 @@ import lombok.ToString;
 @EqualsAndHashCode(of = {"alertId"})
 public class AccountUpdatedAlert implements SignableAlertMessage {
 
-  public enum DataFields {
-    Type,
-    AlertId,
-    AccountId,
-    BankId
-  }
+  public static final String ACCOUNT_ID = "accountId";
+  public static final String BANK_ID = "bankId";
 
   @NonNull
   private String alertId;
@@ -67,6 +65,14 @@ public class AccountUpdatedAlert implements SignableAlertMessage {
   @Override
   public List<ProxyId> receivers() {
     return Collections.singletonList(receiverId);
+  }
+
+  @Override
+  public Map<String, String> toFcmMap() {
+    Map<String, String> map = SignableAlertMessage.super.toFcmMap();
+    map.put(ACCOUNT_ID, proxyAccountId.getAccountId());
+    map.put(BANK_ID, proxyAccountId.getBankId());
+    return map;
   }
 
 }

@@ -20,7 +20,6 @@ import lombok.ToString;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
-@EqualsAndHashCode(of = {"requestId"})
 public class AccountBalanceResponse implements SignableMessage, AddressableMessage {
 
   @NonNull
