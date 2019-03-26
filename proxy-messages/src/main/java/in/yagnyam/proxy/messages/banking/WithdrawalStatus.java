@@ -12,25 +12,31 @@ import lombok.*;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
-public class AccountDetailsResponse implements SignableMessage, AddressableMessage {
+public class WithdrawalStatus implements SignableMessage, AddressableMessage {
+
+    public enum StatusEnum {
+        Registered,
+        Rejected,
+        Cancelled,
+        InTransit,
+        Completed,
+        Failed,
+    }
 
     @NonNull
-    public SignedMessage<AccountDetailsRequest> request;
+    public SignedMessage<Withdrawal> request;
 
     @NonNull
-    private NonProxyAccount underlyingAccount;
-
-    @NonNull
-    private Amount balance;
+    private StatusEnum status;
 
     @Override
     public ProxyId address() {
-        return request.getSignedBy();
+        return request.getMessage().getOwnerProxyId();
     }
 
     @Override
     public ProxyId signer() {
-        return request.getMessage().getProxyAccount().getSignedBy();
+        return request.getMessage().proxyAccount.getSignedBy();
     }
 
     @Override
@@ -42,11 +48,6 @@ public class AccountDetailsResponse implements SignableMessage, AddressableMessa
     @JsonIgnore
     public boolean isValid() {
         return request != null && request.isValid()
-                && underlyingAccount != null && underlyingAccount.isValid()
-                && balance != null && balance.isValid();
-    }
-
-    public String getRequestId() {
-        return request != null && request.getMessage() != null ? request.getMessage().getRequestId() : null;
+                && status != null;
     }
 }

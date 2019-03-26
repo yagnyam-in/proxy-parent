@@ -31,7 +31,7 @@ public interface Currency {
    * @return true if a valid currency
    */
   static boolean isValidCurrency(String currency) {
-    return currenciesSupported.contains(currency);
+    return currency != null && currenciesSupported.contains(currency);
   }
 
 }

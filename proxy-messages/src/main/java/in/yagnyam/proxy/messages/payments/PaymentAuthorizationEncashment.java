@@ -6,16 +6,10 @@ import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.messages.banking.Amount;
+import in.yagnyam.proxy.messages.banking.NonProxyAccount;
 import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.ToString;
+import lombok.*;
 
 /**
  * Payment Authorization Encashment
@@ -28,58 +22,59 @@ import lombok.ToString;
 @EqualsAndHashCode(of = {"paymentAuthorization"})
 public class PaymentAuthorizationEncashment implements SignableRequestMessage, AddressableMessage {
 
-  @NonNull
-  public SignedMessage<PaymentAuthorization> paymentAuthorization;
+    @NonNull
+    public SignedMessage<PaymentAuthorization> paymentAuthorization;
 
-  @NonNull
-  private String requestId;
+    @NonNull
+    private String requestId;
 
-  private Amount amount;
+    @NonNull
+    private Amount amount;
 
-  private ProxyAccountId receivingProxyAccountId;
+    private ProxyAccountId receivingProxyAccountId;
 
-  private NonProxyAccount receivingNonProxyAccount;
+    private NonProxyAccount receivingNonProxyAccount;
 
-  @Override
-  public ProxyId signer() {
-    return paymentAuthorization.getMessage().getPayeeId();
-  }
+    @Override
+    public ProxyId signer() {
+        return paymentAuthorization.getMessage().getPayeeId();
+    }
 
-  @Override
-  public String toReadableString() {
-    return null;
-  }
+    @Override
+    public String toReadableString() {
+        return null;
+    }
 
-  @Override
-  @JsonIgnore
-  public boolean isValid() {
-    return StringUtils.isValid(requestId)
-        && paymentAuthorization != null
-        && paymentAuthorization.isValid()
-        && amount != null
-        && amount.isValid()
-        && (receivingProxyAccountId != null && receivingProxyAccountId.isValid()
-        || receivingNonProxyAccount != null && receivingNonProxyAccount.isValid());
-  }
+    @Override
+    @JsonIgnore
+    public boolean isValid() {
+        String currency = getCurrency();
+        return StringUtils.isValid(requestId)
+                && paymentAuthorization != null && paymentAuthorization.isValid()
+                && amount != null && amount.isValid()
+                && amount.getCurrency().equals(currency)
+                && (receivingProxyAccountId != null && receivingProxyAccountId.isValid()
+                || receivingNonProxyAccount != null && receivingNonProxyAccount.isValid() && receivingNonProxyAccount.getCurrency().equals(currency));
+    }
 
-  @Override
-  public ProxyId address() {
-    return paymentAuthorization.getMessage().getProxyAccount().getSignedBy();
-  }
+    @Override
+    public ProxyId address() {
+        return paymentAuthorization.getMessage().getProxyAccount().getSignedBy();
+    }
 
-  @Override
-  public String requestId() {
-    return requestId;
-  }
+    @Override
+    public String requestId() {
+        return requestId;
+    }
 
 
-  @JsonIgnore
-  public ProxyAccountId getPayerAccountId() {
-    return paymentAuthorization != null && paymentAuthorization.getMessage() != null ? paymentAuthorization.getMessage().getPayerAccountId() : null;
-  }
+    @JsonIgnore
+    public ProxyAccountId getPayerAccountId() {
+        return paymentAuthorization != null && paymentAuthorization.getMessage() != null ? paymentAuthorization.getMessage().getPayerAccountId() : null;
+    }
 
-  @JsonIgnore
-  public String getCurrency() {
-    return paymentAuthorization != null && paymentAuthorization.getMessage() != null ? paymentAuthorization.getMessage().getCurrency() : null;
-  }
+    @JsonIgnore
+    public String getCurrency() {
+        return paymentAuthorization != null && paymentAuthorization.getMessage() != null ? paymentAuthorization.getMessage().getCurrency() : null;
+    }
 }

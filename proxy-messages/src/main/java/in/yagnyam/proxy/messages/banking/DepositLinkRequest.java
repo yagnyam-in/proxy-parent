@@ -1,6 +1,7 @@
 package in.yagnyam.proxy.messages.banking;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
@@ -54,8 +55,10 @@ public class DepositLinkRequest implements SignableRequestMessage, AddressableMe
   @NonNull
   private Amount amount;
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private String message;
 
+  @JsonInclude(JsonInclude.Include.NON_NULL)
   private RequestingCustomer requestingCustomer;
 
   @Override
