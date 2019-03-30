@@ -41,6 +41,11 @@ public class AccountUpdatedAlert implements SignableAlertMessage {
   private ProxyId receiverId;
 
   @Override
+  public String proxyUniverse() {
+    return proxyAccountId.getProxyUniverse();
+  }
+
+  @Override
   public ProxyId signer() {
     return ProxyId.of(proxyAccountId.getBankId());
   }

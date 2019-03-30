@@ -12,6 +12,13 @@ public interface SignableAlertMessage extends SignableMessage {
 
   String ALERT_TYPE = "alertType";
   String ALERT_ID = "alertId";
+  String PROXY_UNIVERSE = "proxyUniverse";
+
+  /**
+   * Proxy Universe
+   * @return Proxy Universe
+   */
+  String proxyUniverse();
 
   /**
    * Alert Id
@@ -32,6 +39,7 @@ public interface SignableAlertMessage extends SignableMessage {
    */
   default Map<String, String> toFcmMap() {
     Map<String, String> map = new HashMap<>();
+    map.put(PROXY_UNIVERSE, proxyUniverse());
     map.put(ALERT_TYPE, getMessageType());
     map.put(ALERT_ID, alertId());
     return map;

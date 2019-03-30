@@ -35,6 +35,11 @@ public class WithdrawalUpdatedAlert implements SignableAlertMessage {
   @NonNull
   private ProxyAccountId proxyAccountId;
 
+  @Override
+  public String proxyUniverse() {
+    return proxyAccountId.getProxyUniverse();
+  }
+
   @NonNull
   private String withdrawalId;
 

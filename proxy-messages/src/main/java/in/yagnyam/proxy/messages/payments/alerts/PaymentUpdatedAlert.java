@@ -41,6 +41,11 @@ public class PaymentUpdatedAlert implements SignableAlertMessage {
   @NonNull
   private ProxyAccountId payerAccountId;
 
+  @Override
+  public String proxyUniverse() {
+    return payerAccountId.getProxyUniverse();
+  }
+
   @NonNull
   @Singular
   private List<ProxyId> receivers;
