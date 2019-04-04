@@ -46,13 +46,34 @@ public class NonProxyAccount {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     String ifscCode;
 
+    /**
+     * Sometimes, it is mandatory withdraw money to specify Mail Id
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    String email;
+
+    /**
+     * Sometimes, it is mandatory withdraw money to specify Phone
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    String phone;
+
+    /**
+     * Sometimes, it is mandatory withdraw money to specify Address
+     */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    String address;
+
     @JsonIgnore
     public boolean isValid() {
         return StringUtils.isValid(bank)
                 && StringUtils.isValid(accountNumber)
                 && StringUtils.isValid(accountHolder)
                 && Currency.isValidCurrency(currency)
-                && (ifscCode == null || StringUtils.isValid(ifscCode));
+                && (ifscCode == null || StringUtils.isValid(ifscCode))
+                && (email == null || StringUtils.isValid(email))
+                && (phone == null || StringUtils.isValid(phone))
+                && (address == null || StringUtils.isValid(address));
     }
 
 }
