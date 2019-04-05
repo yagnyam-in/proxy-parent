@@ -1,22 +1,19 @@
 package in.yagnyam.proxy.services;
 
-import static java.lang.Math.toIntExact;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.http.ByteArrayContent;
-import com.google.api.client.http.GenericUrl;
-import com.google.api.client.http.HttpContent;
-import com.google.api.client.http.HttpRequestFactory;
-import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.*;
 import com.google.api.client.http.javanet.NetHttpTransport;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
+
+import static java.lang.Math.toIntExact;
 
 @Slf4j
 public class NetworkService {
@@ -95,18 +92,26 @@ public class NetworkService {
     return new Builder();
   }
 
-  public String get(String url) throws IOException, HttpException {
+  public String getWithHeaders(String url, Map<String, String> headers) throws IOException, HttpException {
     try (HttpResponse response = HttpResponse
-        .of(url, httpRequestFactory()
-            .buildGetRequest(new GenericUrl(url))
-            .setThrowExceptionOnExecuteError(false)
-            .execute())) {
+            .of(url, httpRequestFactory(headers)
+                    .buildGetRequest(new GenericUrl(url))
+                    .setThrowExceptionOnExecuteError(false)
+                    .execute())) {
       return response.getContent();
     }
   }
 
+  public String get(String url) throws IOException, HttpException {
+    return getWithHeaders(url, Collections.emptyMap());
+  }
+
   public <T> T getValue(String url, Class<T> resultClass) throws IOException, HttpException {
-    return new ObjectMapper().readValue(get(url), resultClass);
+    return new ObjectMapper().readValue(getWithHeaders(url, Collections.emptyMap()), resultClass);
+  }
+
+  public <T> T getValueWithHeaders(String url, Map<String, String> headers, Class<T> resultClass) throws IOException, HttpException {
+    return new ObjectMapper().readValue(getWithHeaders(url, headers), resultClass);
   }
 
   public <I, O> O postValue(String url, I request, Class<O> resultClass)
@@ -122,7 +127,6 @@ public class NetworkService {
       }
     }
   }
-
 
   private <T> HttpResponse postValueWithHeaders(String url, Map<String, String> headers, T request)
       throws IOException {
