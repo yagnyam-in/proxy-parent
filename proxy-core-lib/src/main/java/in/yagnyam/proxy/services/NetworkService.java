@@ -1,19 +1,23 @@
 package in.yagnyam.proxy.services;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.api.client.http.*;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.extern.slf4j.Slf4j;
+import static java.lang.Math.toIntExact;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.http.ByteArrayContent;
+import com.google.api.client.http.EmptyContent;
+import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpContent;
+import com.google.api.client.http.HttpRequestFactory;
+import com.google.api.client.http.HttpTransport;
+import com.google.api.client.http.javanet.NetHttpTransport;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
-import static java.lang.Math.toIntExact;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 public class NetworkService {
@@ -48,21 +52,29 @@ public class NetworkService {
       return response.getStatusCode();
     }
 
-    public String getContent() throws IOException, HttpException {
+    public String getContent(boolean failIfFailure) throws IOException, HttpException {
       if (content == null) {
         content = response.parseAsString();
       }
-      if (response.isSuccessStatusCode()) {
-        log.debug("{} => {}", url, content);
-        return content;
-      } else {
+      if (failIfFailure && !response.isSuccessStatusCode()) {
         log.error("Request " + url + " failed with status " + response.getStatusMessage());
         throw new HttpException(response.getStatusCode(), response.getStatusMessage());
+      } else {
+        log.debug("{} => {}", url, content);
+        return content;
       }
+    }
+
+    public String getContent() throws IOException, HttpException {
+      return getContent(true);
     }
 
     public <T> T getValue(Class<T> valueClass) throws IOException, HttpException {
       return new ObjectMapper().readValue(getContent(), valueClass);
+    }
+
+    public <T> T getValue(Class<T> valueClass, boolean failIfFailure) throws IOException, HttpException {
+      return new ObjectMapper().readValue(getContent(failIfFailure), valueClass);
     }
 
     public static HttpResponse of(String url, com.google.api.client.http.HttpResponse response) {
@@ -92,12 +104,13 @@ public class NetworkService {
     return new Builder();
   }
 
-  public String getWithHeaders(String url, Map<String, String> headers) throws IOException, HttpException {
+  public String getWithHeaders(String url, Map<String, String> headers)
+      throws IOException, HttpException {
     try (HttpResponse response = HttpResponse
-            .of(url, httpRequestFactory(headers)
-                    .buildGetRequest(new GenericUrl(url))
-                    .setThrowExceptionOnExecuteError(false)
-                    .execute())) {
+        .of(url, httpRequestFactory(headers)
+            .buildGetRequest(new GenericUrl(url))
+            .setThrowExceptionOnExecuteError(false)
+            .execute())) {
       return response.getContent();
     }
   }
@@ -110,7 +123,8 @@ public class NetworkService {
     return new ObjectMapper().readValue(getWithHeaders(url, Collections.emptyMap()), resultClass);
   }
 
-  public <T> T getValueWithHeaders(String url, Map<String, String> headers, Class<T> resultClass) throws IOException, HttpException {
+  public <T> T getValueWithHeaders(String url, Map<String, String> headers, Class<T> resultClass)
+      throws IOException, HttpException {
     return new ObjectMapper().readValue(getWithHeaders(url, headers), resultClass);
   }
 
@@ -123,7 +137,7 @@ public class NetworkService {
       throws IOException, HttpException {
     try (HttpResponse httpResponse = postValueWithHeaders(url, Collections.emptyMap(), request)) {
       if (httpResponse.getStatusCode() < 200 || httpResponse.getStatusCode() >= 300) {
-        throw new  HttpException(httpResponse.getStatusCode(), httpResponse.getContent());
+        throw new HttpException(httpResponse.getStatusCode(), httpResponse.getContent());
       }
     }
   }
@@ -135,7 +149,8 @@ public class NetworkService {
   }
 
 
-  private HttpResponse postValueWithHeaders(String url, Map<String, String> headers, String type, byte[] requestBytes)
+  private HttpResponse postValueWithHeaders(String url, Map<String, String> headers, String type,
+      byte[] requestBytes)
       throws IOException {
     HttpContent httpContent = new ByteArrayContent(type, requestBytes);
     return HttpResponse.of(url, httpRequestFactory(headers)
@@ -151,22 +166,43 @@ public class NetworkService {
       Class<O> resultClass) throws IOException, HttpException {
     try (HttpResponse httpResponse = postValueWithHeaders(url, headers, request)) {
       if (httpResponse.getStatusCode() < 200 || httpResponse.getStatusCode() >= 300) {
-        throw new  HttpException(httpResponse.getStatusCode(), httpResponse.getContent());
+        throw new HttpException(httpResponse.getStatusCode(), httpResponse.getContent());
       } else {
         return httpResponse.getValue(resultClass);
       }
     }
   }
 
-  public <O> O postWithHeaders(String url, Map<String, String> headers, String type, byte[] requestBytes,
+  public <O> O postWithHeaders(String url, Map<String, String> headers, String type,
+      byte[] requestBytes,
       Class<O> resultClass) throws IOException, HttpException {
     try (HttpResponse httpResponse = postValueWithHeaders(url, headers, type, requestBytes)) {
       if (httpResponse.getStatusCode() < 200 || httpResponse.getStatusCode() >= 300) {
-        throw new  HttpException(httpResponse.getStatusCode(), httpResponse.getContent());
+        throw new HttpException(httpResponse.getStatusCode(), httpResponse.getContent());
       } else {
         return httpResponse.getValue(resultClass);
       }
     }
+  }
+
+  public <O> O postEmpty(String url, Map<String, String> headers, Class<O> resultClass)
+      throws IOException, HttpException {
+    try (HttpResponse response = HttpResponse
+        .of(url, httpRequestFactory(headers)
+            .buildPostRequest(new GenericUrl(url), new EmptyContent())
+            .setThrowExceptionOnExecuteError(false)
+            .execute())) {
+      return response.getValue(resultClass);
+    }
+  }
+
+  public HttpResponse postEmpty(String url, Map<String, String> headers)
+      throws IOException, HttpException {
+    return HttpResponse
+        .of(url, httpRequestFactory(headers)
+            .buildPostRequest(new GenericUrl(url), new EmptyContent())
+            .setThrowExceptionOnExecuteError(false)
+            .execute());
   }
 
 
