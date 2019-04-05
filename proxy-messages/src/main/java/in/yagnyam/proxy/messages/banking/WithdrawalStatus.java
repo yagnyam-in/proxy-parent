@@ -17,10 +17,10 @@ public class WithdrawalStatus implements SignableMessage, AddressableMessage {
     public enum StatusEnum {
         Registered,
         Rejected,
-        Cancelled,
         InTransit,
         Completed,
-        Failed,
+        FailedInTransit,
+        FailedCompleted,
     }
 
     @NonNull
