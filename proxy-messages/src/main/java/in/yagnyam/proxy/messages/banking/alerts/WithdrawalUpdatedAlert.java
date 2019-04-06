@@ -28,6 +28,8 @@ import lombok.ToString;
 public class WithdrawalUpdatedAlert implements SignableAlertMessage {
 
   public static final String WITHDRAWAL_ID = "withdrawalId";
+  public static final String ACCOUNT_ID = "accountId";
+  public static final String BANK_ID = "bankId";
 
   @NonNull
   private String alertId;
@@ -77,6 +79,8 @@ public class WithdrawalUpdatedAlert implements SignableAlertMessage {
   public Map<String, String> toFcmMap() {
     Map<String, String> map = SignableAlertMessage.super.toFcmMap();
     map.put(WITHDRAWAL_ID, withdrawalId);
+    map.put(ACCOUNT_ID, proxyAccountId.getAccountId());
+    map.put(BANK_ID, proxyAccountId.getBankId());
     return map;
   }
 
