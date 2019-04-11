@@ -27,7 +27,7 @@ import lombok.ToString;
 @EqualsAndHashCode(of = {"alertId"})
 public class DepositUpdatedAlert implements SignableAlertMessage {
 
-  public static final String WITHDRAWAL_ID = "depositRequestId";
+  public static final String DEPOSIT_ID = "depositId";
   public static final String ACCOUNT_ID = "accountId";
   public static final String BANK_ID = "bankId";
 
@@ -43,7 +43,7 @@ public class DepositUpdatedAlert implements SignableAlertMessage {
   }
 
   @NonNull
-  private String depositRequestId;
+  private String depositId;
 
   @NonNull
   private ProxyId receiverId;
@@ -55,13 +55,13 @@ public class DepositUpdatedAlert implements SignableAlertMessage {
 
   @Override
   public String toReadableString() {
-    return String.format("Deposit request %s is updated.", depositRequestId);
+    return String.format("Deposit request %s is updated.", depositId);
   }
 
   @Override
   public boolean isValid() {
     return StringUtils.isValid(alertId)
-        && StringUtils.isValid(depositRequestId)
+        && StringUtils.isValid(depositId)
         && receiverId != null && receiverId.isValid();
   }
 
@@ -78,7 +78,7 @@ public class DepositUpdatedAlert implements SignableAlertMessage {
   @Override
   public Map<String, String> toFcmMap() {
     Map<String, String> map = SignableAlertMessage.super.toFcmMap();
-    map.put(WITHDRAWAL_ID, depositRequestId);
+    map.put(DEPOSIT_ID, depositId);
     map.put(ACCOUNT_ID, proxyAccountId.getAccountId());
     map.put(BANK_ID, proxyAccountId.getBankId());
     return map;
