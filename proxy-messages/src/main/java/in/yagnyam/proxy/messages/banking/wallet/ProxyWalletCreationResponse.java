@@ -51,7 +51,25 @@ public class ProxyWalletCreationResponse implements SignableMessage, Addressable
   @JsonIgnore
   public boolean isValid() {
     return request != null && request.isValid()
+        && request.getMessage().getProxyUniverse()
+        .equals(proxyAccount.getMessage().getProxyAccountId().getProxyUniverse())
         && proxyAccount != null && proxyAccount.isValid()
         && proxyAccount.getSignedBy().canSignOnBehalfOf(request.getMessage().getBankId());
   }
+
+  @JsonIgnore
+  public String getProxyUniverse() {
+    String proxyUniverseFromRequest =
+        request.getMessage().getProxyUniverse();
+    String proxyUniverseFromAccount =
+        proxyAccount.getMessage().getProxyAccountId().getProxyUniverse();
+    if (!proxyUniverseFromRequest.equals(proxyUniverseFromAccount)) {
+      throw new IllegalArgumentException(
+          "Proxy Universe from request [" + proxyUniverseFromRequest + "]"
+              + " != Proxy Universe from account [" + proxyUniverseFromAccount + "]");
+    }
+    return proxyUniverseFromAccount;
+  }
+
+
 }

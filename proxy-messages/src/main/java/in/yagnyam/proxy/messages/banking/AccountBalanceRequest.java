@@ -55,4 +55,11 @@ public class AccountBalanceRequest implements SignableRequestMessage, Addressabl
     return StringUtils.isValid(requestId)
         && proxyAccount != null && proxyAccount.isValid();
   }
+
+  @JsonIgnore
+  public ProxyAccountId getProxyAccountId() {
+    return proxyAccount != null && proxyAccount.getMessage() != null
+        ? proxyAccount.getMessage().getProxyAccountId() : null;
+  }
+
 }

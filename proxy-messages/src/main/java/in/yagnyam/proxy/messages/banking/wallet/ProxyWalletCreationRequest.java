@@ -31,6 +31,9 @@ public class ProxyWalletCreationRequest implements SignableRequestMessage, Addre
   private String requestId;
 
   @NonNull
+  private String proxyUniverse;
+
+  @NonNull
   private ProxyId proxyId;
 
   @NonNull
@@ -59,6 +62,7 @@ public class ProxyWalletCreationRequest implements SignableRequestMessage, Addre
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(requestId)
+        && StringUtils.isValid(proxyUniverse)
         && proxyId != null && proxyId.isValid()
         && bankId != null && bankId.isValid()
         && Currency.isValidCurrency(currency);
