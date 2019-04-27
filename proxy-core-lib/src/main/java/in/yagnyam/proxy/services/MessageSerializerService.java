@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @SuppressWarnings("unchecked")
 public class MessageSerializerService {
 
-  private ObjectMapper objectMapper() {
+  protected ObjectMapper objectMapper() {
     ObjectMapper objectMapper = new ObjectMapper();
     objectMapper.registerModule(new JavaTimeModule());
     objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
