@@ -7,11 +7,15 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import java.io.IOException;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Builder
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @SuppressWarnings("unchecked")
 public class MessageSerializerService {
 
@@ -51,6 +55,15 @@ public class MessageSerializerService {
     }
   }
 
+
+  public byte[] serializeMessageAsBytes(Object object) throws IOException {
+    try {
+      return objectMapper().writeValueAsBytes(object);
+    } catch (JsonProcessingException e) {
+      log.error("Unable to serialize Message " + object, e);
+      throw new IOException(e);
+    }
+  }
 
   public <T extends SignableMessage> SignedMessage<T> deserializeSignedMessage(String message)
       throws IOException {
