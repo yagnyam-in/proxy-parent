@@ -123,12 +123,12 @@ public class NetworkService {
     return messageSerializerService.deserializeMessage(getWithHeaders(url, headers), resultClass);
   }
 
-  public <I, O> O postValue(String url, I request, Class<O> resultClass)
+  public <I, O> O postAndGetValue(String url, I request, Class<O> resultClass)
       throws IOException, HttpException {
-    return postValueWithHeaders(url, Collections.emptyMap(), request, resultClass);
+    return postAndGetValueWithHeaders(url, Collections.emptyMap(), request, resultClass);
   }
 
-  public <I> void postValue(String url, I request)
+  public <I> void postValueWithNoResponse(String url, I request)
       throws IOException, HttpException {
     try (HttpResponse httpResponse = postValueWithHeaders(url, Collections.emptyMap(), request)) {
       if (httpResponse.getStatusCode() < 200 || httpResponse.getStatusCode() >= 300) {
@@ -137,14 +137,14 @@ public class NetworkService {
     }
   }
 
-  private <T> HttpResponse postValueWithHeaders(String url, Map<String, String> headers, T request)
+  public  <T> HttpResponse postValueWithHeaders(String url, Map<String, String> headers, T request)
       throws IOException {
     byte[] requestBytes = messageSerializerService.serializeMessageAsBytes(request);
-    return postValueWithHeaders(url, headers, "application/json", requestBytes);
+    return postBytesWithHeaders(url, headers, "application/json", requestBytes);
   }
 
 
-  private HttpResponse postValueWithHeaders(String url, Map<String, String> headers, String type,
+  public HttpResponse postBytesWithHeaders(String url, Map<String, String> headers, String type,
       byte[] requestBytes)
       throws IOException {
     HttpContent httpContent = new ByteArrayContent(type, requestBytes);
@@ -157,30 +157,23 @@ public class NetworkService {
   }
 
 
-  public <I, O> O postValueWithHeaders(String url, Map<String, String> headers, I request,
+  public <I, O> O postAndGetValueWithHeaders(String url, Map<String, String> headers, I request,
       Class<O> resultClass) throws IOException, HttpException {
     try (HttpResponse httpResponse = postValueWithHeaders(url, headers, request)) {
-      if (httpResponse.getStatusCode() < 200 || httpResponse.getStatusCode() >= 300) {
-        throw new HttpException(httpResponse.getStatusCode(), httpResponse.getContent());
-      } else {
-        return messageSerializerService.deserializeMessage(httpResponse.getContent(), resultClass);
-      }
+      return messageSerializerService.deserializeMessage(httpResponse.getContent(), resultClass);
     }
   }
 
-  public <O> O postWithHeaders(String url, Map<String, String> headers, String type,
+  public <O> O postBytesAndGetValueWithHeaders(String url, Map<String, String> headers, String type,
       byte[] requestBytes,
       Class<O> resultClass) throws IOException, HttpException {
-    try (HttpResponse httpResponse = postValueWithHeaders(url, headers, type, requestBytes)) {
-      if (httpResponse.getStatusCode() < 200 || httpResponse.getStatusCode() >= 300) {
-        throw new HttpException(httpResponse.getStatusCode(), httpResponse.getContent());
-      } else {
-        return messageSerializerService.deserializeMessage(httpResponse.getContent(), resultClass);
-      }
+    try (HttpResponse httpResponse = postBytesWithHeaders(url, headers, type, requestBytes)) {
+      return messageSerializerService.deserializeMessage(httpResponse.getContent(), resultClass);
     }
   }
 
-  public <O> O postEmpty(String url, Map<String, String> headers, Class<O> resultClass)
+  public <O> O postEmptyAndGetValueWithHeaders(String url, Map<String, String> headers,
+      Class<O> resultClass)
       throws IOException, HttpException {
     try (HttpResponse httpResponse = HttpResponse
         .of(url, httpRequestFactory(headers)
@@ -191,7 +184,7 @@ public class NetworkService {
     }
   }
 
-  public HttpResponse postEmpty(String url, Map<String, String> headers)
+  public HttpResponse postEmptyWithHeaders(String url, Map<String, String> headers)
       throws IOException, HttpException {
     return HttpResponse
         .of(url, httpRequestFactory(headers)
