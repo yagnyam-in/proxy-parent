@@ -69,11 +69,7 @@ public class NonProxyAccount {
         return StringUtils.isValid(bank)
                 && StringUtils.isValid(accountNumber)
                 && StringUtils.isValid(accountHolder)
-                && Currency.isValidCurrency(currency)
-                && (ifscCode == null || StringUtils.isValid(ifscCode))
-                && (email == null || StringUtils.isValid(email))
-                && (phone == null || StringUtils.isValid(phone))
-                && (address == null || StringUtils.isValid(address));
+                && Currency.isValidCurrency(currency);
     }
 
 }
