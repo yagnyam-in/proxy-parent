@@ -76,6 +76,16 @@ public class NetworkService {
     public void close() throws IOException {
       response.disconnect();
     }
+
+    @Override
+    public String toString() {
+      try {
+        return "HttpResponse(statusCode: " + getStatusCode() + ", "
+            + "content: " + getContent(false) + ")";
+      } catch (IOException | HttpException e) {
+        return "HttpResponse(statusCode: " + getStatusCode() + ", content: unable to parse)";
+      }
+    }
   }
 
   private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
@@ -137,7 +147,7 @@ public class NetworkService {
     }
   }
 
-  public  <T> HttpResponse postValueWithHeaders(String url, Map<String, String> headers, T request)
+  public <T> HttpResponse postValueWithHeaders(String url, Map<String, String> headers, T request)
       throws IOException {
     byte[] requestBytes = messageSerializerService.serializeMessageAsBytes(request);
     return postBytesWithHeaders(url, headers, "application/json", requestBytes);
