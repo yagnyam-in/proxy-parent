@@ -5,7 +5,6 @@ import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
-import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 @Builder
@@ -13,25 +12,27 @@ import lombok.*;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
-public class DepositResponse implements SignableMessage, AddressableMessage {
+public class DepositRequestCancelResponse implements SignableMessage, AddressableMessage {
 
     @NonNull
-    public SignedMessage<DepositRequest> request;
-
-    @NonNull
-    private String depositLink;
+    public SignedMessage<DepositRequestCancelRequest> request;
 
     @NonNull
     private DepositStatusEnum status;
 
     @Override
     public ProxyId address() {
-        return request.getMessage().getOwnerProxyId();
+        return request.getSignedBy();
     }
 
     @Override
     public ProxyId signer() {
-        return request.getMessage().proxyAccount.getSignedBy();
+        return request.getMessage().address();
+    }
+
+    @JsonIgnore
+    public String getRequestId() {
+        return request.getMessage().getRequestId();
     }
 
     @Override
@@ -43,7 +44,12 @@ public class DepositResponse implements SignableMessage, AddressableMessage {
     @JsonIgnore
     public boolean isValid() {
         return request != null && request.isValid()
-                && StringUtils.isValid(depositLink)
                 && status != null;
     }
+
+    @JsonIgnore
+    public String getDepositId() {
+        return request.getMessage().getDepositId();
+    }
+
 }

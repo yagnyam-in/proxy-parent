@@ -12,10 +12,13 @@ import lombok.*;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
-public class DepositStatusResponse implements SignableMessage, AddressableMessage {
+public class DepositRequestCreationResponse implements SignableMessage, AddressableMessage {
 
     @NonNull
-    public SignedMessage<DepositStatusRequest> request;
+    public SignedMessage<DepositRequestCreationRequest> request;
+
+    @NonNull
+    public SignedMessage<DepositRequest> depositRequest;
 
     @NonNull
     private DepositStatusEnum status;
@@ -27,14 +30,7 @@ public class DepositStatusResponse implements SignableMessage, AddressableMessag
 
     @Override
     public ProxyId signer() {
-        DepositRequest deposit = request.getMessage().getRequest().getMessage();
-        return deposit.address();
-    }
-
-    @JsonIgnore
-    public String getRequestId() {
-        return request != null && request.getMessage() != null ? request.getMessage().getRequestId()
-                : null;
+        return request.getMessage().proxyAccount.getSignedBy();
     }
 
     @Override
@@ -46,6 +42,7 @@ public class DepositStatusResponse implements SignableMessage, AddressableMessag
     @JsonIgnore
     public boolean isValid() {
         return request != null && request.isValid()
+                && depositRequest != null && depositRequest.isValid()
                 && status != null;
     }
 }

@@ -16,6 +16,12 @@ public class DateUtils {
     return c.getTime();
   }
 
+  public static Date afterDays(int days) {
+    Calendar c = Calendar.getInstance();
+    c.add(Calendar.DATE, days);
+    return c.getTime();
+  }
+
   public static int age(Date dateOfBirth) {
     Calendar today = Calendar.getInstance();
 

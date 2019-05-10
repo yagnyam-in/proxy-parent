@@ -1,7 +1,6 @@
 package in.yagnyam.proxy.messages.banking;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.utils.DateUtils;
@@ -24,7 +23,7 @@ import lombok.ToString;
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"proxyAccountId", "ownerProxyId"})
-public class ProxyAccount implements SignableMessage, AddressableMessage {
+public class ProxyAccount implements SignableMessage {
 
   @NonNull
   private ProxyAccountId proxyAccountId;
@@ -67,11 +66,6 @@ public class ProxyAccount implements SignableMessage, AddressableMessage {
         && DateUtils.isValid(expiryDate)
         && currency != null
         && maximumAmountPerTransaction != null && maximumAmountPerTransaction.isValid();
-  }
-
-  @Override
-  public ProxyId address() {
-    return ownerProxyId;
   }
 
   @JsonIgnore
