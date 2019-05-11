@@ -27,7 +27,7 @@ public class DepositRequestStatusRequest implements SignableRequestMessage, Addr
 
     @Override
     public ProxyId signer() {
-        return depositRequest.getSignedBy();
+        return getOwnerProxyId();
     }
 
     @Override
@@ -54,6 +54,11 @@ public class DepositRequestStatusRequest implements SignableRequestMessage, Addr
     @JsonIgnore
     public ProxyAccountId getProxyAccountId() {
         return depositRequest.getMessage().getProxyAccountId();
+    }
+
+    @JsonIgnore
+    public ProxyId getOwnerProxyId() {
+        return depositRequest.getMessage().getOwnerProxyId();
     }
 
     @JsonIgnore
