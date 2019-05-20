@@ -5,6 +5,7 @@ import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 @Builder
@@ -38,7 +39,7 @@ public class DepositRequestStatusRequest implements SignableRequestMessage, Addr
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return depositRequest != null && depositRequest.isValid();
+        return StringUtils.isValid(requestId) && depositRequest != null && depositRequest.isValid();
     }
 
     @Override

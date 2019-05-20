@@ -2,6 +2,7 @@ package in.yagnyam.proxy.messages.banking;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.*;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 @Builder
@@ -15,16 +16,16 @@ public class DepositRequestCancelRequest implements SignableRequestMessage, Addr
     private String requestId;
 
     @NonNull
-    public SignedMessage<DepositRequest> request;
+    public SignedMessage<DepositRequest> depositRequest;
 
     @Override
     public ProxyId address() {
-        return request.getSignedBy();
+        return depositRequest.getSignedBy();
     }
 
     @Override
     public ProxyId signer() {
-        return request.getMessage().getOwnerProxyId();
+        return depositRequest.getMessage().getOwnerProxyId();
     }
 
     @Override
@@ -35,7 +36,7 @@ public class DepositRequestCancelRequest implements SignableRequestMessage, Addr
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return request != null && request.isValid();
+        return StringUtils.isValid(requestId) && depositRequest != null && depositRequest.isValid();
     }
 
     @Override
@@ -45,11 +46,11 @@ public class DepositRequestCancelRequest implements SignableRequestMessage, Addr
 
     @JsonIgnore
     public String getDepositId() {
-        return request.getMessage().getDepositId();
+        return depositRequest.getMessage().getDepositId();
     }
 
     @JsonIgnore
     public String getProxyUniverse() {
-        return request.getMessage().getProxyUniverse();
+        return depositRequest.getMessage().getProxyUniverse();
     }
 }
