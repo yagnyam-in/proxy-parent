@@ -5,16 +5,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.ToString;
+import lombok.*;
 
 /**
- * Payment Registered confirmation by bank
+ * PaymentAuthorization Status Response
  */
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -22,14 +16,17 @@ import lombok.ToString;
 @Getter
 @ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PaymentRegistered implements SignableMessage {
+public class PaymentAuthorizationStatusResponse implements SignableMessage {
 
   @NonNull
-  public SignedMessage<Payment> payment;
+  public SignedMessage<PaymentAuthorizationStatusRequest> request;
+
+  @NonNull
+  private PaymentStatusEnum paymentStatus;
 
   @Override
   public ProxyId signer() {
-    return payment.getMessage().getProxyAccount().getSignedBy();
+    return request.getMessage().getPaymentAuthorization().getMessage().getProxyAccount().getSignedBy();
   }
 
   @Override
@@ -40,7 +37,13 @@ public class PaymentRegistered implements SignableMessage {
   @Override
   @JsonIgnore
   public boolean isValid() {
-    return payment != null && payment.isValid();
+    return request != null && request.isValid()
+        && paymentStatus != null;
+  }
+
+  @JsonIgnore
+  public String getPaymentId() {
+    return request.getMessage().getPaymentId();
   }
 
 }

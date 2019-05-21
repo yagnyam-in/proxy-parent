@@ -18,7 +18,7 @@ import lombok.Singular;
 import lombok.ToString;
 
 /**
- * Alert used by GCM for sending Payment Update Event
+ * Alert used by GCM for sending PaymentAuthorization Update Event
  */
 @Builder
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -57,7 +57,7 @@ public class PaymentUpdatedAlert implements SignableAlertMessage {
 
   @Override
   public String toReadableString() {
-    return String.format("Payment %s is updated.", paymentId);
+    return String.format("PaymentAuthorization %s is updated.", paymentId);
   }
 
   @Override

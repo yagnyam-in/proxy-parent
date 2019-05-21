@@ -14,7 +14,7 @@ import lombok.NonNull;
 import lombok.ToString;
 
 /**
- * Payment Status Response
+ * PaymentAuthorization Registered confirmation by bank
  */
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -22,30 +22,17 @@ import lombok.ToString;
 @Getter
 @ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PaymentStatusResponse implements SignableMessage {
-
-  public enum PaymentStatus {
-    Registered,
-    InsufficientFunds,
-    CancelledByPayer,
-    CancleedByPayee,
-    Expired,
-    Processed,
-    Error
-  }
+public class PaymentAuthorizationRegistered implements SignableMessage {
 
   @NonNull
-  public SignedMessage<Payment> payment;
+  public SignedMessage<PaymentAuthorization> paymentAuthorization;
 
   @NonNull
-  private String requestId;
-
-  @NonNull
-  private PaymentStatus status;
+  private PaymentStatusEnum paymentStatus;
 
   @Override
   public ProxyId signer() {
-    return payment.getMessage().getProxyAccount().getSignedBy();
+    return paymentAuthorization.getMessage().getProxyAccount().getSignedBy();
   }
 
   @Override
@@ -56,14 +43,7 @@ public class PaymentStatusResponse implements SignableMessage {
   @Override
   @JsonIgnore
   public boolean isValid() {
-    return payment != null && payment.isValid()
-        && requestId != null
-        && status != null;
-  }
-
-  @JsonIgnore
-  public String getPaymentId() {
-    return payment != null && payment.getMessage() != null ? payment.getMessage().getPaymentId() : null;
+    return paymentAuthorization != null && paymentAuthorization.isValid() && paymentStatus != null;
   }
 
 }

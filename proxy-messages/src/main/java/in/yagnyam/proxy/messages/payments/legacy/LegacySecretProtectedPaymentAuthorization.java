@@ -1,4 +1,4 @@
-package in.yagnyam.proxy.messages.payments;
+package in.yagnyam.proxy.messages.payments.legacy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.ProxyId;
@@ -16,13 +16,13 @@ import lombok.NonNull;
 import lombok.ToString;
 
 /**
- * Payment Authorization that is protected by a Secret
+ * PaymentAuthorization Authorization that is protected by a Secret
  */
 @Builder
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"paymentAuthorizationId", "proxyAccount"})
-public class SecretProtectedPaymentAuthorization implements SignableMessage {
+public class LegacySecretProtectedPaymentAuthorization implements SignableMessage {
 
   @NonNull
   public SignedMessage<ProxyAccount> proxyAccount;

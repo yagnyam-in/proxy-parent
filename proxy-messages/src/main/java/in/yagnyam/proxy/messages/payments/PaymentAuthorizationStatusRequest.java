@@ -2,16 +2,15 @@ package in.yagnyam.proxy.messages.payments;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
-import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
 import java.util.Set;
 
 import in.yagnyam.proxy.messages.banking.ProxyAccountId;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +20,7 @@ import lombok.NonNull;
 import lombok.ToString;
 
 /**
- * Payment Status Request
+ * PaymentAuthorization Status Request
  */
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -29,25 +28,27 @@ import lombok.ToString;
 @Getter
 @ToString
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class PaymentStatusRequest implements SignableRequestMessage, AddressableMessage {
-
-  @NonNull
-  public SignedMessage<Payment> payment;
+public class PaymentAuthorizationStatusRequest implements SignableRequestMessage, AddressableMessage {
 
   @NonNull
   private String requestId;
 
+  @NonNull
+  public SignedMessage<PaymentAuthorization> paymentAuthorization;
+
   @Override
   public ProxyId signer() {
-    throw new RuntimeException("SignableMessage.signer should never be invoked when SignableMessage.validSigners is implemented");
+    throw new RuntimeException("PaymentAuthorizationStatusRequest.signer should never be invoked when PaymentAuthorizationStatusRequest.validSigners is implemented");
   }
 
   @Override
   public Set<ProxyId> validSigners() {
-    if (payment.getMessage().getPayeeId() == null) {
-      return ImmutableSet.of(payment.getSignedBy());
+    ProxyId payerId = paymentAuthorization.getMessage().getPayerId();
+    ProxyId payeeId = paymentAuthorization.getMessage().getPayeeId();
+    if (payeeId == null) {
+      return ImmutableSet.of(payerId);
     } else {
-      return ImmutableSet.of(payment.getSignedBy(), payment.getMessage().getPayeeId());
+      return ImmutableSet.of(payerId, payeeId);
     }
   }
 
@@ -59,8 +60,7 @@ public class PaymentStatusRequest implements SignableRequestMessage, Addressable
   @Override
   @JsonIgnore
   public boolean isValid() {
-    return payment != null && payment.isValid()
-        && requestId != null;
+    return StringUtils.isValid(requestId) && paymentAuthorization != null && paymentAuthorization.isValid();
   }
 
   @Override
@@ -70,21 +70,21 @@ public class PaymentStatusRequest implements SignableRequestMessage, Addressable
 
   @Override
   public ProxyId address() {
-    return payment.getMessage().getProxyAccount().getSignedBy();
+    return paymentAuthorization.getMessage().getProxyAccount().getSignedBy();
   }
 
   @JsonIgnore
   public String getPaymentId() {
-    return payment != null && payment.getMessage() != null ? payment.getMessage().getPaymentId() : null;
+    return paymentAuthorization != null && paymentAuthorization.getMessage() != null ? paymentAuthorization.getMessage().getPaymentId() : null;
   }
 
   @JsonIgnore
   public ProxyAccountId getPayerAccountId() {
-    return payment != null && payment.getMessage() != null ? payment.getMessage().getPayerAccountId() : null;
+    return paymentAuthorization != null && paymentAuthorization.getMessage() != null ? paymentAuthorization.getMessage().getPayerAccountId() : null;
   }
 
   @JsonIgnore
   public String getCurrency() {
-    return payment != null && payment.getMessage() != null ? payment.getMessage().getCurrency() : null;
+    return paymentAuthorization != null && paymentAuthorization.getMessage() != null ? paymentAuthorization.getMessage().getCurrency() : null;
   }
 }

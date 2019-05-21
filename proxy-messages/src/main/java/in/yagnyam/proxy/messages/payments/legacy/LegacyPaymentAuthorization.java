@@ -1,7 +1,6 @@
-package in.yagnyam.proxy.messages.payments;
+package in.yagnyam.proxy.messages.payments.legacy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
@@ -9,7 +8,9 @@ import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.messages.banking.ProxyAccount;
 import in.yagnyam.proxy.messages.banking.ProxyAccountId;
+import in.yagnyam.proxy.utils.DateUtils;
 import in.yagnyam.proxy.utils.StringUtils;
+import java.util.Date;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,31 +21,45 @@ import lombok.NonNull;
 import lombok.ToString;
 
 /**
- * Payment to the payee or payee account
+ * PaymentAuthorization Authorization
  */
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder
 @Getter
 @ToString
-@EqualsAndHashCode(of = {"paymentId"})
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class Payment implements SignableRequestMessage, AddressableMessage {
+@EqualsAndHashCode(of = {"paymentAuthorizationId", "proxyAccount"})
+public class LegacyPaymentAuthorization implements SignableRequestMessage, AddressableMessage {
 
   @NonNull
   public SignedMessage<ProxyAccount> proxyAccount;
 
   @NonNull
-  private String paymentId;
+  private String requestId;
+
+  @NonNull
+  private String paymentAuthorizationId;
+
+  /**
+   * Payee is mandatory (Anonymous Cheques are not supported to prevent Fraud)
+   */
+  @NonNull
+  private ProxyId payeeId;
+
+  @NonNull
+  private Date validFrom;
+
+  @NonNull
+  private Date validTill;
+
+  @NonNull
+  private Date issueDate;
 
   @NonNull
   private Amount amount;
 
-  private ProxyId payeeId;
-
-  private ProxyAccountId payeeAccountId;
-
-  private String ivPrefixedSecretHash;
+  @NonNull
+  private String transactionId;
 
   @Override
   public ProxyId signer() {
@@ -59,28 +74,28 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
   @Override
   @JsonIgnore
   public boolean isValid() {
-    boolean valid = StringUtils.isValid(paymentId)
-        && proxyAccount != null && proxyAccount.isValid()
-        && amount != null && amount.isValid();
+    return StringUtils.isValid(requestId)
+        && proxyAccount != null
+        && proxyAccount.isValid()
+        && payeeId != null && payeeId.isValid()
+        && DateUtils.isValid(validFrom)
+        && DateUtils.isValid(validTill)
+        && DateUtils.isValid(issueDate)
+        && amount != null
+        && amount.isValid()
+        && StringUtils.isValid(transactionId);
+  }
 
-    if (StringUtils.isValid(ivPrefixedSecretHash)) {
-      valid = valid && payeeId == null && payeeAccountId == null;
-    } else {
-      valid = valid && payeeId != null && payeeId.isValid()
-          && (payeeAccountId == null || payeeAccountId.isValid());
-    }
-    return valid;
+  @Override
+  public ProxyId address() {
+    return payeeId;
   }
 
   @Override
   public String requestId() {
-    return paymentId;
+    return requestId;
   }
 
-  @JsonIgnore
-  public ProxyId getPayerId() {
-    return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().getOwnerProxyId() : null;
-  }
 
   @JsonIgnore
   public ProxyAccountId getPayerAccountId() {
@@ -90,10 +105,5 @@ public class Payment implements SignableRequestMessage, AddressableMessage {
   @JsonIgnore
   public String getCurrency() {
     return proxyAccount != null && proxyAccount.getMessage() != null ? proxyAccount.getMessage().getCurrency() : null;
-  }
-
-  @Override
-  public ProxyId address() {
-    return payeeId != null ? payeeId : ProxyId.any();
   }
 }

@@ -4,15 +4,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.utils.DateUtils;
+import lombok.*;
+
 import java.util.Date;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.ToString;
 
 /**
  * Proxy Account
@@ -41,7 +35,7 @@ public class ProxyAccount implements SignableMessage {
   private String currency;
 
   /**
-   * Maximum amount for which *each* Payment can be made
+   * Maximum amount for which *each* PaymentAuthorization can be made
    */
   @NonNull
   private Amount maximumAmountPerTransaction;
@@ -69,8 +63,12 @@ public class ProxyAccount implements SignableMessage {
   }
 
   @JsonIgnore
-  public String bankId() {
-    return proxyAccountId != null ? proxyAccountId.getBankId() : null;
+  public String getBankId() {
+    return proxyAccountId.getBankId();
   }
 
+  @JsonIgnore
+  public String getProxyUniverse() {
+    return proxyAccountId.getProxyUniverse();
+  }
 }

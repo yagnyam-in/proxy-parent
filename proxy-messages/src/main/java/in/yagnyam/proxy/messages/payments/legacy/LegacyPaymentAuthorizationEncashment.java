@@ -1,4 +1,4 @@
-package in.yagnyam.proxy.messages.payments;
+package in.yagnyam.proxy.messages.payments.legacy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.AddressableMessage;
@@ -12,7 +12,7 @@ import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 /**
- * Payment Authorization Encashment
+ * PaymentAuthorization Authorization Encashment
  */
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -20,10 +20,10 @@ import lombok.*;
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"paymentAuthorization"})
-public class PaymentAuthorizationEncashment implements SignableRequestMessage, AddressableMessage {
+public class LegacyPaymentAuthorizationEncashment implements SignableRequestMessage, AddressableMessage {
 
     @NonNull
-    public SignedMessage<PaymentAuthorization> paymentAuthorization;
+    public SignedMessage<LegacyPaymentAuthorization> paymentAuthorization;
 
     @NonNull
     private String requestId;
