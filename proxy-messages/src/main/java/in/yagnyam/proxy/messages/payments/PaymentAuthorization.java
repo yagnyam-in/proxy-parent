@@ -89,6 +89,7 @@ public class PaymentAuthorization implements SignableRequestMessage {
     return payee.getProxyId();
   }
 
+  @JsonIgnore
   public ProxyId getPayerBankProxyId() {
     return proxyAccount.getSignedBy();
   }
