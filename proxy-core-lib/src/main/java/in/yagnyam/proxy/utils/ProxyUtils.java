@@ -17,7 +17,7 @@ public final class ProxyUtils {
    */
   public static Proxy enrichCertificate(@NonNull Proxy proxy, PemService pemService) {
     log.debug("enrichCertificate({})", proxy);
-    if (proxy.getCertificate() == null) {
+    if (proxy.getCertificate() != null) {
       CertificateUtils.enrichCertificate(proxy.getCertificate(), pemService);
     }
     return proxy;
