@@ -61,7 +61,7 @@
     <maven-gpg-plugin>1.6</maven-gpg-plugin>
     <gpg.keyname>8AD2E469B4C10B660728D2A24279690FEED8CAB5</gpg.keyname>
 
-    <appengine.sdk.version>1.9.59</appengine.sdk.version>
+    <appengine.sdk.version>1.9.74</appengine.sdk.version>
   </properties>
 
   <modules>
@@ -80,12 +80,12 @@
       <dependency>
         <groupId>org.springframework</groupId>
         <artifactId>spring-web</artifactId>
-        <version>4.3.18.RELEASE</version>
+        <version>4.3.24.RELEASE</version>
       </dependency>
       <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcpkix-jdk15on</artifactId>
-        <version>1.60</version>
+        <version>1.61</version>
       </dependency>
       <dependency>
         <groupId>com.googlecode.objectify</groupId>
@@ -95,7 +95,7 @@
       <dependency>
         <groupId>org.bitbucket.b_c</groupId>
         <artifactId>jose4j</artifactId>
-        <version>0.6.4</version>
+        <version>0.6.5</version>
         <exclusions>
           <exclusion>
             <groupId>org.bouncycastle</groupId>
@@ -114,14 +114,14 @@
       <dependency>
         <groupId>org.projectlombok</groupId>
         <artifactId>lombok</artifactId>
-        <version>1.16.20</version>
+        <version>1.16.22</version>
         <scope>provided</scope>
       </dependency>
 
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>25.1-jre</version>
+        <version>27.1-jre</version>
       </dependency>
 
       <dependency>
@@ -177,7 +177,7 @@
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.7.25</version>
+        <version>1.7.26</version>
       </dependency>
       <dependency>
         <groupId>com.twitter</groupId>
@@ -186,8 +186,8 @@
       </dependency>
       <dependency>
         <groupId>com.google.http-client</groupId>
-        <artifactId>google-http-client</artifactId>
-        <version>1.23.0</version>
+          <artifactId>google-http-client</artifactId>
+        <version>1.29.1</version>
         <exclusions>
           <exclusion>
             <groupId>com.google.code.findbugs</groupId>
@@ -226,12 +226,12 @@
       <dependency>
         <groupId>org.webjars</groupId>
         <artifactId>jquery</artifactId>
-        <version>3.3.1-1</version>
+        <version>3.4.1</version>
       </dependency>
       <dependency>
         <groupId>org.webjars</groupId>
         <artifactId>bootstrap</artifactId>
-        <version>3.3.7-1</version>
+        <version>3.4.1</version>
       </dependency>
       <dependency>
         <groupId>org.webjars</groupId>
@@ -291,7 +291,7 @@
       <dependency>
         <groupId>com.google.truth</groupId>
         <artifactId>truth</artifactId>
-        <version>0.37</version>
+        <version>0.45</version>
         <scope>test</scope>
       </dependency>
 
