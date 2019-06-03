@@ -10,12 +10,13 @@ import lombok.*;
 /**
  * PaymentAuthorization Status Response
  */
-@NoArgsConstructor
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @Getter
 @ToString
+@EqualsAndHashCode
+@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PaymentAuthorizationStatusResponse implements SignableMessage {
 
   @NonNull

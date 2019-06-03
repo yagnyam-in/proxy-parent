@@ -16,12 +16,13 @@ import java.util.Set;
 /**
  * PaymentAuthorization Status Request
  */
-@NoArgsConstructor
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @Getter
 @ToString
+@EqualsAndHashCode
+@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PaymentEncashmentStatusRequest implements SignableRequestMessage, AddressableMessage {
 
   @NonNull
@@ -64,6 +65,11 @@ public class PaymentEncashmentStatusRequest implements SignableRequestMessage, A
   @JsonIgnore
   public String getPaymentId() {
     return paymentEncashment.getMessage().getPaymentId();
+  }
+
+  @JsonIgnore
+  public String getProxyUniverse() {
+    return paymentEncashment.getMessage().getProxyUniverse();
   }
 
 }

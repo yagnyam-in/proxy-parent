@@ -11,23 +11,18 @@ import java.util.Set;
 
 import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.ToString;
+import lombok.*;
 
 /**
  * PaymentAuthorization Status Request
  */
-@NoArgsConstructor
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @Getter
 @ToString
+@EqualsAndHashCode
+@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PaymentAuthorizationStatusRequest implements SignableRequestMessage, AddressableMessage {
 
   @NonNull
@@ -87,4 +82,10 @@ public class PaymentAuthorizationStatusRequest implements SignableRequestMessage
   public String getCurrency() {
     return paymentAuthorization != null && paymentAuthorization.getMessage() != null ? paymentAuthorization.getMessage().getCurrency() : null;
   }
+
+  @JsonIgnore
+  public String getProxyUniverse() {
+    return paymentAuthorization.getMessage().getProxyUniverse();
+  }
+
 }

@@ -4,20 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.utils.StringUtils;
 import java.util.List;
 import java.util.Set;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.Singular;
-import lombok.ToString;
+
+import lombok.*;
 
 @Builder
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString(of = {"type", "payload", "signatures"})
+@EqualsAndHashCode(exclude = {"message"})
 public class SignedMessage<T extends SignableMessage> {
 
   @JsonIgnore

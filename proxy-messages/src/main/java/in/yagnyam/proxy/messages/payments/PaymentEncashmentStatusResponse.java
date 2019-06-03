@@ -13,12 +13,13 @@ import java.util.Set;
 /**
  * PaymentAuthorization Status Response
  */
-@NoArgsConstructor
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @Getter
 @ToString
+@EqualsAndHashCode
+@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PaymentEncashmentStatusResponse implements SignableMessage {
 
   @NonNull

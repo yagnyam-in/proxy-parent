@@ -15,12 +15,13 @@ import lombok.*;
 /**
  * PaymentAuthorization Encashment by Payee
  */
-@NoArgsConstructor
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Builder
 @Getter
 @ToString
+@EqualsAndHashCode
+@NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class PaymentEncashment implements SignableMessage, AddressableMessage {
 
   @NonNull
@@ -94,22 +95,29 @@ public class PaymentEncashment implements SignableMessage, AddressableMessage {
     return paymentAuthorization.getMessage().getCurrency();
   }
 
-    @JsonIgnore
-    public ProxyId getPayeeId() {
+  @JsonIgnore
+  public ProxyId getPayeeId() {
         return payeeAccount.getMessage().getOwnerProxyId();
     }
 
-    @JsonIgnore
-    public ProxyAccountId getPayeeAccountId() {
+  @JsonIgnore
+  public ProxyAccountId getPayeeAccountId() {
         return payeeAccount.getMessage().getProxyAccountId();
     }
 
-    public ProxyId getPayerBankProxyId() {
+  @JsonIgnore
+  public ProxyId getPayerBankProxyId() {
       return paymentAuthorization.getMessage().getPayerBankProxyId();
     }
 
-    public ProxyId getPayeeBankProxyId() {
+  @JsonIgnore
+  public ProxyId getPayeeBankProxyId() {
         return payeeAccount.getSignedBy();
     }
+
+  @JsonIgnore
+  public String getProxyUniverse() {
+    return paymentAuthorization.getMessage().getProxyUniverse();
+  }
 
 }
