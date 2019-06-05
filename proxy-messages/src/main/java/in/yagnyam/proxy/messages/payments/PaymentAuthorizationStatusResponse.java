@@ -7,9 +7,6 @@ import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import lombok.*;
 
-/**
- * PaymentAuthorization Status Response
- */
 @Builder
 @Getter
 @ToString
@@ -23,7 +20,7 @@ public class PaymentAuthorizationStatusResponse implements SignableMessage {
   public SignedMessage<PaymentAuthorizationStatusRequest> request;
 
   @NonNull
-  private PaymentStatusEnum paymentStatus;
+  private PaymentAuthorizationStatusEnum paymentAuthorizationStatus;
 
   @Override
   public ProxyId signer() {
@@ -39,7 +36,7 @@ public class PaymentAuthorizationStatusResponse implements SignableMessage {
   @JsonIgnore
   public boolean isValid() {
     return request != null && request.isValid()
-        && paymentStatus != null;
+        && paymentAuthorizationStatus != null;
   }
 
   @JsonIgnore

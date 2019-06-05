@@ -23,7 +23,7 @@ public class PaymentEncashmentRegistered implements SignableMessage {
   public SignedMessage<PaymentEncashment> paymentEncashment;
 
   @NonNull
-  private PaymentStatusEnum paymentStatus;
+  private PaymentEncashmentStatusEnum paymentEncashmentStatus;
 
   @Override
   public ProxyId signer() {
@@ -38,7 +38,7 @@ public class PaymentEncashmentRegistered implements SignableMessage {
   @Override
   @JsonIgnore
   public boolean isValid() {
-    return paymentEncashment != null && paymentEncashment.isValid() && paymentStatus != null;
+    return paymentEncashment != null && paymentEncashment.isValid() && paymentEncashmentStatus != null;
   }
 
 }

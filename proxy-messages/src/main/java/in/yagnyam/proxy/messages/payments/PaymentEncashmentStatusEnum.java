@@ -1,6 +1,6 @@
 package in.yagnyam.proxy.messages.payments;
 
-public enum PaymentStatusEnum {
+public enum PaymentEncashmentStatusEnum {
   Registered,
   Rejected,
   InsufficientFunds,

@@ -23,7 +23,7 @@ public class PaymentAuthorizationRegistered implements SignableMessage {
   public SignedMessage<PaymentAuthorization> paymentAuthorization;
 
   @NonNull
-  private PaymentStatusEnum paymentStatus;
+  private PaymentAuthorizationStatusEnum paymentAuthorizationStatus;
 
   @Override
   public ProxyId signer() {
@@ -38,7 +38,7 @@ public class PaymentAuthorizationRegistered implements SignableMessage {
   @Override
   @JsonIgnore
   public boolean isValid() {
-    return paymentAuthorization != null && paymentAuthorization.isValid() && paymentStatus != null;
+    return paymentAuthorization != null && paymentAuthorization.isValid() && paymentAuthorizationStatus != null;
   }
 
 }

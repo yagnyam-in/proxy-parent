@@ -12,9 +12,6 @@ import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
-/**
- * PaymentAuthorization Encashment by Payee
- */
 @Builder
 @Getter
 @ToString

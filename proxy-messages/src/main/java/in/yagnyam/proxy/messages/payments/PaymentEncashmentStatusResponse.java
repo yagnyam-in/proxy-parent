@@ -26,7 +26,7 @@ public class PaymentEncashmentStatusResponse implements SignableMessage {
   public SignedMessage<PaymentEncashmentStatusRequest> request;
 
   @NonNull
-  private PaymentStatusEnum paymentStatus;
+  private PaymentEncashmentStatusEnum paymentEncashmentStatus;
 
   @Override
   public ProxyId signer() {
@@ -48,7 +48,7 @@ public class PaymentEncashmentStatusResponse implements SignableMessage {
   @JsonIgnore
   public boolean isValid() {
     return request != null && request.isValid()
-        && paymentStatus != null;
+        && paymentEncashmentStatus != null;
   }
 
   @JsonIgnore

@@ -10,9 +10,6 @@ import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
-/**
- * PaymentAuthorization Status Request
- */
 @Builder
 @Getter
 @ToString
