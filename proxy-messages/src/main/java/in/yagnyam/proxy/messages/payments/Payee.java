@@ -3,13 +3,9 @@ package in.yagnyam.proxy.messages.payments;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import in.yagnyam.proxy.ProxyId;
-import in.yagnyam.proxy.messages.banking.ProxyAccountId;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
-/**
- * Payee
- */
 @Builder
 @Getter
 @ToString
@@ -20,39 +16,33 @@ import lombok.*;
 public class Payee {
 
     @NonNull
-    private PayeeTypeEnum payeeType;
+    private String paymentEncashmentId;
 
-    private ProxyAccountId proxyAccountId;
+    @NonNull
+    private PayeeTypeEnum payeeType;
 
     private ProxyId proxyId;
 
-    private String email;
+    private String emailHash;
 
-    private String phone;
+    private String phoneHash;
 
-    private String ivPrefixedSecretHash;
+    private String secretHash;
 
-    /**
-     * Tests if the message is valid
-     *
-     * @return true if message is valid, false otherwise
-     */
     @JsonIgnore
     boolean isValid() {
-        if (payeeType == null) {
+        if (payeeType == null || StringUtils.isEmpty(paymentEncashmentId)) {
             return false;
         }
         switch (payeeType) {
-            case ProxyAccountId:
-                return proxyAccountId != null && proxyAccountId.isValid() && proxyId != null && proxyId.isValid();
             case ProxyId:
                 return proxyId != null && proxyId.isValid();
             case Email:
-                return StringUtils.isValid(email) && StringUtils.isValid(ivPrefixedSecretHash);
+                return StringUtils.isValid(emailHash) && StringUtils.isValid(secretHash);
             case Phone:
-                return StringUtils.isValid(phone) && StringUtils.isValid(ivPrefixedSecretHash);
+                return StringUtils.isValid(phoneHash) && StringUtils.isValid(secretHash);
             case AnyoneWithSecret:
-                return StringUtils.isValid(ivPrefixedSecretHash);
+                return StringUtils.isValid(secretHash);
             default:
                 return false;
         }

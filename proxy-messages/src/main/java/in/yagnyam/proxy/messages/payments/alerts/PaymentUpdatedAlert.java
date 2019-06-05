@@ -28,7 +28,7 @@ import lombok.ToString;
 @EqualsAndHashCode(of = {"alertId"})
 public class PaymentUpdatedAlert implements SignableAlertMessage {
 
-  public static final String PAYMENT_ID = "paymentId";
+  public static final String PAYMENT_ID = "paymentAuthorizationId";
   public static final String PAYER_ACCOUNT_ID = "payerAccountId";
   public static final String PAYER_BANK_ID = "payerBankId";
 

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
-import in.yagnyam.proxy.SignableMessage;
+import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.messages.banking.ProxyAccount;
@@ -22,102 +22,115 @@ import lombok.*;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class PaymentEncashment implements SignableMessage, AddressableMessage {
+public class PaymentEncashment implements SignableRequestMessage, AddressableMessage {
 
-  @NonNull
-  public SignedMessage<PaymentAuthorization> paymentAuthorization;
+    @NonNull
+    private String paymentEncashmentId;
 
-  @NonNull
-  public SignedMessage<ProxyAccount> payeeAccount;
+    @NonNull
+    public SignedMessage<PaymentAuthorization> paymentAuthorization;
 
-  private String secret;
+    @NonNull
+    public SignedMessage<ProxyAccount> payeeAccount;
 
-  @Override
-  public ProxyId signer() {
-    return payeeAccount.getMessage().getOwnerProxyId();
-  }
+    private String secret;
 
-  @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
-  @JsonIgnore
-  public boolean isValid() {
-    boolean valid = paymentAuthorization != null && paymentAuthorization.isValid()
-        && payeeAccount != null && payeeAccount.isValid();
-    if (!valid) return false;
-
-    switch (paymentAuthorization.getMessage().getPayee().getPayeeType()) {
-      case ProxyAccountId:
-        return paymentAuthorization.getMessage().getPayeeAccountId().equals(payeeAccount.getMessage().getProxyAccountId())
-                && paymentAuthorization.getMessage().getPayeeId().equals(payeeAccount.getMessage().getOwnerProxyId());
-      case ProxyId:
-        return paymentAuthorization.getMessage().getPayeeId().equals(payeeAccount.getMessage().getOwnerProxyId());
-      case Email:
-      case Phone:
-      case AnyoneWithSecret:
-        return StringUtils.isValid(secret);
-      default:
-        return false;
+    @Override
+    public ProxyId signer() {
+        return getPayeeId();
     }
-  }
 
-  @Override
-  public ProxyId address() {
-    return paymentAuthorization.getMessage().getProxyAccount().getSignedBy();
-  }
+    @Override
+    public String toReadableString() {
+        return null;
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isValid() {
+        boolean valid = paymentAuthorization != null && paymentAuthorization.isValid()
+                && payeeAccount != null && payeeAccount.isValid();
+        if (!valid) return false;
+        Payee payee = getPayee();
+        switch (payee.getPayeeType()) {
+            case ProxyId:
+                return payee.getProxyId().equals(getPayeeId());
+            case Email:
+            case Phone:
+            case AnyoneWithSecret:
+                return StringUtils.isValid(secret);
+            default:
+                return false;
+        }
+    }
+
+    @JsonIgnore
+    public Payee getPayee() {
+        return paymentAuthorization.getMessage().getPayees().stream()
+                .filter(p -> p.getPaymentEncashmentId().equals(paymentEncashmentId))
+                .findAny()
+                .orElseThrow(() -> new IllegalStateException("Payment encashment doesn't have matching Payee"));
+    }
 
 
-  @JsonIgnore
-  public String getPaymentId() {
-    return paymentAuthorization.getMessage().getPaymentId();
-  }
+    @Override
+    public ProxyId address() {
+        return paymentAuthorization.getMessage().getProxyAccount().getSignedBy();
+    }
 
-  @JsonIgnore
-  public Amount getAmount() {
-    return paymentAuthorization.getMessage().getAmount();
-  }
+    @Override
+    public String requestId() {
+        return paymentEncashmentId;
+    }
 
-  @JsonIgnore
-  public ProxyId getPayerId() {
-    return paymentAuthorization.getMessage().getPayerId();
-  }
+    @JsonIgnore
+    public String getPaymentId() {
+        return paymentAuthorization.getMessage().getPaymentAuthorizationId();
+    }
 
-  @JsonIgnore
-  public ProxyAccountId getPayerAccountId() {
-    return paymentAuthorization.getMessage().getPayerAccountId();
-  }
+    @JsonIgnore
+    public Amount getAmount() {
+        return paymentAuthorization.getMessage().getAmount();
+    }
 
-  @JsonIgnore
-  public String getCurrency() {
-    return paymentAuthorization.getMessage().getCurrency();
-  }
+    @JsonIgnore
+    public ProxyId getPayerId() {
+        return paymentAuthorization.getMessage().getPayerId();
+    }
 
-  @JsonIgnore
-  public ProxyId getPayeeId() {
+    @JsonIgnore
+    public ProxyAccountId getPayerAccountId() {
+        return paymentAuthorization.getMessage().getPayerAccountId();
+    }
+
+    @JsonIgnore
+    public String getCurrency() {
+        return paymentAuthorization.getMessage().getCurrency();
+    }
+
+    @JsonIgnore
+    public ProxyId getPayeeId() {
         return payeeAccount.getMessage().getOwnerProxyId();
     }
 
-  @JsonIgnore
-  public ProxyAccountId getPayeeAccountId() {
+    @JsonIgnore
+    public ProxyAccountId getPayeeAccountId() {
         return payeeAccount.getMessage().getProxyAccountId();
     }
 
-  @JsonIgnore
-  public ProxyId getPayerBankProxyId() {
-      return paymentAuthorization.getMessage().getPayerBankProxyId();
+    @JsonIgnore
+    public ProxyId getPayerBankProxyId() {
+        return paymentAuthorization.getMessage().getPayerBankProxyId();
     }
 
-  @JsonIgnore
-  public ProxyId getPayeeBankProxyId() {
+    @JsonIgnore
+    public ProxyId getPayeeBankProxyId() {
         return payeeAccount.getSignedBy();
     }
 
-  @JsonIgnore
-  public String getProxyUniverse() {
-    return paymentAuthorization.getMessage().getProxyUniverse();
-  }
+    @JsonIgnore
+    public String getProxyUniverse() {
+        return paymentAuthorization.getMessage().getProxyUniverse();
+    }
 
 }

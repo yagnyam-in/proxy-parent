@@ -38,7 +38,7 @@ public class PaymentEncashmentStatusRequest implements SignableRequestMessage, A
 
   @Override
   public Set<ProxyId> validSigners() {
-      return ImmutableSet.of(paymentEncashment.getMessage().getPayerId(), paymentEncashment.getMessage().getPayerId());
+      return ImmutableSet.of(paymentEncashment.getMessage().getPayerId(), paymentEncashment.getMessage().getPayeeId());
   }
 
   @Override

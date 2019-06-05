@@ -43,8 +43,8 @@ public class PaymentAuthorizationStatusResponse implements SignableMessage {
   }
 
   @JsonIgnore
-  public String getPaymentId() {
-    return request.getMessage().getPaymentId();
+  public String getPaymentAuthorizationId() {
+    return request.getMessage().getPaymentAuthorizationId();
   }
 
 }
