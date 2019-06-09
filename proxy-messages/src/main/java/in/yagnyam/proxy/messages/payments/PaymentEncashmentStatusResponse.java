@@ -52,8 +52,13 @@ public class PaymentEncashmentStatusResponse implements SignableMessage {
   }
 
   @JsonIgnore
-  public String getPaymentId() {
-    return request.getMessage().getPaymentId();
+  public String getPaymentAuthorizationId() {
+    return request.getMessage().getPaymentAuthorizationId();
+  }
+
+  @JsonIgnore
+  public String getPaymentEncashmentId() {
+    return request.getMessage().getPaymentEncashmentId();
   }
 
 }
