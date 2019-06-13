@@ -17,18 +17,16 @@ import lombok.NonNull;
 import lombok.Singular;
 import lombok.ToString;
 
-/**
- * Alert used by GCM for sending PaymentAuthorization Update Event
- */
 @Builder
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
 @EqualsAndHashCode(of = {"alertId"})
-public class PaymentUpdatedAlert implements SignableAlertMessage {
+public class PaymentEncashmentUpdatedAlert implements SignableAlertMessage {
 
-  public static final String PAYMENT_ID = "paymentAuthorizationId";
+  public static final String PAYMENT_AUTHORIZATION_ID = "paymentAuthorizationId";
+  public static final String PAYMENT_ENCASHMENT_ID = "paymentEncashmentId";
   public static final String PAYER_ACCOUNT_ID = "payerAccountId";
   public static final String PAYER_BANK_ID = "payerBankId";
 
@@ -36,7 +34,10 @@ public class PaymentUpdatedAlert implements SignableAlertMessage {
   private String alertId;
 
   @NonNull
-  private String paymentId;
+  private String paymentAuthorizationId;
+
+  @NonNull
+  private String paymentEncashmentId;
 
   @NonNull
   private ProxyAccountId payerAccountId;
@@ -57,7 +58,7 @@ public class PaymentUpdatedAlert implements SignableAlertMessage {
 
   @Override
   public String toReadableString() {
-    return String.format("PaymentAuthorization %s is updated.", paymentId);
+    return String.format("PaymentEncashment %s (of Authorization %s) is updated.", paymentEncashmentId, paymentAuthorizationId);
   }
 
   @Override
@@ -80,7 +81,8 @@ public class PaymentUpdatedAlert implements SignableAlertMessage {
   @Override
   public Map<String, String> toFcmMap() {
     Map<String, String> map = SignableAlertMessage.super.toFcmMap();
-    map.put(PAYMENT_ID, paymentId);
+    map.put(PAYMENT_AUTHORIZATION_ID, paymentAuthorizationId);
+    map.put(PAYMENT_ENCASHMENT_ID, paymentEncashmentId);
     map.put(PAYER_ACCOUNT_ID, payerAccountId.getAccountId());
     map.put(PAYER_BANK_ID, payerAccountId.getBankId());
     return map;
