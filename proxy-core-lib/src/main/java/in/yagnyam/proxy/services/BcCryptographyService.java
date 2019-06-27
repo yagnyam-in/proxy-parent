@@ -1,27 +1,20 @@
 package in.yagnyam.proxy.services;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.Security;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.security.cert.Certificate;
-import java.util.HashMap;
-import java.util.Map;
-import javax.crypto.Cipher;
-import javax.crypto.NoSuchPaddingException;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
+
+import javax.crypto.Cipher;
+import javax.crypto.Mac;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.security.*;
+import java.security.cert.Certificate;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Cryptography Service using Bouncy Castle
@@ -59,6 +52,17 @@ public class BcCryptographyService implements CryptographyService {
     byte[] hash = digest.digest(message.getBytes(StandardCharsets.UTF_8));
     return Base64.toBase64String(hash);
   }
+
+
+  @Override
+  public String getHmac(String hmacAlgorithm, String key, String message) throws GeneralSecurityException {
+    Mac mac = Mac.getInstance(hmacAlgorithm);
+    SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), hmacAlgorithm);
+    mac.init(secretKey);
+    byte[] hmac = mac.doFinal(message.getBytes(StandardCharsets.UTF_8));
+    return Base64.toBase64String(hmac);
+  }
+
 
   @Override
   public String getSignature(String algorithm, PrivateKey privateKey, String input)

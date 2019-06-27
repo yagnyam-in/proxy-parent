@@ -20,6 +20,16 @@ public interface CryptographyService {
   String getHash(String hashAlgorithm, String message) throws GeneralSecurityException;
 
   /**
+   * Get the HMAC of given message and key
+   *
+   * @param key Secret Key
+   * @param message Original Message to compute hash
+   * @param hmacAlgorithm HMAC Algorithm
+   * @return Hash
+   */
+  String getHmac(String hmacAlgorithm, String key, String message) throws GeneralSecurityException;
+
+  /**
    * Create Cryptographic Key Pair
    *
    * @param keyGenerationAlgorithm Key Generation Algorithm
