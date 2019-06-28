@@ -45,4 +45,8 @@ public class CertificateEntity {
 
   private String issuerSha256Thumbprint;
 
+  private String publicKeyEncoded;
+
+  private String publicKeySha256Thumbprint;
+
 }

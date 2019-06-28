@@ -2,6 +2,7 @@ package in.yagnyam.proxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -27,11 +28,17 @@ public class Proxy {
   @NonNull
   private Certificate certificate;
 
+  private String publicKeyEncoded;
+
+  private String publicKeySha256Thumbprint;
+
   public static Proxy of(Certificate certificate) {
     return builder()
         .id(ProxyId.of(certificate))
         .name(certificate.getOwner())
         .certificate(certificate)
+        .publicKeyEncoded(certificate.getPublicKeyEncoded())
+        .publicKeySha256Thumbprint(certificate.getPublicKeySha256Thumbprint())
         .build();
   }
 
@@ -43,6 +50,7 @@ public class Proxy {
   @JsonIgnore
   public boolean isValid() {
     return id != null && id.isValid()
-        && certificate != null && certificate.isValid();
+            && StringUtils.isValid(publicKeyEncoded) && StringUtils.isValid(publicKeySha256Thumbprint)
+            && certificate != null && certificate.isValid();
   }
 }

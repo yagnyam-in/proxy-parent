@@ -58,6 +58,10 @@ public class Certificate {
   @Setter
   private X509Certificate certificate;
 
+  private String publicKeyEncoded;
+
+  private String publicKeySha256Thumbprint;
+
   public String getId() {
     return owner;
   }
@@ -70,6 +74,8 @@ public class Certificate {
         && StringUtils.isValid(subject)
         && DateUtils.isValid(validFrom)
         && DateUtils.isValid(validTill)
-        && StringUtils.isValid(certificateEncoded);
+        && StringUtils.isValid(certificateEncoded)
+        && StringUtils.isValid(publicKeyEncoded)
+        && StringUtils.isValid(publicKeySha256Thumbprint);
   }
 }
