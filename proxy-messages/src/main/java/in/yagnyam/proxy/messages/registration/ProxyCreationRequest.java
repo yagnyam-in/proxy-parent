@@ -1,5 +1,6 @@
 package in.yagnyam.proxy.messages.registration;
 
+import in.yagnyam.proxy.Hash;
 import in.yagnyam.proxy.RequestMessage;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.AllArgsConstructor;
@@ -34,10 +35,10 @@ public class ProxyCreationRequest implements RequestMessage {
   private String proxyId;
 
   /**
-   * Pass phrase to de-activate a given Proxy (sha256(ownerProxyId#passPhrase))
+   * Pass phrase to de-activate a given Proxy
    */
   @NonNull
-  private String revocationPassPhraseSha256;
+  private Hash revocationPassPhraseHash;
 
   /**
    * Valid Certificate Request for Subject requestId. This is to prevent misusing un-protected
@@ -54,7 +55,7 @@ public class ProxyCreationRequest implements RequestMessage {
   public boolean isValid() {
     return StringUtils.isValid(requestId)
         && StringUtils.isValid(proxyId)
-        && StringUtils.isValid(revocationPassPhraseSha256)
+        && revocationPassPhraseHash != null && revocationPassPhraseHash.isValid()
         && StringUtils.isValid(certificateRequestEncoded);
   }
 }

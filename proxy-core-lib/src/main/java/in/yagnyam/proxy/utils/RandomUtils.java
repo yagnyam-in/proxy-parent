@@ -1,5 +1,6 @@
 package in.yagnyam.proxy.utils;
 
+import java.security.SecureRandom;
 import java.util.UUID;
 
 public class RandomUtils {

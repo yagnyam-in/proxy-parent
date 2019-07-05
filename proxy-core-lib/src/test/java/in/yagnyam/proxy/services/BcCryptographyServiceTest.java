@@ -6,6 +6,8 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import in.yagnyam.proxy.Hash;
+import in.yagnyam.proxy.Hmac;
 import in.yagnyam.proxy.TestUtils;
 import in.yagnyam.proxy.config.ProxyVersion;
 
@@ -13,7 +15,6 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.cert.Certificate;
-import java.util.UUID;
 
 import org.bouncycastle.operator.OperatorCreationException;
 import org.junit.Test;
@@ -76,7 +77,10 @@ public class BcCryptographyServiceTest {
             throws GeneralSecurityException {
         BcCryptographyService cryptographyService = BcCryptographyService.builder().build();
         String data = "Hello World!!";
-        assertEquals("CWwKcsMfmi1lEm2OikAaKrLy4h0KKCpv/mZCu+9l/9k=", cryptographyService.getHash("SHA256", data));
+        Hash hash = cryptographyService.getHash("SHA256", data);
+        assertTrue(cryptographyService.verifyHash(data, hash));
+        assertFalse(cryptographyService.verifyHash(data + ".", hash));
+        System.out.println(hash);
     }
 
     @Test
@@ -85,7 +89,10 @@ public class BcCryptographyServiceTest {
         BcCryptographyService cryptographyService = BcCryptographyService.builder().build();
         String key = "Secret Key";
         String data = "Hello World!!";
-        assertEquals("greqDRX0BW75FowfIKLB6xOmTTsrU8zE+4emBPOlTHw=", cryptographyService.getHmac("HmacSHA256", key, data));
+        Hmac hmac = cryptographyService.getHmac("HmacSHA256", key, data);
+        assertTrue(cryptographyService.verifyHmac(key, data, hmac));
+        assertFalse(cryptographyService.verifyHmac(key + ".", data, hmac));
+        assertFalse(cryptographyService.verifyHmac(key, data + ".", hmac));
     }
 
 }

@@ -1,5 +1,7 @@
 package in.yagnyam.proxy.services;
 
+import in.yagnyam.proxy.Hash;
+import in.yagnyam.proxy.Hmac;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -17,7 +19,16 @@ public interface CryptographyService {
    * @param hashAlgorithm Hashing Algorithm
    * @return Hash
    */
-  String getHash(String hashAlgorithm, String message) throws GeneralSecurityException;
+  Hash getHash(String hashAlgorithm, String message) throws GeneralSecurityException;
+
+  /**
+   * Verify if the given message produces same Hash
+   *
+   * @param message Original Message to compute hash
+   * @param hash Hash
+   * @return Hash
+   */
+  boolean verifyHash(String message, Hash hash) throws GeneralSecurityException;
 
   /**
    * Get the HMAC of given message and key
@@ -27,7 +38,15 @@ public interface CryptographyService {
    * @param hmacAlgorithm HMAC Algorithm
    * @return Hash
    */
-  String getHmac(String hmacAlgorithm, String key, String message) throws GeneralSecurityException;
+  Hmac getHmac(String hmacAlgorithm, String key, String message) throws GeneralSecurityException;
+
+  /**
+   * Validates the Key by verifying the HMAC
+   * @param key Secret Key
+   * @param hmac Hmac
+   * @return true if
+   */
+  boolean verifyHmac(String key, String message, Hmac hmac) throws GeneralSecurityException;
 
   /**
    * Create Cryptographic Key Pair

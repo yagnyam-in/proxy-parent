@@ -1,20 +1,32 @@
 package in.yagnyam.proxy.services;
 
-import lombok.Builder;
-import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.encoders.Base64;
-
+import in.yagnyam.proxy.Hash;
+import in.yagnyam.proxy.Hmac;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.security.cert.Certificate;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.security.*;
-import java.security.cert.Certificate;
-import java.util.HashMap;
-import java.util.Map;
+import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Base64;
 
 /**
  * Cryptography Service using Bouncy Castle
@@ -40,27 +52,64 @@ public class BcCryptographyService implements CryptographyService {
   @Override
   public KeyPair generateKeyPair(String keyGenerationAlgorithm, int keySize)
       throws GeneralSecurityException {
-    KeyPairGenerator generator = KeyPairGenerator
-        .getInstance(keyGenerationAlgorithm, BC_PROVIDER);
+    KeyPairGenerator generator = KeyPairGenerator.getInstance(keyGenerationAlgorithm, BC_PROVIDER);
     generator.initialize(keySize, new SecureRandom());
     return generator.generateKeyPair();
   }
 
   @Override
-  public String getHash(String hashAlgorithm, String message) throws GeneralSecurityException {
+  public Hash getHash(String hashAlgorithm, String message) throws GeneralSecurityException {
+    byte[] iv = new byte[32];
+    new SecureRandom().nextBytes(iv);
     MessageDigest digest = MessageDigest.getInstance(hashAlgorithm);
-    byte[] hash = digest.digest(message.getBytes(StandardCharsets.UTF_8));
-    return Base64.toBase64String(hash);
+    digest.update(iv);
+    digest.update(message.getBytes(StandardCharsets.UTF_8));
+    byte[] hash = digest.digest();
+
+    return Hash.builder()
+        .algorithm(hashAlgorithm)
+        .iv(Base64.toBase64String(iv))
+        .hash(Base64.toBase64String(hash))
+        .build();
+  }
+
+  @Override
+  public boolean verifyHash(String message, Hash hash) throws GeneralSecurityException {
+    MessageDigest digest = MessageDigest.getInstance(hash.getAlgorithm());
+    digest.update(Base64.decode(hash.getIv()));
+    digest.update(message.getBytes(StandardCharsets.UTF_8));
+
+    return Arrays.equals(Base64.decode(hash.getHash()), digest.digest());
   }
 
 
   @Override
-  public String getHmac(String hmacAlgorithm, String key, String message) throws GeneralSecurityException {
+  public Hmac getHmac(String hmacAlgorithm, String key, String message) throws GeneralSecurityException {
+    byte[] iv = new byte[32];
+    new SecureRandom().nextBytes(iv);
     Mac mac = Mac.getInstance(hmacAlgorithm);
     SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), hmacAlgorithm);
     mac.init(secretKey);
-    byte[] hmac = mac.doFinal(message.getBytes(StandardCharsets.UTF_8));
-    return Base64.toBase64String(hmac);
+    mac.update(iv);
+    mac.update(message.getBytes(StandardCharsets.UTF_8));
+    byte[] hmac = mac.doFinal();
+
+    return Hmac.builder()
+        .algorithm(hmacAlgorithm)
+        .iv(Base64.toBase64String(iv))
+        .hmac(Base64.toBase64String(hmac))
+        .build();
+  }
+
+  @Override
+  public boolean verifyHmac(String key, String message, Hmac hmac) throws GeneralSecurityException {
+    Mac mac = Mac.getInstance(hmac.getAlgorithm());
+    SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), hmac.getAlgorithm());
+    mac.init(secretKey);
+    mac.update(Base64.decode(hmac.getIv()));
+    mac.update(message.getBytes(StandardCharsets.UTF_8));
+
+    return Arrays.equals(Base64.decode(hmac.getHmac()), mac.doFinal());
   }
 
 

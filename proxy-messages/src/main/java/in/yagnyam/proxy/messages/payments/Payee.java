@@ -2,9 +2,17 @@ package in.yagnyam.proxy.messages.payments;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import in.yagnyam.proxy.Hash;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
 @Builder
 @Getter
@@ -15,37 +23,37 @@ import lombok.*;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Payee {
 
-    @NonNull
-    private String paymentEncashmentId;
+  @NonNull
+  private String paymentEncashmentId;
 
-    @NonNull
-    private PayeeTypeEnum payeeType;
+  @NonNull
+  private PayeeTypeEnum payeeType;
 
-    private ProxyId proxyId;
+  private ProxyId proxyId;
 
-    private String emailHash;
+  private Hash emailHash;
 
-    private String phoneHash;
+  private Hash phoneHash;
 
-    private String secretHash;
+  private Hash secretHash;
 
-    @JsonIgnore
-    boolean isValid() {
-        if (payeeType == null || StringUtils.isEmpty(paymentEncashmentId)) {
-            return false;
-        }
-        switch (payeeType) {
-            case ProxyId:
-                return proxyId != null && proxyId.isValid();
-            case Email:
-                return StringUtils.isValid(emailHash) && StringUtils.isValid(secretHash);
-            case Phone:
-                return StringUtils.isValid(phoneHash) && StringUtils.isValid(secretHash);
-            case AnyoneWithSecret:
-                return StringUtils.isValid(secretHash);
-            default:
-                return false;
-        }
+  @JsonIgnore
+  boolean isValid() {
+    if (payeeType == null || StringUtils.isEmpty(paymentEncashmentId)) {
+      return false;
     }
+    switch (payeeType) {
+      case ProxyId:
+        return proxyId != null && proxyId.isValid();
+      case Email:
+        return emailHash != null && emailHash.isValid() && secretHash != null && secretHash.isValid();
+      case Phone:
+        return phoneHash != null && phoneHash.isValid() && secretHash != null && secretHash.isValid();
+      case AnyoneWithSecret:
+        return secretHash != null && secretHash.isValid();
+      default:
+        return false;
+    }
+  }
 
 }
