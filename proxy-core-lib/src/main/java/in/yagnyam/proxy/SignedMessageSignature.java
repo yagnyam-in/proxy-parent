@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -13,6 +14,7 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(staticName = "of")
+@EqualsAndHashCode
 public class SignedMessageSignature {
 
   private String algorithm;

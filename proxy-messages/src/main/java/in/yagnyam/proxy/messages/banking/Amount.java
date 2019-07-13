@@ -6,6 +6,7 @@ import in.yagnyam.proxy.utils.StringUtils;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
@@ -18,6 +19,7 @@ import lombok.NonNull;
 @Data
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(staticName = "of")
+@EqualsAndHashCode
 public class Amount implements Comparable<Amount> {
 
   @NonNull
@@ -47,7 +49,7 @@ public class Amount implements Comparable<Amount> {
 
 
   @Override
-  public int compareTo(@SuppressWarnings("NullableProblems") Amount amount) {
+  public int compareTo(Amount amount) {
     if (!StringUtils.equals(currency, amount.currency)) {
       throw new IllegalArgumentException("Currencies " + currency + ", " + amount.currency + " are not same");
     }

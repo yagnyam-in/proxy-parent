@@ -16,7 +16,7 @@ import java.util.Date;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
-@EqualsAndHashCode(of = {"proxyAccountId", "ownerProxyId"})
+@EqualsAndHashCode
 public class ProxyAccount implements SignableMessage {
 
   @NonNull
