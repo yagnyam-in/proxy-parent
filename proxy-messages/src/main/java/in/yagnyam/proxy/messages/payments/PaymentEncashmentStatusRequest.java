@@ -77,4 +77,19 @@ public class PaymentEncashmentStatusRequest implements SignableRequestMessage, A
     return paymentEncashment.getMessage().getProxyUniverse();
   }
 
+  @JsonIgnore
+  public String getCurrency() {
+    return paymentEncashment.getMessage().getCurrency();
+  }
+
+  @JsonIgnore
+  public ProxyId getPayerBankProxyId() {
+    return paymentEncashment.getMessage().getPayerBankProxyId();
+  }
+
+  @JsonIgnore
+  public ProxyId getPayeeBankProxyId() {
+    return paymentEncashment.getMessage().getPayeeBankProxyId();
+  }
+
 }
