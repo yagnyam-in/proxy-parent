@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import in.yagnyam.proxy.MultiSignableMessage;
+import in.yagnyam.proxy.MultiSignedMessage;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import java.io.IOException;
@@ -38,10 +40,29 @@ public class MessageSerializerService {
 
   public String serializeSignableMessage(SignableMessage message) throws IOException {
     try {
-      // objectMapper.enable(SerializationFeature.WRAP_ROOT_VALUE);
       return objectMapper().writeValueAsString(message);
     } catch (JsonProcessingException e) {
       log.error("Unable to serialize Signable Message " + message, e);
+      throw new IOException(e);
+    }
+  }
+
+
+  public <T extends MultiSignableMessage> String serializeMultiSignedMessage(MultiSignedMessage<T> message)
+          throws IOException {
+    try {
+      return objectMapper().writeValueAsString(message);
+    } catch (JsonProcessingException e) {
+      log.error("Unable to serialize MultiSigned Message " + message, e);
+      throw new IOException(e);
+    }
+  }
+
+  public String serializeMultiSignableMessage(MultiSignableMessage message) throws IOException {
+    try {
+      return objectMapper().writeValueAsString(message);
+    } catch (JsonProcessingException e) {
+      log.error("Unable to serialize MultiSignable Message " + message, e);
       throw new IOException(e);
     }
   }
@@ -78,13 +99,32 @@ public class MessageSerializerService {
   public <T extends SignableMessage> T deserializeSignableMessage(String message, Class<T> tClass)
       throws IOException {
     try {
-      // objectMapper.enable(DeserializationFeature.UNWRAP_ROOT_VALUE);
       return objectMapper().readValue(message, tClass);
     } catch (IOException e) {
       log.error("Unable to deserialize signable Message: " + message, e);
       throw e;
     }
   }
+  public <T extends MultiSignableMessage> MultiSignedMessage<T> deserializeMultiSignedMessage(String message)
+          throws IOException {
+    try {
+      return objectMapper().readValue(message, MultiSignedMessage.class);
+    } catch (IOException e) {
+      log.error("Unable to deserialize Signed Message: " + message, e);
+      throw e;
+    }
+  }
+
+  public <T extends MultiSignableMessage> T deserializeMultiSignableMessage(String message, Class<T> tClass)
+          throws IOException {
+    try {
+      return objectMapper().readValue(message, tClass);
+    } catch (IOException e) {
+      log.error("Unable to deserialize signable Message: " + message, e);
+      throw e;
+    }
+  }
+
 
   public <T> T deserializeMessage(String message, Class<T> tClass)
       throws IOException {

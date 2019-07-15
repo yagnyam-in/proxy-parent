@@ -7,12 +7,13 @@ import java.util.Set;
 
 import lombok.*;
 
+// TODO: Add Signature Timestamp to Payload (Or make it a mandatory field in SignableMessage)
+@Getter
 @Builder
+@EqualsAndHashCode(exclude = {"message"})
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Getter
 @ToString(of = {"type", "payload", "signatures"})
-@EqualsAndHashCode(exclude = {"message"})
 public class SignedMessage<T extends SignableMessage> {
 
   @JsonIgnore
@@ -61,7 +62,7 @@ public class SignedMessage<T extends SignableMessage> {
    * @param signerId Signer Proxy Id
    * @return true if signer can sign this message
    */
-  public boolean cabBeSignedBy(ProxyId signerId) {
+  public boolean canBeSignedBy(ProxyId signerId) {
     return message.cabBeSignedBy(signerId);
   }
 

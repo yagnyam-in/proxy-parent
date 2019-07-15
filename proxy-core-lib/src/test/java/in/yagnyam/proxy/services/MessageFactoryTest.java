@@ -70,7 +70,7 @@ public class MessageFactoryTest {
         .cryptographyService(cryptographyService)
         .build();
     SimpleSignableMessage signableMessage = new SimpleSignableMessage();
-    SignedMessage<SimpleSignableMessage> signedMessage = service.sign(signableMessage, proxyKey);
+    SignedMessage<SimpleSignableMessage> signedMessage = service.singleSign(signableMessage, proxyKey);
 
     MessageFactory messageFactory = MessageFactory.builder()
         .serializer(messageSerializerService)
@@ -96,12 +96,12 @@ public class MessageFactoryTest {
 
     SimpleSignableMessage simpleMessage = new SimpleSignableMessage();
     SignedMessage<SimpleSignableMessage> signedSimpleMessage = service
-        .sign(simpleMessage, proxyKey);
+        .singleSign(simpleMessage, proxyKey);
 
     ComplexSignableMessage complexMessage = new ComplexSignableMessage();
     complexMessage.internalObject = signedSimpleMessage;
     SignedMessage<ComplexSignableMessage> signedComplexMessage = service
-        .sign(complexMessage, proxyKey);
+        .singleSign(complexMessage, proxyKey);
     String signedText = messageSerializerService.serializeSignedMessage(signedComplexMessage);
     System.out.println("signedText: " + signedText);
 
@@ -133,7 +133,7 @@ public class MessageFactoryTest {
         .cryptographyService(cryptographyService)
         .build();
     SimpleSignableMessage signableMessage = new SimpleSignableMessage();
-    SignedMessage<SimpleSignableMessage> signedMessage = service.sign(signableMessage, proxyKey);
+    SignedMessage<SimpleSignableMessage> signedMessage = service.singleSign(signableMessage, proxyKey);
 
     MessageFactory messageFactory = MessageFactory.builder()
         .serializer(messageSerializerService)

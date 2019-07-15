@@ -67,7 +67,7 @@ public class MessageSigningServiceTest {
         .serializer(new MessageSerializerService())
         .cryptographyService(cryptographyService)
         .build();
-    val s = service.sign(signableMessage, proxyKey);
+    val s = service.singleSign(signableMessage, proxyKey);
     System.out.println(s);
   }
 
@@ -101,7 +101,7 @@ public class MessageSigningServiceTest {
         .serializer(new MessageSerializerService())
         .cryptographyService(cryptographyService)
         .build();
-    val s = service.sign(signableMessage, proxyKey);
+    val s = service.singleSign(signableMessage, proxyKey);
     System.out.println(s);
   }
 
@@ -134,7 +134,7 @@ public class MessageSigningServiceTest {
         .serializer(new MessageSerializerService())
         .cryptographyService(cryptographyService)
         .build();
-    val s = service.sign(signableMessage, proxyKey);
+    val s = service.singleSign(signableMessage, proxyKey);
     System.out.println(s);
   }
 

@@ -2,12 +2,7 @@ package in.yagnyam.proxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
 
 @Getter
@@ -17,8 +12,10 @@ import lombok.ToString;
 @EqualsAndHashCode
 public class SignedMessageSignature {
 
+  @NonNull
   private String algorithm;
 
+  @NonNull
   private String value;
 
   @JsonIgnore
