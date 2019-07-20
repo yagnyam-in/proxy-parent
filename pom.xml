@@ -350,7 +350,7 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
             <version>${maven-gpg-plugin}</version>
-            <executions>
+            <!--executions>
               <execution>
                 <id>sign-artifacts</id>
                 <phase>verify</phase>
@@ -362,7 +362,7 @@
                   <passphraseServerId>${gpg.keyname}</passphraseServerId>
                 </configuration>
               </execution>
-            </executions>
+            </executions-->
           </plugin>
 
         </plugins>
