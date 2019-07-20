@@ -10,22 +10,22 @@
 
   <name>${project.groupId}:${project.artifactId}</name>
   <description>A shared configuration for Proxy Projects</description>
-  <url>https://bitbucket.org/yagnyam-proxy/proxy-parent</url>
+  <url>https://github.com/yagnyam-in/proxy-parent</url>
 
   <developers>
     <developer>
       <name>Chenna Reddy</name>
       <email>chenna@alavala.in</email>
-      <organization>Yagnyam LLP</organization>
-      <organizationUrl>http://yagnyam.in</organizationUrl>
+      <organization>Yagnyam eCommerce LLP</organization>
+      <organizationUrl>https://www.pxy.yagnyam.in</organizationUrl>
     </developer>
   </developers>
 
   <scm>
-    <connection>scm:git:git@bitbucket.org:yagnyam-proxy/proxy-parent.git</connection>
-    <developerConnection>scm:git:git@bitbucket.org:yagnyam-proxy/proxy-parent.git
+    <connection>scm:git:git@github.com:yagnyam-in/proxy-parent.git</connection>
+    <developerConnection>scm:git:git@github.com:yagnyam-in/proxy-parent.git
     </developerConnection>
-    <url>git@bitbucket.org:yagnyam-proxy/proxy-parent.git</url>
+    <url>git@github.com:yagnyam-in/proxy-parent.git</url>
     <tag>HEAD</tag>
   </scm>
 
