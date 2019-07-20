@@ -41,7 +41,7 @@
     <plexus-compiler-javac-errorprone>2.8.4</plexus-compiler-javac-errorprone>
     <error_prone_core>2.3.1</error_prone_core>
 
-    <maven-failsafe-plugin>2.20</maven-failsafe-plugin>
+    <maven-failsafe-plugin>2.22.2</maven-failsafe-plugin>
     <maven-surefire-plugin>2.22.2</maven-surefire-plugin>
     <maven-checkstyle-plugin>3.1.0</maven-checkstyle-plugin>
     <maven-clean-plugin>3.0.0</maven-clean-plugin>
