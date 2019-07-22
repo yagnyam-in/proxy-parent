@@ -11,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DummyMessageVerificationService extends MessageVerificationService {
 
   @Override
-  public <T extends SignableMessage> void verify(@NonNull SignedMessage<T> message) {
+  public <T extends SignableMessage> void verify(@NonNull SignedMessage<T> signedMessage) {
     log.warn("Using DummyMessageVerificationService.");
   }
 }

@@ -1,16 +1,26 @@
 package in.yagnyam.proxy.services;
 
-import in.yagnyam.proxy.*;
+import in.yagnyam.proxy.MultiSignableMessage;
+import in.yagnyam.proxy.MultiSignedMessage;
+import in.yagnyam.proxy.MultiSignedMessageSignature;
+import in.yagnyam.proxy.Proxy;
+import in.yagnyam.proxy.ProxyId;
+import in.yagnyam.proxy.SignableMessage;
+import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.SignedMessageSignature;
 import in.yagnyam.proxy.config.ProxyVersion;
-import lombok.*;
-import lombok.Builder.Default;
-import lombok.extern.slf4j.Slf4j;
-
 import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Builder.Default;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Message Verification service to Verify Signature on Signed Messages
@@ -34,35 +44,40 @@ public class MessageVerificationService {
   /**
    * Verify Signature on Singed Messages
    *
-   * @param message Signed Message to verify signature
+   * @param signedMessage Signed Message to verify signature
    * @param <T> Underlying Message Type
    * @throws GeneralSecurityException In case of any exceptions while validating Signature
    * @throws IllegalArgumentException If Signatures are missing or wrong
    */
-  public <T extends SignableMessage> void verify(@NonNull SignedMessage<T> message)
+  public <T extends SignableMessage> void verify(@NonNull SignedMessage<T> signedMessage)
       throws GeneralSecurityException {
-    if (!message.isValid()) {
-      log.info("Message validation failed for {}", message);
+    if (!signedMessage.isValid()) {
+      log.info("Message validation failed for {}", signedMessage);
       throw new IllegalArgumentException("Message validation failed");
     }
-    if (message.getSignatures().isEmpty()) {
-      log.info("No signatures found in {}", message);
+    if (signedMessage.getSignatures().isEmpty()) {
+      log.info("No signatures found in {}", signedMessage);
       throw new IllegalArgumentException("No signatures found");
     }
-    Set<String> signatureAlgorithmSet = message.getSignatures().stream()
+    if (signedMessage.getMessage() == null) {
+      log.info("Message {} must be de-serialized before verify", signedMessage);
+      throw new IllegalStateException("Message must be de-serialized before verify");
+    }
+    Set<String> signatureAlgorithmSet = signedMessage.getSignatures().stream()
         .map(SignedMessageSignature::getAlgorithm)
         .collect(Collectors.toSet());
     if (!proxyVersion.getValidSignatureAlgorithmSets()
         .contains(signatureAlgorithmSet)) {
-      log.info("Un-recognised signature algorithms {} in {}", signatureAlgorithmSet, message);
+      log.info("Un-recognised signature algorithms {} in {}", signatureAlgorithmSet, signedMessage);
       throw new IllegalArgumentException(
           "Un-recognised signature algorithms " + signatureAlgorithmSet);
     }
-    if (!message.canBeSignedBy(message.getSignedBy())) {
-      throw new IllegalStateException("Message: " + message + " can only be signed by "
-          + message.validSigners() + ", but signed by " + message.getSignedBy());
+    if (!signedMessage.canBeSignedBy(signedMessage.getSignedBy())) {
+      throw new IllegalStateException("Message: " + signedMessage + " can only be signed by "
+          + signedMessage.validSigners() + ", but signed by " + signedMessage.getSignedBy());
     }
-    validateSignaturesBySingleProxy(message.getSignedBy(), message.getPayload(), message.getSignatures(), message);
+    validateSignaturesBySingleProxy(signedMessage.getSignedBy(), signedMessage.getPayload(),
+        signedMessage.getSignatures(), signedMessage);
   }
 
 
@@ -71,43 +86,52 @@ public class MessageVerificationService {
    * <p>
    * Is Valid doesn't mean it is complete. It might still be lacking required signatures.
    *
-   * @param message Multi Signed Message to verify signatures
+   * @param multiSignedMessage Multi Signed Message to verify signatures
    * @param <T> Underlying Message Type
    * @throws GeneralSecurityException In case of any exceptions while validating Signature
    * @throws IllegalArgumentException If Signatures are missing or wrong
    */
-  public <T extends MultiSignableMessage> void isValid(@NonNull MultiSignedMessage<T> message)
+  public <T extends MultiSignableMessage> void isValid(@NonNull MultiSignedMessage<T> multiSignedMessage)
       throws GeneralSecurityException {
-    if (!message.isValid()) {
-      log.info("Message validation failed for {}", message);
+    if (!multiSignedMessage.isValid()) {
+      log.info("Message validation failed for {}", multiSignedMessage);
       throw new IllegalArgumentException("Message validation failed");
     }
-    validateMultiSignatures(message);
+    if (multiSignedMessage.getMessage() == null) {
+      log.info("Message {} must be de-serialized before verify", multiSignedMessage);
+      throw new IllegalStateException("Message must be de-serialized before verify");
+    }
+    validateMultiSignatures(multiSignedMessage);
   }
 
 
   /**
    * Check if the Multi Signed message has required valid signatures.
    *
-   * @param message Multi Signed Message to verify signatures
+   * @param multiSignedMessage Multi Signed Message to verify signatures
    * @param <T> Underlying Message Type
    * @throws GeneralSecurityException In case of any exceptions while validating Signature
    * @throws IllegalArgumentException If Signatures are missing or wrong
    */
-  public <T extends MultiSignableMessage> void isComplete(@NonNull MultiSignedMessage<T> message)
+  public <T extends MultiSignableMessage> void isComplete(@NonNull MultiSignedMessage<T> multiSignedMessage)
       throws GeneralSecurityException {
-    if (!message.isComplete()) {
-      log.info("Message validation failed for {}", message);
+    if (!multiSignedMessage.isComplete()) {
+      log.info("Message validation failed for {}", multiSignedMessage);
       throw new IllegalArgumentException("Message validation failed");
     }
-    validateMultiSignatures(message);
+    if (multiSignedMessage.getMessage() == null) {
+      log.info("Message {} must be de-serialized before verify", multiSignedMessage);
+      throw new IllegalStateException("Message must be de-serialized before verify");
+    }
+    validateMultiSignatures(multiSignedMessage);
   }
 
 
-  private <T extends MultiSignableMessage> void validateMultiSignatures(@NonNull MultiSignedMessage<T> message)
+  private <T extends MultiSignableMessage> void validateMultiSignatures(
+      @NonNull MultiSignedMessage<T> multiSignedMessage)
       throws GeneralSecurityException {
-    for (MultiSignedMessageSignature multiSignature : message.getSignatures()) {
-      validateMultiSignature(message, multiSignature);
+    for (MultiSignedMessageSignature multiSignature : multiSignedMessage.getSignatures()) {
+      validateMultiSignature(multiSignedMessage, multiSignature);
     }
   }
 
@@ -146,8 +170,8 @@ public class MessageVerificationService {
   private Proxy getSignerProxy(ProxyId signerProxyId) {
     Optional<Proxy> proxy = proxyResolver.resolveProxy(signerProxyId);
     if (!proxy.isPresent()) {
-      log.error("Invalid Signer/Proxy Id. No proxy found.");
-      throw new IllegalArgumentException("Invalid Signer/Proxy Id. No proxy found.");
+      log.error("Invalid Signer Proxy Id. No proxy found.");
+      throw new IllegalArgumentException("Invalid Signer Proxy Id. No proxy found.");
     }
     return proxy.get();
   }
