@@ -28,7 +28,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 @SuppressWarnings("unchecked")
-public class MessageFactoryTest {
+public class SignedMessageFactoryTest {
 
   static {
     Security.addProvider(new BouncyCastleProvider());
@@ -72,7 +72,7 @@ public class MessageFactoryTest {
     SimpleSignableMessage signableMessage = new SimpleSignableMessage();
     SignedMessage<SimpleSignableMessage> signedMessage = service.singleSign(signableMessage, proxyKey);
 
-    MessageFactory messageFactory = MessageFactory.builder()
+    SignedMessageFactory messageFactory = SignedMessageFactory.builder()
         .serializer(messageSerializerService)
         .cryptographyService(cryptographyService)
         .verificationService(verificationService)
@@ -105,7 +105,7 @@ public class MessageFactoryTest {
     String signedText = messageSerializerService.serializeSignedMessage(signedComplexMessage);
     System.out.println("signedText: " + signedText);
 
-    MessageFactory messageFactory = MessageFactory.builder()
+    SignedMessageFactory messageFactory = SignedMessageFactory.builder()
         .serializer(messageSerializerService)
         .verificationService(verificationService)
         .cryptographyService(cryptographyService)
@@ -135,7 +135,7 @@ public class MessageFactoryTest {
     SimpleSignableMessage signableMessage = new SimpleSignableMessage();
     SignedMessage<SimpleSignableMessage> signedMessage = service.singleSign(signableMessage, proxyKey);
 
-    MessageFactory messageFactory = MessageFactory.builder()
+    SignedMessageFactory messageFactory = SignedMessageFactory.builder()
         .serializer(messageSerializerService)
         .cryptographyService(cryptographyService)
         .verificationService(verificationService)

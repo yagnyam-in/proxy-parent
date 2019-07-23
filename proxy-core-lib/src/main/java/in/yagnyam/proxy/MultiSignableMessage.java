@@ -4,6 +4,7 @@ package in.yagnyam.proxy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.services.MessageSerializerService;
 
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -15,18 +16,17 @@ import java.util.Set;
  */
 public interface MultiSignableMessage {
 
-    /**
-     * Validate if these are valid signers
-     * @return Set of Proxies that can sign this message
-     */
-   boolean validateSigners(Set<ProxyId> signers);
-
-
   /**
-   * Check if the message has required number of signatures from given Signers
+   * Signers that can sign this message.
    * @return Set of Proxies that can sign this message
    */
-  boolean hasRequiredSignatures(Set<ProxyId> signers);
+  Set<ProxyId> validSigners();
+
+  /**
+   * Minimum number of signature required for this message to be Complete
+   * @return Minimum required signatures.
+   */
+  int minimumRequiredSignatures();
 
   /**
    * Return this message in human readable format
@@ -42,13 +42,6 @@ public interface MultiSignableMessage {
    */
   @JsonIgnore
   boolean isValid();
-
-  /**
-   * Test if the Signer can sign this message
-   * @param signerId Signer Proxy Id
-   * @return true if signer can sign this message
-   */
-  boolean canBeSignedBy(ProxyId signerId);
 
     /**
    * Type of the Message
@@ -69,6 +62,15 @@ public interface MultiSignableMessage {
       throw new IllegalArgumentException(
           "Invalid Type " + type + ". It must be " + getMessageType());
     }
+  }
+
+  /**
+   * Validate if these are valid signers
+   * @return Set of Proxies that can sign this message
+   */
+  default boolean validateSigners(Set<ProxyId> signers) {
+    Set<ProxyId> validSigners = validSigners();
+    return validSigners.containsAll(signers);
   }
 
 }

@@ -10,6 +10,7 @@ import lombok.NonNull;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -76,7 +77,7 @@ public class MessageSigningService {
   public <T extends MultiSignableMessage> MultiSignedMessage<T> multiSign(T message, ProxyKey signer)
           throws IOException, GeneralSecurityException {
     String payload = serializer.serializeMultiSignableMessage(message);
-    MultiSignedMessageSignature signature = _multiSign(message, payload, signer);
+    MultiSignedMessageSignature signature = multiSign(message, payload, signer);
     return MultiSignedMessage.<T>builder()
             .message(message)
             .type(message.getMessageType())
@@ -98,11 +99,11 @@ public class MessageSigningService {
     if (signedMessage.getMessage() == null) {
       throw new IllegalStateException("Message should be deserialized before signing");
     }
-    return signedMessage.toBuilder().signature(_multiSign(signedMessage.getMessage(), signedMessage.getPayload(), signer)).build();
+    return signedMessage.toBuilder().signature(multiSign(signedMessage.getMessage(), signedMessage.getPayload(), signer)).build();
   }
 
 
-  private  <T extends MultiSignableMessage> MultiSignedMessageSignature _multiSign(T message, String payload, ProxyKey signer)
+  private  <T extends MultiSignableMessage> MultiSignedMessageSignature multiSign(T message, String payload, ProxyKey signer)
           throws GeneralSecurityException {
     if (proxyVersion.getPreferredSignatureAlgorithmSet().isEmpty()) {
       throw new IllegalStateException("At least one signature algorithm is required");
@@ -110,7 +111,7 @@ public class MessageSigningService {
     if (!message.isValid()) {
       throw new IllegalStateException("Invalid message: " + message);
     }
-    if (!message.canBeSignedBy(signer.getId())) {
+    if (!message.validateSigners(Collections.singleton(signer.getId()))) {
       throw new IllegalStateException("Message: " + message + " can not be sign by " + signer.getId());
     }
     if (!StringUtils.isValid(payload)) {

@@ -35,7 +35,7 @@ public class MultiSignedMessage<T extends MultiSignableMessage> {
 
   @JsonIgnore
   @SuppressWarnings("unchecked")
-  public MultiSignedMessage<T> setMessage(SignableMessage message) {
+  public MultiSignedMessage<T> setMessage(MultiSignableMessage message) {
     this.message = (T) message;
     return this;
   }
@@ -45,7 +45,8 @@ public class MultiSignedMessage<T extends MultiSignableMessage> {
     if (!isValid()) {
       return  false;
     }
-    return message.validateSigners(actualSigners());
+    Set<ProxyId> actualSigners = actualSigners();
+    return message.validateSigners(actualSigners) && message.minimumRequiredSignatures() >= actualSigners.size();
   }
 
   @JsonIgnore

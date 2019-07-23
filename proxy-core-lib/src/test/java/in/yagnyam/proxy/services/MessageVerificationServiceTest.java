@@ -1,16 +1,17 @@
 package in.yagnyam.proxy.services;
 
-import static org.mockito.Mockito.mock;
-
 import in.yagnyam.proxy.MultiSignableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
-import java.security.Security;
-import java.util.Set;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.security.Security;
+import java.util.Set;
+
+import static org.mockito.Mockito.mock;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MessageVerificationServiceTest {
@@ -42,8 +43,13 @@ public class MessageVerificationServiceTest {
     }
 
     @Override
-    public boolean hasRequiredSignatures(Set<ProxyId> signers) {
-      return false;
+    public Set<ProxyId> validSigners() {
+      return null;
+    }
+
+    @Override
+    public int minimumRequiredSignatures() {
+      return 0;
     }
 
     @Override
@@ -56,10 +62,6 @@ public class MessageVerificationServiceTest {
       return true;
     }
 
-    @Override
-    public boolean canBeSignedBy(ProxyId signerId) {
-      return false;
-    }
   }
 
 

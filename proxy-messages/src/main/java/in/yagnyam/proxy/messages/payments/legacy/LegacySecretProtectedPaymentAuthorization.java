@@ -21,7 +21,7 @@ import lombok.ToString;
 @Builder
 @Getter
 @ToString
-@EqualsAndHashCode(of = {"paymentAuthorizationId", "proxyAccount"})
+@EqualsAndHashCode(of = {"paymentAuthorizationId", "escrowAccount"})
 public class LegacySecretProtectedPaymentAuthorization implements SignableMessage {
 
   @NonNull

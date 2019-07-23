@@ -28,7 +28,7 @@ import lombok.ToString;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @ToString
-@EqualsAndHashCode(of = {"paymentAuthorizationId", "proxyAccount"})
+@EqualsAndHashCode(of = {"paymentAuthorizationId", "escrowAccount"})
 public class LegacyPaymentAuthorization implements SignableRequestMessage, AddressableMessage {
 
   @NonNull
