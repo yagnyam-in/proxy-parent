@@ -17,12 +17,12 @@ import lombok.NonNull;
 import lombok.Singular;
 import lombok.ToString;
 
+@Getter
 @Builder
+@ToString
+@EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Getter
-@ToString
-@EqualsAndHashCode(of = {"alertId"})
 public class PaymentEncashmentUpdatedAlert implements SignableAlertMessage {
 
   public static final String PAYMENT_AUTHORIZATION_ID = "paymentAuthorizationId";

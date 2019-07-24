@@ -8,7 +8,6 @@ import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import lombok.*;
 
-
 @Getter
 @Builder
 @ToString
@@ -16,7 +15,7 @@ import lombok.*;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class ProxyCustomerUpdateResponse implements SignableMessage, AddressableMessage {
+public class DeviceUpdateResponse implements SignableMessage, AddressableMessage {
 
   @NonNull
   public SignedMessage<ProxyCustomerUpdateRequest> request;

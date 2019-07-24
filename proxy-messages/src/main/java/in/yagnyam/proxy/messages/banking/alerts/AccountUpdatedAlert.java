@@ -17,15 +17,12 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.ToString;
 
-/**
- * Alert used by GCM for sending Account Update Event
- */
+@Getter
 @Builder
+@ToString
+@EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Getter
-@ToString
-@EqualsAndHashCode(of = {"alertId"})
 public class AccountUpdatedAlert implements SignableAlertMessage {
 
   public static final String ACCOUNT_ID = "accountId";

@@ -16,15 +16,12 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.ToString;
 
-/**
- * Alert used by GCM for sending Deposit Update Event
- */
+@Getter
 @Builder
+@ToString
+@EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Getter
-@ToString
-@EqualsAndHashCode(of = {"alertId"})
 public class DepositUpdatedAlert implements SignableAlertMessage {
 
   public static final String DEPOSIT_ID = "depositId";

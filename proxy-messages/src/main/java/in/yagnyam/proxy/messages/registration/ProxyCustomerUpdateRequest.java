@@ -16,16 +16,13 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.ToString;
 
-/**
- * Request to update Customer details for given Proxy Id
- */
 @Getter
-@ToString
-@EqualsAndHashCode(of = "requestId", callSuper = false)
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-@AllArgsConstructor
 @Builder
+@ToString
+@EqualsAndHashCode
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ProxyCustomerUpdateRequest implements SignableRequestMessage, AddressableMessage {
 
   @NonNull
@@ -33,8 +30,6 @@ public class ProxyCustomerUpdateRequest implements SignableRequestMessage, Addre
 
   @NonNull
   private ProxyId proxyId;
-
-  private String gcmToken;
 
   private String name;
 

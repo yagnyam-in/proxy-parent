@@ -1,8 +1,8 @@
-package in.yagnyam.proxy.messages.payments.alerts;
+package in.yagnyam.proxy.messages.escrow.alerts;
 
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableAlertMessage;
-import in.yagnyam.proxy.messages.banking.ProxyAccountId;
+import in.yagnyam.proxy.messages.escrow.EscrowAccountId;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
@@ -15,24 +15,20 @@ import java.util.Map;
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class PaymentAuthorizationUpdatedAlert implements SignableAlertMessage {
+public class EscrowAccountUpdatedAlert implements SignableAlertMessage {
 
-  public static final String PAYMENT_AUTHORIZATION_ID = "paymentAuthorizationId";
-  public static final String PAYER_ACCOUNT_ID = "payerAccountId";
-  public static final String PAYER_BANK_ID = "payerBankId";
+  public static final String ESCROW_ACCOUNT_ID = "escrowAccountId";
+  public static final String ESCROW_BANK_ID = "escrowAccountBankId";
 
   @NonNull
   private String alertId;
 
   @NonNull
-  private String paymentAuthorizationId;
-
-  @NonNull
-  private ProxyAccountId payerAccountId;
+  private EscrowAccountId escrowAccountId;
 
   @Override
   public String proxyUniverse() {
-    return payerAccountId.getProxyUniverse();
+    return escrowAccountId.getProxyUniverse();
   }
 
   @NonNull
@@ -41,18 +37,18 @@ public class PaymentAuthorizationUpdatedAlert implements SignableAlertMessage {
 
   @Override
   public ProxyId signer() {
-    return ProxyId.of(payerAccountId.getBankId());
+    return ProxyId.of(escrowAccountId.getBankId());
   }
 
   @Override
   public String toReadableString() {
-    return String.format("PaymentAuthorization %s is updated.", paymentAuthorizationId);
+    return null;
   }
 
   @Override
   public boolean isValid() {
     return StringUtils.isValid(alertId)
-        && payerAccountId != null && payerAccountId.isValid()
+        && escrowAccountId != null && escrowAccountId.isValid()
         && receivers != null && receivers.stream().allMatch(ProxyId::isValid);
   }
 
@@ -69,9 +65,8 @@ public class PaymentAuthorizationUpdatedAlert implements SignableAlertMessage {
   @Override
   public Map<String, String> toFcmMap() {
     Map<String, String> map = SignableAlertMessage.super.toFcmMap();
-    map.put(PAYMENT_AUTHORIZATION_ID, paymentAuthorizationId);
-    map.put(PAYER_ACCOUNT_ID, payerAccountId.getAccountId());
-    map.put(PAYER_BANK_ID, payerAccountId.getBankId());
+    map.put(ESCROW_ACCOUNT_ID, escrowAccountId.getAccountId());
+    map.put(ESCROW_BANK_ID, escrowAccountId.getBankId());
     return map;
   }
 
