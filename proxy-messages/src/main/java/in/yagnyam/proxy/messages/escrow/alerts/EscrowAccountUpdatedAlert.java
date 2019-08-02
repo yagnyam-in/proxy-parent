@@ -37,7 +37,7 @@ public class EscrowAccountUpdatedAlert implements SignableAlertMessage {
 
   @Override
   public ProxyId signer() {
-    return ProxyId.of(escrowAccountId.getBankId());
+    return escrowAccountId.getBankProxyId();
   }
 
   @Override
@@ -66,7 +66,7 @@ public class EscrowAccountUpdatedAlert implements SignableAlertMessage {
   public Map<String, String> toFcmMap() {
     Map<String, String> map = SignableAlertMessage.super.toFcmMap();
     map.put(ESCROW_ACCOUNT_ID, escrowAccountId.getAccountId());
-    map.put(ESCROW_BANK_ID, escrowAccountId.getBankId());
+    map.put(ESCROW_BANK_ID, escrowAccountId.getBankProxyId().uniqueId());
     return map;
   }
 

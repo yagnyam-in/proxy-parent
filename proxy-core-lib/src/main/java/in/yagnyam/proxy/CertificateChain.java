@@ -6,12 +6,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import in.yagnyam.proxy.utils.StringUtils;
 import java.util.List;
 import java.util.Optional;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Singular;
-import lombok.ToString;
+
+import lombok.*;
 
 @Getter
 @Builder
@@ -19,7 +15,8 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CertificateChain {
+@EqualsAndHashCode
+public class CertificateChain implements ProxyBaseObject {
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
   private String certificateSerial;
@@ -44,6 +41,7 @@ public class CertificateChain {
         .findFirst();
   }
 
+  @Override
   @JsonIgnore
   public boolean isValid() {
     return (StringUtils.isValid(certificateSerial) || StringUtils.isValid(certificateId))

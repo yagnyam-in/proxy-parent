@@ -13,7 +13,7 @@ import java.util.Set;
  *
  * @see MessageSerializerService
  */
-public interface SignableMessage {
+public interface SignableMessage extends ProxyBaseObject {
 
   /**
    * Proxy Id of the Subject that must sign this message?

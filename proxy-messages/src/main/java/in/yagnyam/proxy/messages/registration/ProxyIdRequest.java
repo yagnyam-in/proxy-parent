@@ -1,6 +1,8 @@
 package in.yagnyam.proxy.messages.registration;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.RequestMessage;
+import in.yagnyam.proxy.utils.StringUtils;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
@@ -36,5 +38,11 @@ public class ProxyIdRequest implements RequestMessage {
   @Override
   public String requestId() {
     return requestId;
+  }
+
+  @Override
+  @JsonIgnore
+  public boolean isValid() {
+    return StringUtils.isValid(requestId) && StringUtils.isValid(certificateRequestEncoded);
   }
 }

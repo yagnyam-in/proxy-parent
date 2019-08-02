@@ -47,7 +47,7 @@ public class DepositRequest implements SignableMessage {
 
   @Override
   public ProxyId signer() {
-    return ProxyId.of(getProxyAccountId().getBankId());
+    return getProxyAccountId().getBankProxyId();
   }
 
   @Override

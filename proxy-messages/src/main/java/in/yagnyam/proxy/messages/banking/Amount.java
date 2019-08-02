@@ -2,6 +2,7 @@ package in.yagnyam.proxy.messages.banking;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import in.yagnyam.proxy.ProxyBaseObject;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -20,7 +21,7 @@ import lombok.NonNull;
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 @AllArgsConstructor(staticName = "of")
 @EqualsAndHashCode
-public class Amount implements Comparable<Amount> {
+public class Amount implements ProxyBaseObject, Comparable<Amount> {
 
   @NonNull
   private String currency;
@@ -28,6 +29,7 @@ public class Amount implements Comparable<Amount> {
   private double value;
 
   @JsonIgnore
+  @Override
   public boolean isValid() {
     return StringUtils.isValid(currency) && Currency.isValidCurrency(currency) && value >= 0;
   }

@@ -53,7 +53,7 @@ public class PaymentEncashmentUpdatedAlert implements SignableAlertMessage {
 
   @Override
   public ProxyId signer() {
-    return ProxyId.of(payerAccountId.getBankId());
+    return payerAccountId.getBankProxyId();
   }
 
   @Override
@@ -84,7 +84,7 @@ public class PaymentEncashmentUpdatedAlert implements SignableAlertMessage {
     map.put(PAYMENT_AUTHORIZATION_ID, paymentAuthorizationId);
     map.put(PAYMENT_ENCASHMENT_ID, paymentEncashmentId);
     map.put(PAYER_ACCOUNT_ID, payerAccountId.getAccountId());
-    map.put(PAYER_BANK_ID, payerAccountId.getBankId());
+    map.put(PAYER_BANK_ID, payerAccountId.getBankProxyId().uniqueId());
     return map;
   }
 

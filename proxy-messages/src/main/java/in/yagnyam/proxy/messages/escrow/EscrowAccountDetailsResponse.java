@@ -18,7 +18,7 @@ public class EscrowAccountDetailsResponse implements SignableMessage {
     public SignedMessage<EscrowAccountDetailsRequest> request;
 
     @NonNull
-    private EscrowAccountStatusEnum accountStatus;
+    private EscrowAccountStatusEnum status;
 
     @Override
     public ProxyId signer() {
@@ -33,8 +33,7 @@ public class EscrowAccountDetailsResponse implements SignableMessage {
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return request != null && request.isValid()
-                && accountStatus != null;
+        return request != null && request.isValid() && status != null;
     }
 
     public String getRequestId() {

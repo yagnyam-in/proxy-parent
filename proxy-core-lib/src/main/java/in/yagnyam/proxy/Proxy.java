@@ -16,9 +16,9 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-@EqualsAndHashCode(of = "id")
+@EqualsAndHashCode(exclude = "certificate")
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Proxy {
+public class Proxy implements ProxyBaseObject {
 
   @NonNull
   private ProxyId id;
@@ -47,6 +47,7 @@ public class Proxy {
     return id.uniqueId();
   }
 
+  @Override
   @JsonIgnore
   public boolean isValid() {
     return id != null && id.isValid()

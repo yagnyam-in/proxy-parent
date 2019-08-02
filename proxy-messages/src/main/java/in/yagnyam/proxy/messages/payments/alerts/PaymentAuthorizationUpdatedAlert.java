@@ -41,7 +41,7 @@ public class PaymentAuthorizationUpdatedAlert implements SignableAlertMessage {
 
   @Override
   public ProxyId signer() {
-    return ProxyId.of(payerAccountId.getBankId());
+    return payerAccountId.getBankProxyId();
   }
 
   @Override
@@ -71,7 +71,7 @@ public class PaymentAuthorizationUpdatedAlert implements SignableAlertMessage {
     Map<String, String> map = SignableAlertMessage.super.toFcmMap();
     map.put(PAYMENT_AUTHORIZATION_ID, paymentAuthorizationId);
     map.put(PAYER_ACCOUNT_ID, payerAccountId.getAccountId());
-    map.put(PAYER_BANK_ID, payerAccountId.getBankId());
+    map.put(PAYER_BANK_ID, payerAccountId.getBankProxyId().uniqueId());
     return map;
   }
 

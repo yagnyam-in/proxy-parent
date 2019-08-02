@@ -5,6 +5,7 @@ import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.utils.DateUtils;
+import in.yagnyam.proxy.utils.ProxyUtils;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
@@ -22,10 +23,10 @@ public class EscrowAccount implements SignableMessage {
     private EscrowAccountId escrowAccountId;
 
     @NonNull
-    private ProxyId buyerProxyId;
+    private ProxyId payerProxyId;
 
     @NonNull
-    private ProxyId sellerProxyId;
+    private ProxyId payeeProxyId;
 
     @NonNull
     private ProxyId escrowProxyId;
@@ -39,12 +40,11 @@ public class EscrowAccount implements SignableMessage {
     @NonNull
     private String title;
 
-    @NonNull
     private String description;
 
     @Override
     public ProxyId signer() {
-        return ProxyId.of(escrowAccountId.getBankId());
+        return escrowAccountId.getBankProxyId();
     }
 
     @Override
@@ -55,19 +55,18 @@ public class EscrowAccount implements SignableMessage {
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return escrowAccountId != null && escrowAccountId.isValid()
-                && buyerProxyId != null && buyerProxyId.isValid()
-                && sellerProxyId != null && sellerProxyId.isValid()
-                && escrowAccountId != null && escrowAccountId.isValid()
+        return ProxyUtils.isValid(payerProxyId)
+                && ProxyUtils.isValid(payeeProxyId)
+                && ProxyUtils.isValid(payeeProxyId)
+                && ProxyUtils.isValid(escrowAccountId)
                 && DateUtils.isValid(creationDate)
-                && balance != null && balance.isValid()
-                && StringUtils.isValid(title)
-                && StringUtils.isValid(description);
+                && ProxyUtils.isValid(balance)
+                && StringUtils.isValid(title);
     }
 
     @JsonIgnore
-    public String getBankId() {
-        return escrowAccountId.getBankId();
+    public ProxyId getBankProxyId() {
+        return escrowAccountId.getBankProxyId();
     }
 
     @JsonIgnore

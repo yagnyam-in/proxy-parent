@@ -34,10 +34,10 @@ public class ProxyWalletCreationRequest implements SignableRequestMessage, Addre
   private String proxyUniverse;
 
   @NonNull
-  private ProxyId proxyId;
+  private ProxyId ownerProxyId;
 
   @NonNull
-  private ProxyId bankId;
+  private ProxyId bankProxyId;
 
   @NonNull
   private String currency;
@@ -49,13 +49,13 @@ public class ProxyWalletCreationRequest implements SignableRequestMessage, Addre
 
   @Override
   public ProxyId signer() {
-    return proxyId;
+    return ownerProxyId;
   }
 
   @Override
   public String toReadableString() {
     return String.format(
-        "With request %s, create new %s wallet for proxy id %s ", requestId, currency, proxyId);
+        "With request %s, create new %s wallet for proxy id %s ", requestId, currency, ownerProxyId);
   }
 
   @Override
@@ -63,13 +63,13 @@ public class ProxyWalletCreationRequest implements SignableRequestMessage, Addre
   public boolean isValid() {
     return StringUtils.isValid(requestId)
         && StringUtils.isValid(proxyUniverse)
-        && proxyId != null && proxyId.isValid()
-        && bankId != null && bankId.isValid()
+        && ownerProxyId != null && ownerProxyId.isValid()
+        && bankProxyId != null && bankProxyId.isValid()
         && Currency.isValidCurrency(currency);
   }
 
   @Override
   public ProxyId address() {
-    return bankId;
+    return bankProxyId;
   }
 }

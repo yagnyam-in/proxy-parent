@@ -18,7 +18,7 @@ import lombok.ToString;
 @ToString
 @EqualsAndHashCode
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Hmac {
+public class Hmac implements ProxyBaseObject {
 
   @NonNull
   private String algorithm;
@@ -29,6 +29,7 @@ public class Hmac {
   @NonNull
   private String hmac;
 
+  @Override
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(iv) && StringUtils.isValid(algorithm) && StringUtils.isValid(hmac);

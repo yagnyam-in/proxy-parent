@@ -45,7 +45,7 @@ public class EscrowAccountDetailsRequest implements SignableRequestMessage, Addr
   @Override
   public Set<ProxyId> validSigners() {
     EscrowAccount account = escrowAccount.getMessage();
-    return new HashSet<>(Arrays.asList(account.getBuyerProxyId(), account.getSellerProxyId(), account.getEscrowProxyId()));
+    return new HashSet<>(Arrays.asList(account.getPayerProxyId(), account.getPayeeProxyId(), account.getEscrowProxyId()));
   }
 
   @Override

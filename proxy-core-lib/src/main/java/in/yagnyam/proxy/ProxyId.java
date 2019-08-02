@@ -13,7 +13,7 @@ import lombok.Setter;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Setter(AccessLevel.PRIVATE)
 @EqualsAndHashCode(of = {"id", "sha256Thumbprint"})
-public class ProxyId {
+public class ProxyId implements ProxyBaseObject {
 
   private String id;
   private String sha256Thumbprint;
@@ -68,6 +68,7 @@ public class ProxyId {
   }
 
   @JsonIgnore
+  @Override
   public boolean isValid() {
     return StringUtils.isValid(id);
   }
@@ -76,6 +77,5 @@ public class ProxyId {
   public String toString() {
     return uniqueId();
   }
-
 
 }

@@ -20,10 +20,10 @@ import lombok.ToString;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString(exclude = "certificateEncoded")
-@EqualsAndHashCode(of = "serialNumber")
+@ToString(of = {"serialNumber", "sha256Thumbprint", "alias", "subject", "publicKeySha256Thumbprint"})
+@EqualsAndHashCode(exclude = "certificate")
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Certificate {
+public class Certificate implements ProxyBaseObject {
 
   @NonNull
   private String serialNumber;
@@ -66,6 +66,7 @@ public class Certificate {
     return owner;
   }
 
+  @Override
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(serialNumber)

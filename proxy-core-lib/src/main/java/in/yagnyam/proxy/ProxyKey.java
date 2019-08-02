@@ -12,7 +12,7 @@ import lombok.ToString;
 @Builder
 @Getter
 @ToString(of = {"id", "name"})
-public class ProxyKey {
+public class ProxyKey implements ProxyBaseObject {
 
   @NonNull
   private ProxyId id;
@@ -30,6 +30,8 @@ public class ProxyKey {
     return id.uniqueId();
   }
 
+  @Override
+  @JsonIgnore
   public boolean isValid() {
     return id != null && id.isValid()
         && StringUtils.isValid(privateKeyEncoded);

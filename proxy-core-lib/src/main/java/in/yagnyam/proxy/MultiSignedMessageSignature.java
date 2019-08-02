@@ -11,7 +11,7 @@ import java.util.List;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(staticName = "of")
 @EqualsAndHashCode
-public class MultiSignedMessageSignature {
+public class MultiSignedMessageSignature implements ProxyBaseObject {
 
     @NonNull
     private ProxyId signedBy;

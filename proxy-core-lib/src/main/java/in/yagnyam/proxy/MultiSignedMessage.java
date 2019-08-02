@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @ToString(of = {"type", "payload", "signatures"})
-public class MultiSignedMessage<T extends MultiSignableMessage> {
+public class MultiSignedMessage<T extends MultiSignableMessage> implements ProxyBaseObject {
 
   @JsonIgnore
   private T message;
@@ -29,6 +29,9 @@ public class MultiSignedMessage<T extends MultiSignableMessage> {
   @Singular
   private List<MultiSignedMessageSignature> signatures;
 
+  @JsonIgnore
+  private boolean verified = false;
+
   public Set<ProxyId> actualSigners() {
     return signatures.stream().map(MultiSignedMessageSignature::getSignedBy).collect(Collectors.toSet());
   }
@@ -37,19 +40,24 @@ public class MultiSignedMessage<T extends MultiSignableMessage> {
   @SuppressWarnings("unchecked")
   public MultiSignedMessage<T> setMessage(MultiSignableMessage message) {
     this.message = (T) message;
+    this.verified = false;
     return this;
   }
 
   @JsonIgnore
-  public boolean isComplete() {
-    if (!isValid()) {
-      return  false;
-    }
-    Set<ProxyId> actualSigners = actualSigners();
-    return message.validateSigners(actualSigners) && message.minimumRequiredSignatures() >= actualSigners.size();
+  public MultiSignedMessage<T> setVerified(boolean value) {
+    this.verified = value;
+    return this;
   }
 
   @JsonIgnore
+  public boolean hasSufficientSignatures() {
+    Set<ProxyId> actualSigners = actualSigners();
+    return message.hasSufficientSignatures(actualSigners);
+  }
+
+  @JsonIgnore
+  @Override
   public boolean isValid() {
     if (message == null) {
       throw new IllegalArgumentException("Message should be de-serialized to check validity");

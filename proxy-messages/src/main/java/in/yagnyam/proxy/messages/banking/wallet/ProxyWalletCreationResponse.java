@@ -39,7 +39,7 @@ public class ProxyWalletCreationResponse implements SignableMessage, Addressable
 
   @Override
   public ProxyId signer() {
-    return request.getMessage().getBankId();
+    return request.getMessage().getBankProxyId();
   }
 
   @Override
@@ -54,7 +54,7 @@ public class ProxyWalletCreationResponse implements SignableMessage, Addressable
         && request.getMessage().getProxyUniverse()
         .equals(proxyAccount.getMessage().getProxyAccountId().getProxyUniverse())
         && proxyAccount != null && proxyAccount.isValid()
-        && proxyAccount.getSignedBy().canSignOnBehalfOf(request.getMessage().getBankId());
+        && proxyAccount.getSignedBy().canSignOnBehalfOf(request.getMessage().getBankProxyId());
   }
 
   @JsonIgnore

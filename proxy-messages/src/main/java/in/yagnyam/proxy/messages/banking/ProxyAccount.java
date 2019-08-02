@@ -19,56 +19,56 @@ import java.util.Date;
 @EqualsAndHashCode
 public class ProxyAccount implements SignableMessage {
 
-  @NonNull
-  private ProxyAccountId proxyAccountId;
+    @NonNull
+    private ProxyAccountId proxyAccountId;
 
-  @NonNull
-  private ProxyId ownerProxyId;
+    @NonNull
+    private ProxyId ownerProxyId;
 
-  @NonNull
-  private Date creationDate;
+    @NonNull
+    private Date creationDate;
 
-  @NonNull
-  private Date expiryDate;
+    @NonNull
+    private Date expiryDate;
 
-  @NonNull
-  private String currency;
+    @NonNull
+    private String currency;
 
-  /**
-   * Maximum amount for which *each* PaymentAuthorization can be made
-   */
-  @NonNull
-  private Amount maximumAmountPerTransaction;
+    /**
+     * Maximum amount for which *each* PaymentAuthorization can be made
+     */
+    @NonNull
+    private Amount maximumAmountPerTransaction;
 
-  @Override
-  public ProxyId signer() {
-    return ProxyId.of(proxyAccountId.getBankId());
-  }
+    @Override
+    public ProxyId signer() {
+        return proxyAccountId.getBankProxyId();
+    }
 
-  @Override
-  public String toReadableString() {
-    return null;
-  }
+    @Override
+    public String toReadableString() {
+        return null;
+    }
 
-  @Override
-  @JsonIgnore
-  public boolean isValid() {
-    return proxyAccountId != null
-        && proxyAccountId.isValid()
-        && ownerProxyId != null && ownerProxyId.isValid()
-        && DateUtils.isValid(creationDate)
-        && DateUtils.isValid(expiryDate)
-        && currency != null
-        && maximumAmountPerTransaction != null && maximumAmountPerTransaction.isValid();
-  }
+    @Override
+    @JsonIgnore
+    public boolean isValid() {
+        return proxyAccountId != null
+                && proxyAccountId.isValid()
+                && ownerProxyId != null && ownerProxyId.isValid()
+                && DateUtils.isValid(creationDate)
+                && DateUtils.isValid(expiryDate)
+                && currency != null
+                && maximumAmountPerTransaction != null && maximumAmountPerTransaction.isValid();
+    }
 
-  @JsonIgnore
-  public String getBankId() {
-    return proxyAccountId.getBankId();
-  }
+    @JsonIgnore
+    public ProxyId getBankProxyId() {
+        return proxyAccountId.getBankProxyId();
+    }
 
-  @JsonIgnore
-  public String getProxyUniverse() {
-    return proxyAccountId.getProxyUniverse();
-  }
+    @JsonIgnore
+    public String getProxyUniverse() {
+        return proxyAccountId.getProxyUniverse();
+    }
 }

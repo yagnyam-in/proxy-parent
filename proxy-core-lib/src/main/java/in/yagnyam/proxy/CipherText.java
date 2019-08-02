@@ -18,7 +18,7 @@ import lombok.ToString;
 @ToString
 @EqualsAndHashCode
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CipherText {
+public class CipherText implements ProxyBaseObject {
 
   @NonNull
   private String iv;
@@ -29,6 +29,7 @@ public class CipherText {
   @NonNull
   private String cipherText;
 
+  @Override
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(iv) && StringUtils.isValid(algorithm) && StringUtils.isValid(cipherText);

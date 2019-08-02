@@ -4,7 +4,6 @@ package in.yagnyam.proxy;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.services.MessageSerializerService;
 
-import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -14,18 +13,20 @@ import java.util.Set;
  *
  * @see MessageSerializerService
  */
-public interface MultiSignableMessage {
+public interface MultiSignableMessage extends ProxyBaseObject {
 
   /**
    * Signers that can sign this message.
    * @return Set of Proxies that can sign this message
    */
+  @JsonIgnore
   Set<ProxyId> validSigners();
 
   /**
    * Minimum number of signature required for this message to be Complete
    * @return Minimum required signatures.
    */
+  @JsonIgnore
   int minimumRequiredSignatures();
 
   /**
@@ -33,6 +34,7 @@ public interface MultiSignableMessage {
    *
    * @return Message in Human readable format
    */
+  @JsonIgnore
   String toReadableString();
 
   /**
@@ -68,9 +70,15 @@ public interface MultiSignableMessage {
    * Validate if these are valid signers
    * @return Set of Proxies that can sign this message
    */
+  @JsonIgnore
   default boolean validateSigners(Set<ProxyId> signers) {
     Set<ProxyId> validSigners = validSigners();
     return validSigners.containsAll(signers);
+  }
+
+  @JsonIgnore
+  default boolean hasSufficientSignatures(Set<ProxyId> signers) {
+    return validateSigners(signers) && signers.size() >= minimumRequiredSignatures();
   }
 
 }

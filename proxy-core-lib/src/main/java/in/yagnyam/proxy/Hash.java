@@ -18,7 +18,7 @@ import lombok.ToString;
 @ToString
 @EqualsAndHashCode
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Hash {
+public class Hash implements ProxyBaseObject {
 
   @NonNull
   private String algorithm;
@@ -29,6 +29,7 @@ public class Hash {
   @NonNull
   private String hash;
 
+  @Override
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(iv) && StringUtils.isValid(algorithm) && StringUtils.isValid(hash);

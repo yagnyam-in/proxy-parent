@@ -1,12 +1,10 @@
 package in.yagnyam.proxy.messages.escrow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import in.yagnyam.proxy.AddressableMessage;
-import in.yagnyam.proxy.ProxyId;
-import in.yagnyam.proxy.SignableRequestMessage;
-import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.*;
 import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.messages.banking.ProxyAccount;
+import in.yagnyam.proxy.utils.ProxyUtils;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
@@ -20,16 +18,10 @@ import lombok.*;
 public class EscrowAccountCreationRequest implements SignableRequestMessage, AddressableMessage {
 
     @NonNull
-    private String requestId;
+    private EscrowAccountId escrowAccountId;
 
     @NonNull
-    private String proxyUniverse;
-
-    @NonNull
-    private ProxyId buyerProxyId;
-
-    @NonNull
-    private ProxyId sellerProxyId;
+    private ProxyId payeeProxyId;
 
     @NonNull
     private ProxyId escrowProxyId;
@@ -43,17 +35,11 @@ public class EscrowAccountCreationRequest implements SignableRequestMessage, Add
     @NonNull
     private String title;
 
-    @NonNull
     private String description;
 
     @Override
-    public String requestId() {
-        return requestId;
-    }
-
-    @Override
     public ProxyId signer() {
-        return buyerProxyId;
+        return getPayerProxyId();
     }
 
     @Override
@@ -64,15 +50,13 @@ public class EscrowAccountCreationRequest implements SignableRequestMessage, Add
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return StringUtils.isValid(requestId)
-                && StringUtils.isValid(proxyUniverse)
-                && buyerProxyId != null && buyerProxyId.isValid()
-                && sellerProxyId != null && sellerProxyId.isValid()
-                && escrowProxyId != null && escrowProxyId.isValid()
-                && debitProxyAccount != null && debitProxyAccount.isValid()
-                && amount != null && amount.isValid()
-                && StringUtils.isValid(title)
-                && StringUtils.isValid(description);
+        return ProxyUtils.isValid(escrowAccountId)
+                && ProxyUtils.isValid(payeeProxyId)
+                && ProxyUtils.isValid(payeeProxyId)
+                && ProxyUtils.isValid(escrowAccountId)
+                && ProxyUtils.isValid(debitProxyAccount)
+                && ProxyUtils.isValid(amount)
+                && StringUtils.isValid(title);
     }
 
     @Override
@@ -81,7 +65,17 @@ public class EscrowAccountCreationRequest implements SignableRequestMessage, Add
     }
 
     @JsonIgnore
-    ProxyId bankProxyId() {
-        return debitProxyAccount.getSignedBy();
+    public ProxyId getBankProxyId() {
+        return debitProxyAccount.getMessage().getBankProxyId();
+    }
+
+    @JsonIgnore
+    public ProxyId getPayerProxyId() {
+        return debitProxyAccount.getMessage().getOwnerProxyId();
+    }
+
+    @Override
+    public String requestId() {
+        return escrowAccountId.getAccountId();
     }
 }

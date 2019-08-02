@@ -1,13 +1,10 @@
 package in.yagnyam.proxy;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.List;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Singular;
-import lombok.ToString;
+
+import lombok.*;
 
 @Getter
 @Builder
@@ -15,9 +12,15 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Certificates {
+@EqualsAndHashCode
+public class Certificates implements ProxyBaseObject {
 
   @Singular
   private List<Certificate> certificates;
 
+  @Override
+  @JsonIgnore
+  public boolean isValid() {
+    return certificates.stream().allMatch(Certificate::isValid);
+  }
 }

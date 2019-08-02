@@ -1,6 +1,9 @@
 package in.yagnyam.proxy.messages.banking;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import in.yagnyam.proxy.ProxyBaseObject;
+import in.yagnyam.proxy.ProxyId;
+import in.yagnyam.proxy.utils.ProxyUtils;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -21,22 +24,28 @@ import lombok.ToString;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @EqualsAndHashCode
-public class ProxyAccountId {
+public class ProxyAccountId implements ProxyBaseObject {
 
   @NonNull
   private String proxyUniverse;
 
   @NonNull
-  private String bankId;
+  private ProxyId bankProxyId;
 
   @NonNull
   private String accountId;
 
   @JsonIgnore
+  @Override
   public boolean isValid() {
     return StringUtils.isValid(proxyUniverse)
-        && StringUtils.isValid(bankId)
+        && ProxyUtils.isValid(bankProxyId)
         && StringUtils
         .isValid(accountId);
+  }
+
+  @JsonIgnore
+  public String getBankId() {
+    return bankProxyId.getId();
   }
 }

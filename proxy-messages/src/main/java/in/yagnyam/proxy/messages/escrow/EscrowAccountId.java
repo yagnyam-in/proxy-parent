@@ -1,6 +1,9 @@
 package in.yagnyam.proxy.messages.escrow;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import in.yagnyam.proxy.ProxyBaseObject;
+import in.yagnyam.proxy.ProxyId;
+import in.yagnyam.proxy.utils.ProxyUtils;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
@@ -10,22 +13,21 @@ import lombok.*;
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class EscrowAccountId {
+public class EscrowAccountId implements ProxyBaseObject {
 
-  @NonNull
-  private String proxyUniverse;
+    @NonNull
+    private String proxyUniverse;
 
-  @NonNull
-  private String bankId;
+    @NonNull
+    private ProxyId bankProxyId;
 
-  @NonNull
-  private String accountId;
+    @NonNull
+    private String accountId;
 
-  @JsonIgnore
-  public boolean isValid() {
-    return StringUtils.isValid(proxyUniverse)
-        && StringUtils.isValid(bankId)
-        && StringUtils
-        .isValid(accountId);
-  }
+    @JsonIgnore
+    public boolean isValid() {
+        return StringUtils.isValid(proxyUniverse)
+                && ProxyUtils.isValid(bankProxyId)
+                && StringUtils.isValid(accountId);
+    }
 }

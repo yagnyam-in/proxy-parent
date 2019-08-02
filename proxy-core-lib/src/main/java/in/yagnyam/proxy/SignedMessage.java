@@ -14,7 +14,7 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @ToString(of = {"type", "payload", "signatures"})
-public class SignedMessage<T extends SignableMessage> {
+public class SignedMessage<T extends SignableMessage> implements ProxyBaseObject {
 
   @JsonIgnore
   private T message;
@@ -32,6 +32,8 @@ public class SignedMessage<T extends SignableMessage> {
   @Singular
   private List<SignedMessageSignature> signatures;
 
+  @JsonIgnore
+  private boolean verified = false;
 
   /**
    * Signers that can sign the underlying message.
@@ -45,6 +47,13 @@ public class SignedMessage<T extends SignableMessage> {
   @SuppressWarnings("unchecked")
   public SignedMessage<T> setMessage(SignableMessage message) {
     this.message = (T) message;
+    this.verified = false;
+    return this;
+  }
+
+  @JsonIgnore
+  public SignedMessage<T> setVerified(boolean value) {
+    this.verified = value;
     return this;
   }
 

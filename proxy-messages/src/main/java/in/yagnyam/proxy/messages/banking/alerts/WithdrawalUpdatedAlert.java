@@ -26,7 +26,7 @@ public class WithdrawalUpdatedAlert implements SignableAlertMessage {
 
   public static final String WITHDRAWAL_ID = "withdrawalId";
   public static final String ACCOUNT_ID = "accountId";
-  public static final String BANK_ID = "bankId";
+  public static final String BANK_PROXY_ID = "bankProxyId";
 
   @NonNull
   private String alertId;
@@ -47,7 +47,7 @@ public class WithdrawalUpdatedAlert implements SignableAlertMessage {
 
   @Override
   public ProxyId signer() {
-    return ProxyId.of(proxyAccountId.getBankId());
+    return proxyAccountId.getBankProxyId();
   }
 
   @Override
@@ -77,7 +77,7 @@ public class WithdrawalUpdatedAlert implements SignableAlertMessage {
     Map<String, String> map = SignableAlertMessage.super.toFcmMap();
     map.put(WITHDRAWAL_ID, withdrawalId);
     map.put(ACCOUNT_ID, proxyAccountId.getAccountId());
-    map.put(BANK_ID, proxyAccountId.getBankId());
+    map.put(BANK_PROXY_ID, proxyAccountId.getBankProxyId().uniqueId());
     return map;
   }
 

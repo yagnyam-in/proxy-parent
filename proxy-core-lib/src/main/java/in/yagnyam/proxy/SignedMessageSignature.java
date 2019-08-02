@@ -10,7 +10,7 @@ import lombok.*;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(staticName = "of")
 @EqualsAndHashCode
-public class SignedMessageSignature {
+public class SignedMessageSignature implements ProxyBaseObject {
 
   @NonNull
   private String algorithm;
