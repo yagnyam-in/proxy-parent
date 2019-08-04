@@ -7,9 +7,15 @@ import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.utils.DateUtils;
 import in.yagnyam.proxy.utils.ProxyUtils;
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.*;
-
 import java.util.Date;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
 @Builder
 @Getter
@@ -19,58 +25,58 @@ import java.util.Date;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class EscrowAccount implements SignableMessage {
 
-    @NonNull
-    private EscrowAccountId escrowAccountId;
+  @NonNull
+  private EscrowAccountId escrowAccountId;
 
-    @NonNull
-    private ProxyId payerProxyId;
+  @NonNull
+  private ProxyId payerProxyId;
 
-    @NonNull
-    private ProxyId payeeProxyId;
+  @NonNull
+  private ProxyId payeeProxyId;
 
-    @NonNull
-    private ProxyId escrowProxyId;
+  @NonNull
+  private ProxyId escrowProxyId;
 
-    @NonNull
-    private Date creationDate;
+  @NonNull
+  private Date creationDate;
 
-    @NonNull
-    private Amount balance;
+  @NonNull
+  private Amount balance;
 
-    @NonNull
-    private String title;
+  @NonNull
+  private String title;
 
-    private String description;
+  private String description;
 
-    @Override
-    public ProxyId signer() {
-        return escrowAccountId.getBankProxyId();
-    }
+  @Override
+  public ProxyId signer() {
+    return escrowAccountId.getBankProxyId();
+  }
 
-    @Override
-    public String toReadableString() {
-        return null;
-    }
+  @Override
+  public String toReadableString() {
+    return null;
+  }
 
-    @Override
-    @JsonIgnore
-    public boolean isValid() {
-        return ProxyUtils.isValid(payerProxyId)
-                && ProxyUtils.isValid(payeeProxyId)
-                && ProxyUtils.isValid(payeeProxyId)
-                && ProxyUtils.isValid(escrowAccountId)
-                && DateUtils.isValid(creationDate)
-                && ProxyUtils.isValid(balance)
-                && StringUtils.isValid(title);
-    }
+  @Override
+  @JsonIgnore
+  public boolean isValid() {
+    return ProxyUtils.isValid(payerProxyId)
+        && ProxyUtils.isValid(payeeProxyId)
+        && ProxyUtils.isValid(payeeProxyId)
+        && ProxyUtils.isValid(escrowAccountId)
+        && DateUtils.isValid(creationDate)
+        && ProxyUtils.isValid(balance)
+        && StringUtils.isValid(title);
+  }
 
-    @JsonIgnore
-    public ProxyId getBankProxyId() {
-        return escrowAccountId.getBankProxyId();
-    }
+  @JsonIgnore
+  public ProxyId getBankProxyId() {
+    return escrowAccountId.getBankProxyId();
+  }
 
-    @JsonIgnore
-    public String getProxyUniverse() {
-        return escrowAccountId.getProxyUniverse();
-    }
+  @JsonIgnore
+  public String getProxyUniverse() {
+    return escrowAccountId.getProxyUniverse();
+  }
 }

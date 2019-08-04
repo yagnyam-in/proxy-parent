@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.utils.ProxyUtils;
 import lombok.*;
 
 @Builder
@@ -33,10 +34,10 @@ public class EscrowAccountDetailsResponse implements SignableMessage {
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return request != null && request.isValid() && status != null;
+        return ProxyUtils.isValid(request) && status != null;
     }
 
     public String getRequestId() {
-        return request != null && request.getMessage() != null ? request.getMessage().getRequestId() : null;
+        return request.getMessage().getRequestId();
     }
 }

@@ -5,7 +5,14 @@ import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.utils.ProxyUtils;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
 @Builder
 @Getter
@@ -15,28 +22,35 @@ import lombok.*;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class EscrowAccountCreationResponse implements SignableMessage {
 
-    @NonNull
-    private SignedMessage<EscrowAccountCreationRequest> request;
+  @NonNull
+  private SignedMessage<EscrowAccountCreationRequest> request;
 
-    @NonNull
-    public SignedMessage<EscrowAccount> escrowAccount;
+  @NonNull
+  public SignedMessage<EscrowAccount> escrowAccount;
 
-    @Override
-    public ProxyId signer() {
-        return request.getMessage().getBankProxyId();
+  @Override
+  public ProxyId signer() {
+    return request.getMessage().getBankProxyId();
+  }
+
+  @Override
+  public String toReadableString() {
+    return null;
+  }
+
+  @Override
+  @JsonIgnore
+  public boolean isValid() {
+    if (!ProxyUtils.isValid(request) || !ProxyUtils.isValid(escrowAccount)) {
+      return false;
     }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
-    @JsonIgnore
-    public boolean isValid() {
-        return ProxyUtils.isValid(request) && ProxyUtils.isValid(escrowAccount)
-                && request.getMessage().getEscrowAccountId().equals(escrowAccount.getMessage().getEscrowAccountId());
-        // TODO: Add additional field checks.
-    }
+    EscrowAccountCreationRequest request = this.request.getMessage();
+    EscrowAccount account = this.escrowAccount.getMessage();
+    return request.getAmount().equals(account.getBalance())
+        && request.getPayerProxyId().equals(account.getPayerProxyId())
+        && request.getPayeeProxyId().equals(account.getPayeeProxyId())
+        && request.getEscrowProxyId().equals(account.getEscrowProxyId())
+        && request.getDebitProxyAccount().getMessage().getBankProxyId().equals(account.getBankProxyId());
+  }
 
 }

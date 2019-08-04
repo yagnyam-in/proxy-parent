@@ -5,13 +5,19 @@ import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
-import in.yagnyam.proxy.messages.banking.ProxyAccountId;
+import in.yagnyam.proxy.utils.ProxyUtils;
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.*;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
 @Builder
 @Getter
@@ -39,13 +45,15 @@ public class EscrowAccountDetailsRequest implements SignableRequestMessage, Addr
 
   @Override
   public ProxyId signer() {
-    throw new RuntimeException("EscrowAccountDetailsRequest.signer should never be invoked when EscrowAccountDetailsRequest.validSigners is implemented");
+    throw new RuntimeException(
+        "EscrowAccountDetailsRequest.signer should never be invoked when EscrowAccountDetailsRequest.validSigners is implemented");
   }
 
   @Override
   public Set<ProxyId> validSigners() {
     EscrowAccount account = escrowAccount.getMessage();
-    return new HashSet<>(Arrays.asList(account.getPayerProxyId(), account.getPayeeProxyId(), account.getEscrowProxyId()));
+    return new HashSet<>(
+        Arrays.asList(account.getPayerProxyId(), account.getPayeeProxyId(), account.getEscrowProxyId()));
   }
 
   @Override
@@ -57,13 +65,17 @@ public class EscrowAccountDetailsRequest implements SignableRequestMessage, Addr
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(requestId)
-        && escrowAccount != null && escrowAccount.isValid();
+        && ProxyUtils.isValid(escrowAccount);
   }
 
   @JsonIgnore
-  public EscrowAccountId getProxyAccountId() {
-    return escrowAccount != null && escrowAccount.getMessage() != null
-        ? escrowAccount.getMessage().getEscrowAccountId() : null;
+  public EscrowAccountId getEscrowAccountId() {
+    return escrowAccount.getMessage().getEscrowAccountId();
+  }
+
+  @JsonIgnore
+  public ProxyId getBankProxyId() {
+    return escrowAccount.getMessage().getBankProxyId();
   }
 
 }
