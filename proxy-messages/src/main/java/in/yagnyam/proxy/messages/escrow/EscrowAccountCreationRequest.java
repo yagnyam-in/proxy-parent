@@ -27,7 +27,7 @@ import lombok.ToString;
 public class EscrowAccountCreationRequest implements SignableRequestMessage, AddressableMessage {
 
   @NonNull
-  private String escrownegotiationId;
+  private String escrowNegotiationId;
 
   @NonNull
   private ProxyId payeeProxyId;
@@ -59,7 +59,7 @@ public class EscrowAccountCreationRequest implements SignableRequestMessage, Add
   @Override
   @JsonIgnore
   public boolean isValid() {
-    return StringUtils.isValid(escrownegotiationId)
+    return StringUtils.isValid(escrowNegotiationId)
         && ProxyUtils.isValid(payeeProxyId)
         && ProxyUtils.isValid(payeeProxyId)
         && ProxyUtils.isValid(debitProxyAccount)
@@ -84,6 +84,6 @@ public class EscrowAccountCreationRequest implements SignableRequestMessage, Add
 
   @Override
   public String requestId() {
-    return escrownegotiationId;
+    return escrowNegotiationId;
   }
 }
