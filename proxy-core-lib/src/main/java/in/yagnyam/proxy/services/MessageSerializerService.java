@@ -12,7 +12,6 @@ import java.io.IOException;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -49,7 +48,7 @@ public class MessageSerializerService {
 
 
   public <T extends MultiSignableMessage> String serializeMultiSignedMessage(MultiSignedMessage<T> message)
-          throws IOException {
+      throws IOException {
     try {
       return objectMapper().writeValueAsString(message);
     } catch (JsonProcessingException e) {
@@ -86,7 +85,7 @@ public class MessageSerializerService {
     }
   }
 
-  public <T extends SignableMessage> SignedMessage<T> deserializeSignedMessage(String message)
+  public SignedMessage deserializeSignedMessage(String message)
       throws IOException {
     try {
       return objectMapper().readValue(message, SignedMessage.class);
@@ -105,8 +104,9 @@ public class MessageSerializerService {
       throw e;
     }
   }
-  public <T extends MultiSignableMessage> MultiSignedMessage<T> deserializeMultiSignedMessage(String message)
-          throws IOException {
+
+  public MultiSignedMessage deserializeMultiSignedMessage(String message)
+      throws IOException {
     try {
       return objectMapper().readValue(message, MultiSignedMessage.class);
     } catch (IOException e) {
@@ -116,7 +116,7 @@ public class MessageSerializerService {
   }
 
   public <T extends MultiSignableMessage> T deserializeMultiSignableMessage(String message, Class<T> tClass)
-          throws IOException {
+      throws IOException {
     try {
       return objectMapper().readValue(message, tClass);
     } catch (IOException e) {

@@ -1,12 +1,13 @@
-package in.yagnyam.proxy.messages.registration;
+package in.yagnyam.proxy.messages.alerts;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import in.yagnyam.proxy.AddressableMessage;
-import in.yagnyam.proxy.Constants;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
+import in.yagnyam.proxy.utils.ProxyUtils;
 import in.yagnyam.proxy.utils.StringUtils;
+import java.util.Date;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,7 +24,7 @@ import lombok.ToString;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class ProxyCustomerUpdateRequest implements SignableRequestMessage, AddressableMessage {
+public class PendingAlertsRequest implements SignableRequestMessage, AddressableMessage {
 
   @NonNull
   private String requestId;
@@ -31,13 +32,13 @@ public class ProxyCustomerUpdateRequest implements SignableRequestMessage, Addre
   @NonNull
   private ProxyId proxyId;
 
-  private String name;
+  @NonNull
+  private String deviceId;
 
-  private String emailAddress;
+  private Date fromTime;
 
-  private String phoneNumber;
-
-  private boolean syncWithContacts;
+  // TODO: Make this mandatory
+  private ProxyId alertProviderProxyId;
 
   @Override
   public ProxyId signer() {
@@ -52,8 +53,9 @@ public class ProxyCustomerUpdateRequest implements SignableRequestMessage, Addre
   @Override
   @JsonIgnore
   public boolean isValid() {
-    return StringUtils.isValid(requestId)
-        && proxyId != null && proxyId.isValid();
+    return ProxyUtils.isValid(proxyId)
+        && StringUtils.isValid(requestId)
+        && StringUtils.isValid(deviceId);
   }
 
   @Override
@@ -63,7 +65,6 @@ public class ProxyCustomerUpdateRequest implements SignableRequestMessage, Addre
 
   @Override
   public ProxyId address() {
-    return ProxyId.of(Constants.PROXY_CENTRAL);
+    return alertProviderProxyId;
   }
-
 }

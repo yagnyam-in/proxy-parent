@@ -1,4 +1,4 @@
-package in.yagnyam.proxy.messages.registration;
+package in.yagnyam.proxy.messages.alerts;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -6,8 +6,15 @@ import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
-import lombok.*;
-
+import in.yagnyam.proxy.utils.ProxyUtils;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.ToString;
 
 @Getter
 @Builder
@@ -16,10 +23,10 @@ import lombok.*;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class ProxyCustomerUpdateResponse implements SignableMessage, AddressableMessage {
+public class SubscribeForAlertsResponse implements SignableMessage, AddressableMessage {
 
   @NonNull
-  public SignedMessage<ProxyCustomerUpdateRequest> request;
+  private SignedMessage<SubscribeForAlertsRequest> request;
 
   @Override
   public ProxyId signer() {
@@ -34,11 +41,11 @@ public class ProxyCustomerUpdateResponse implements SignableMessage, Addressable
   @Override
   @JsonIgnore
   public boolean isValid() {
-    return request != null && request.isValid();
+    return ProxyUtils.isValid(request);
   }
 
   @Override
   public ProxyId address() {
-    return request.getMessage().getProxyId();
+    return request.getSignedBy();
   }
 }
