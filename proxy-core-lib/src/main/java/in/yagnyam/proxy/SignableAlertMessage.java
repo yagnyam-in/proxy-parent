@@ -10,9 +10,10 @@ import java.util.Map;
  */
 public interface SignableAlertMessage extends SignableMessage {
 
-  String ALERT_TYPE = "alertType";
-  String ALERT_ID = "alertId";
-  String PROXY_UNIVERSE = "proxyUniverse";
+  String FIELD_ALERT_TYPE = "alertType";
+  String FIELD_ALERT_ID = "alertId";
+  String FIELD_PROXY_UNIVERSE = "proxyUniverse";
+  String FIELD_RECEIVER_PROXY_ID = "receiverProxyId";
 
   /**
    * Proxy Universe
@@ -39,9 +40,9 @@ public interface SignableAlertMessage extends SignableMessage {
    */
   default Map<String, String> toFcmMap() {
     Map<String, String> map = new HashMap<>();
-    map.put(PROXY_UNIVERSE, proxyUniverse());
-    map.put(ALERT_TYPE, getMessageType());
-    map.put(ALERT_ID, alertId());
+    map.put(FIELD_PROXY_UNIVERSE, proxyUniverse());
+    map.put(FIELD_ALERT_TYPE, getMessageType());
+    map.put(FIELD_ALERT_ID, alertId());
     return map;
   }
 }

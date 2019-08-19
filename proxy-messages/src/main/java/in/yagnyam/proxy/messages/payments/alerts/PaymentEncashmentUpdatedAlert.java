@@ -28,7 +28,7 @@ public class PaymentEncashmentUpdatedAlert implements SignableAlertMessage {
   public static final String PAYMENT_AUTHORIZATION_ID = "paymentAuthorizationId";
   public static final String PAYMENT_ENCASHMENT_ID = "paymentEncashmentId";
   public static final String PAYER_ACCOUNT_ID = "payerAccountId";
-  public static final String PAYER_BANK_ID = "payerBankId";
+  public static final String PAYER_BANK_PROXY_ID = "payerBankProxyId";
 
   @NonNull
   private String alertId;
@@ -84,7 +84,7 @@ public class PaymentEncashmentUpdatedAlert implements SignableAlertMessage {
     map.put(PAYMENT_AUTHORIZATION_ID, paymentAuthorizationId);
     map.put(PAYMENT_ENCASHMENT_ID, paymentEncashmentId);
     map.put(PAYER_ACCOUNT_ID, payerAccountId.getAccountId());
-    map.put(PAYER_BANK_ID, payerAccountId.getBankProxyId().uniqueId());
+    map.put(PAYER_BANK_PROXY_ID, payerAccountId.getBankProxyId().uniqueId());
     return map;
   }
 
