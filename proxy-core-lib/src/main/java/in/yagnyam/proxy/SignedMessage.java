@@ -7,7 +7,11 @@ import java.util.Set;
 
 import lombok.*;
 
-// TODO: Add Signature Timestamp to Payload (Or make it a mandatory field in SignableMessage)
+// TODO: Make following fields part of Payload (Don't put them in SignableMessage)
+//  1. Signature Timestamp (Should be part of Payload)
+//    Advantage: Better Audit/Proof
+//  2. Unique Id for Every Message (Should be part of Payload)
+//    Advantage: So the Verification can skip already verified messages using Unique Id and Signature Hash.
 @Getter
 @Builder
 @EqualsAndHashCode(exclude = {"message"})
