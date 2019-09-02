@@ -17,7 +17,7 @@ import lombok.*;
 public class PhoneNumberAuthorizationRequest implements SignableRequestMessage, AddressableMessage {
 
     @NonNull
-    private String requestId;
+    private String authorizationId;
 
     @NonNull
     private ProxyId requesterProxyId;
@@ -35,7 +35,7 @@ public class PhoneNumberAuthorizationRequest implements SignableRequestMessage, 
 
     @Override
     public String requestId() {
-        return requestId;
+        return authorizationId;
     }
 
     @Override
@@ -51,7 +51,7 @@ public class PhoneNumberAuthorizationRequest implements SignableRequestMessage, 
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return StringUtils.isValid(requestId)
+        return StringUtils.isValid(authorizationId)
                 && ProxyUtils.isValid(requesterProxyId)
                 && StringUtils.isValid(phoneNumber)
                 && ProxyUtils.isValid(authorizerProxyId)
