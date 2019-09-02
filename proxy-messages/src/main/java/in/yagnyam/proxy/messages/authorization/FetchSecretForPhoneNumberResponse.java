@@ -3,7 +3,8 @@ package in.yagnyam.proxy.messages.authorization;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
-import in.yagnyam.proxy.SignableRequestMessage;
+import in.yagnyam.proxy.SignableMessage;
+import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.utils.ProxyUtils;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
@@ -14,33 +15,22 @@ import lombok.*;
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class PhoneNumberAuthorizationRequest implements SignableRequestMessage, AddressableMessage {
+public class FetchSecretForPhoneNumberResponse implements SignableMessage, AddressableMessage {
 
     @NonNull
-    private String authorizationId;
+    public SignedMessage<FetchSecretForPhoneNumberRequest> request;
 
     @NonNull
-    private ProxyId requesterProxyId;
-
-    @NonNull
-    private String phoneNumber;
-
-    @NonNull
-    private ProxyId authorizerProxyId;
+    private String secret;
 
     @Override
     public ProxyId address() {
-        return authorizerProxyId;
-    }
-
-    @Override
-    public String requestId() {
-        return authorizationId;
+        return request.getMessage().getRequesterProxyId();
     }
 
     @Override
     public ProxyId signer() {
-        return requesterProxyId;
+        return request.getMessage().phoneNumberAuthorization.getMessage().getAuthorizerProxyId();
     }
 
     @Override
@@ -51,11 +41,8 @@ public class PhoneNumberAuthorizationRequest implements SignableRequestMessage, 
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return StringUtils.isValid(authorizationId)
-                && ProxyUtils.isValid(requesterProxyId)
-                && StringUtils.isValid(phoneNumber)
-                && ProxyUtils.isValid(authorizerProxyId)
-                ;
+        return ProxyUtils.isValid(request)
+                && StringUtils.isValid(secret);
     }
 
 }

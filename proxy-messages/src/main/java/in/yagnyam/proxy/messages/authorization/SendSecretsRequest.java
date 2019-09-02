@@ -2,10 +2,12 @@ package in.yagnyam.proxy.messages.authorization;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.*;
+import in.yagnyam.proxy.utils.DateUtils;
 import in.yagnyam.proxy.utils.ProxyUtils;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
+import java.util.Date;
 import java.util.List;
 
 @Getter
@@ -78,6 +80,12 @@ public class SendSecretsRequest implements SignableMessage, AddressableMessage {
     @Singular
     private List<SecretForPhoneNumberRecipient> secretsForPhoneNumberRecipients;
 
+    @NonNull
+    private Date validFrom;
+
+    @NonNull
+    private Date validTill;
+
     @Override
     public ProxyId address() {
         return routerProxyId;
@@ -98,8 +106,10 @@ public class SendSecretsRequest implements SignableMessage, AddressableMessage {
     public boolean isValid() {
         return ProxyUtils.isValid(senderProxyId)
                 && ProxyUtils.isValid(routerProxyId)
-                && secretsForEmailRecipients.stream().allMatch(SecretForEmailRecipient::isValid)
-                && secretsForPhoneNumberRecipients.stream().allMatch(SecretForPhoneNumberRecipient::isValid);
+                && (secretsForEmailRecipients.isEmpty() || secretsForEmailRecipients.stream().allMatch(SecretForEmailRecipient::isValid))
+                && (secretsForPhoneNumberRecipients.isEmpty() || secretsForPhoneNumberRecipients.stream().allMatch(SecretForPhoneNumberRecipient::isValid))
+                && DateUtils.isValid(validFrom)
+                && DateUtils.isValid(validTill);
 
     }
 
