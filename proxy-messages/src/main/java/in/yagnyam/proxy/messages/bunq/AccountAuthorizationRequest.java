@@ -45,13 +45,6 @@ public class AccountAuthorizationRequest implements SignableRequestMessage {
   }
 
   @Override
-  public String toReadableString() {
-    return String
-        .format("With request %s, authorize account with Api Token %s to Proxy Id %s ", requestId,
-            apiToken, proxyId);
-  }
-
-  @Override
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(requestId)

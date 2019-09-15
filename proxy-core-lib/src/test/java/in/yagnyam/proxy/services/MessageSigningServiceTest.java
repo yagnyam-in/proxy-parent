@@ -54,11 +54,6 @@ public class MessageSigningServiceTest {
       }
 
       @Override
-      public String toReadableString() {
-        return "dummy";
-      }
-
-      @Override
       public boolean isValid() {
         return true;
       }
@@ -88,11 +83,6 @@ public class MessageSigningServiceTest {
       }
 
       @Override
-      public String toReadableString() {
-        return "dummy";
-      }
-
-      @Override
       public boolean isValid() {
         return true;
       }
@@ -118,11 +108,6 @@ public class MessageSigningServiceTest {
       @Override
       public ProxyId signer() {
         return ProxyId.of("dummy");
-      }
-
-      @Override
-      public String toReadableString() {
-        return "dummy";
       }
 
       @Override

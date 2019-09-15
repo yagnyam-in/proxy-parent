@@ -44,11 +44,6 @@ public class PaymentAuthorization implements SignableRequestMessage {
     }
 
     @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
     @JsonIgnore
     public boolean isValid() {
         return StringUtils.isValid(paymentAuthorizationId)

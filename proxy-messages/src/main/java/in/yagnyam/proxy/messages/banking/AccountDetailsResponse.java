@@ -31,14 +31,7 @@ public class AccountDetailsResponse implements SignableMessage, AddressableMessa
     @Override
     public ProxyId signer() {
         return request.getMessage().getProxyAccount().getSignedBy();
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
+    }@Override
     @JsonIgnore
     public boolean isValid() {
         return request != null && request.isValid()

@@ -30,14 +30,6 @@ public interface MultiSignableMessage extends ProxyBaseObject {
   int minimumRequiredSignatures();
 
   /**
-   * Return this message in human readable format
-   *
-   * @return Message in Human readable format
-   */
-  @JsonIgnore
-  String toReadableString();
-
-  /**
    * Tests if the message is valid
    *
    * @return true if message is valid, false otherwise

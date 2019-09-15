@@ -53,12 +53,6 @@ public class ProxyWalletCreationRequest implements SignableRequestMessage, Addre
   }
 
   @Override
-  public String toReadableString() {
-    return String.format(
-        "With request %s, create new %s wallet for proxy id %s ", requestId, currency, ownerProxyId);
-  }
-
-  @Override
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(requestId)

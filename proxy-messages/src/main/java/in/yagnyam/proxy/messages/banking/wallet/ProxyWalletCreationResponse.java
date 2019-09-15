@@ -40,14 +40,7 @@ public class ProxyWalletCreationResponse implements SignableMessage, Addressable
   @Override
   public ProxyId signer() {
     return request.getMessage().getBankProxyId();
-  }
-
-  @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
+  }@Override
   @JsonIgnore
   public boolean isValid() {
     return request != null && request.isValid()

@@ -48,11 +48,6 @@ public class AccountUpdatedAlert implements SignableAlertMessage {
   }
 
   @Override
-  public String toReadableString() {
-    return String.format("Account %s is updated.", proxyAccountId.getAccountId());
-  }
-
-  @Override
   public boolean isValid() {
     return StringUtils.isValid(alertId)
         && proxyAccountId != null && proxyAccountId.isValid()

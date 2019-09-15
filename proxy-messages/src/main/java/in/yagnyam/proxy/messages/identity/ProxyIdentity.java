@@ -62,19 +62,6 @@ public class ProxyIdentity implements SignableMessage, AddressableMessage {
   }
 
   @Override
-  public String toReadableString() {
-    // TODO: Add optional fields
-    return issuerId +
-        " certify that " +
-        proxyId +
-        " is a valid id from " +
-        creationDate +
-        " till " +
-        expiryDate +
-        ".";
-  }
-
-  @Override
   @JsonIgnore
   public boolean isValid() {
     return issuerId != null && issuerId.isValid()

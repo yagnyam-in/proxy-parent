@@ -28,14 +28,7 @@ public class PaymentAuthorizationStatusRequest implements SignableRequestMessage
     @Override
     public ProxyId signer() {
         return getPayerId();
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
+    }@Override
     @JsonIgnore
     public boolean isValid() {
         return StringUtils.isValid(requestId) && paymentAuthorization != null && paymentAuthorization.isValid();

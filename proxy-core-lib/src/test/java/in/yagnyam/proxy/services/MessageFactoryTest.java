@@ -149,11 +149,6 @@ public class MessageFactoryTest {
         }
 
         @Override
-        public String toReadableString() {
-            return "dummy";
-        }
-
-        @Override
         @JsonIgnore
         public boolean isValid() {
             return true;
@@ -168,11 +163,6 @@ public class MessageFactoryTest {
         @Override
         public ProxyId signer() {
             return ProxyId.of("dummy", "SHA256");
-        }
-
-        @Override
-        public String toReadableString() {
-            return "dummy";
         }
 
         @Override

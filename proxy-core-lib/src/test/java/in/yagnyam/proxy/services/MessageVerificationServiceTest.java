@@ -24,11 +24,6 @@ public class MessageVerificationServiceTest {
     }
 
     @Override
-    public String toReadableString() {
-      return "dummy";
-    }
-
-    @Override
     public boolean isValid() {
       return true;
     }
@@ -50,11 +45,6 @@ public class MessageVerificationServiceTest {
     @Override
     public int minimumRequiredSignatures() {
       return 0;
-    }
-
-    @Override
-    public String toReadableString() {
-      return "dummy";
     }
 
     @Override

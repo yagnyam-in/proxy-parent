@@ -41,14 +41,7 @@ public class WithdrawalStatusResponse implements SignableMessage, AddressableMes
   public String getRequestId() {
     return request != null && request.getMessage() != null ? request.getMessage().getRequestId()
         : null;
-  }
-
-  @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
+  }@Override
   @JsonIgnore
   public boolean isValid() {
     return request != null && request.isValid()

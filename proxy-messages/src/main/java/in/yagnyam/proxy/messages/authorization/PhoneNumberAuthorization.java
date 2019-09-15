@@ -42,14 +42,7 @@ public class PhoneNumberAuthorization implements SignableMessage, AddressableMes
     @Override
     public ProxyId signer() {
         return authorizerProxyId;
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
+    }@Override
     @JsonIgnore
     public boolean isValid() {
         return ProxyUtils.isValid(authorizedProxyId)

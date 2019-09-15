@@ -51,11 +51,6 @@ public class WithdrawalUpdatedAlert implements SignableAlertMessage {
   }
 
   @Override
-  public String toReadableString() {
-    return String.format("Withdrawal request %s is updated.", withdrawalId);
-  }
-
-  @Override
   public boolean isValid() {
     return StringUtils.isValid(alertId)
         && StringUtils.isValid(withdrawalId)

@@ -59,14 +59,7 @@ public class IdentityVerificationRequest implements SignableRequestMessage {
   @Override
   public ProxyId signer() {
     return ownerProxyId;
-  }
-
-  @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
+  }@Override
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(requestId)

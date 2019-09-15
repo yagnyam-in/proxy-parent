@@ -57,11 +57,6 @@ public class PaymentEncashmentUpdatedAlert implements SignableAlertMessage {
   }
 
   @Override
-  public String toReadableString() {
-    return String.format("PaymentEncashment %s (of Authorization %s) is updated.", paymentEncashmentId, paymentAuthorizationId);
-  }
-
-  @Override
   public boolean isValid() {
     return StringUtils.isValid(alertId)
         && payerAccountId != null && payerAccountId.isValid()

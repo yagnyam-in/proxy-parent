@@ -26,14 +26,7 @@ public class DepositRequestCancelRequest implements SignableRequestMessage, Addr
     @Override
     public ProxyId signer() {
         return depositRequest.getMessage().getOwnerProxyId();
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
+    }@Override
     @JsonIgnore
     public boolean isValid() {
         return StringUtils.isValid(requestId) && depositRequest != null && depositRequest.isValid();

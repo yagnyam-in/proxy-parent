@@ -31,14 +31,7 @@ public class EscrowAccountProposalStatus implements SignableMessage {
   @Override
   public ProxyId signer() {
     return escrowAccountProposal.getMessage().getBankProxyId();
-  }
-
-  @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
+  }@Override
   public boolean isValid() {
     return ProxyUtils.isValid(escrowAccountProposal)
         && (escrowProxyId == null || escrowProxyId.isValid())

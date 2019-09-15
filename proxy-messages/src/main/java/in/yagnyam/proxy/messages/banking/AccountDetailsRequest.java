@@ -42,14 +42,7 @@ public class AccountDetailsRequest implements SignableRequestMessage, Addressabl
   @Override
   public ProxyId signer() {
     return proxyAccount.getMessage().getOwnerProxyId();
-  }
-
-  @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
+  }@Override
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(requestId)

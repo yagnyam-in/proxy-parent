@@ -3,6 +3,7 @@ package in.yagnyam.proxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.services.MessageSerializerService;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -29,13 +30,6 @@ public interface SignableMessage extends ProxyBaseObject {
   default Set<ProxyId> validSigners() {
     return Collections.singleton(signer());
   }
-
-  /**
-   * Return this message in human readable format
-   *
-   * @return Message in Human readable format
-   */
-  String toReadableString();
 
   /**
    * Tests if the message is valid

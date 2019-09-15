@@ -94,14 +94,7 @@ public class SendSecretsRequest implements SignableMessage, AddressableMessage {
     @Override
     public ProxyId signer() {
         return senderProxyId;
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
+    }@Override
     @JsonIgnore
     public boolean isValid() {
         return ProxyUtils.isValid(senderProxyId)

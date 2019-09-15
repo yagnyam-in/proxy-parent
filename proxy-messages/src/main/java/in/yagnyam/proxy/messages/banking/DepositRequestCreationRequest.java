@@ -69,14 +69,7 @@ public class DepositRequestCreationRequest implements SignableRequestMessage, Ad
     @Override
     public ProxyId signer() {
         return getOwnerProxyId();
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
+    }@Override
     @JsonIgnore
     public boolean isValid() {
         return StringUtils.isValid(depositId)

@@ -40,11 +40,6 @@ public class PaymentEncashmentStatusResponse implements SignableMessage {
   }
 
   @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
   @JsonIgnore
   public boolean isValid() {
     return request != null && request.isValid()

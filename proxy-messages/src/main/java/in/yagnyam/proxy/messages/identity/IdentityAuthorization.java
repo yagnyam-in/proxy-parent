@@ -44,14 +44,7 @@ public class IdentityAuthorization implements SignableRequestMessage {
   @Override
   public ProxyId signer() {
     return proxyIdentity.getMessage().getProxyId();
-  }
-
-  @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
+  }@Override
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(requestId)

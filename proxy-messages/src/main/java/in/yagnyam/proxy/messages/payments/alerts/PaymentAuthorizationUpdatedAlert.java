@@ -45,11 +45,6 @@ public class PaymentAuthorizationUpdatedAlert implements SignableAlertMessage {
   }
 
   @Override
-  public String toReadableString() {
-    return String.format("PaymentAuthorization %s is updated.", paymentAuthorizationId);
-  }
-
-  @Override
   public boolean isValid() {
     return StringUtils.isValid(alertId)
         && payerAccountId != null && payerAccountId.isValid()

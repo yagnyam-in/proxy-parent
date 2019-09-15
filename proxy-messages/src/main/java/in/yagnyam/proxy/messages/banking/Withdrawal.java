@@ -41,14 +41,7 @@ public class Withdrawal implements SignableRequestMessage, AddressableMessage {
     @Override
     public ProxyId address() {
         return proxyAccount.getSignedBy();
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
+    }@Override
     @JsonIgnore
     public boolean isValid() {
         String currency = getCurrency();

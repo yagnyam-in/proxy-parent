@@ -41,14 +41,7 @@ public class EmailAuthorizationRequest implements SignableRequestMessage, Addres
     @Override
     public ProxyId signer() {
         return requesterProxyId;
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
+    }@Override
     @JsonIgnore
     public boolean isValid() {
         return StringUtils.isValid(authorizationId)

@@ -51,11 +51,6 @@ public class DepositUpdatedAlert implements SignableAlertMessage {
   }
 
   @Override
-  public String toReadableString() {
-    return String.format("Deposit request %s is updated.", depositId);
-  }
-
-  @Override
   public boolean isValid() {
     return StringUtils.isValid(alertId)
         && StringUtils.isValid(depositId)

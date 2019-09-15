@@ -24,14 +24,7 @@ public class EscrowAccountDetailsResponse implements SignableMessage {
     @Override
     public ProxyId signer() {
         return request.getMessage().getEscrowAccount().getSignedBy();
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
+    }@Override
     @JsonIgnore
     public boolean isValid() {
         return ProxyUtils.isValid(request) && status != null;

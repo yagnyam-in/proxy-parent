@@ -1,26 +1,25 @@
-package in.yagnyam.proxy.messages.banking;
+package in.yagnyam.proxy.messages.sack;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
+import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.utils.DateUtils;
+import in.yagnyam.proxy.utils.ProxyUtils;
 import lombok.*;
 
 import java.util.Date;
 
-/**
- * Proxy Account
- */
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
+@Builder
 @ToString
 @EqualsAndHashCode
-public class ProxyAccount implements SignableMessage {
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public class MoneySack implements SignableMessage {
 
     @NonNull
-    private ProxyAccountId proxyAccountId;
+    private MoneySackId moneySackId;
 
     @NonNull
     private ProxyId ownerProxyId;
@@ -32,36 +31,31 @@ public class ProxyAccount implements SignableMessage {
     private Date expiryDate;
 
     @NonNull
-    private String currency;
-
-    /**
-     * Maximum amount for which *each* PaymentAuthorization can be made
-     */
-    @NonNull
-    private Amount maximumAmountPerTransaction;
+    private Amount balance;
 
     @Override
     public ProxyId signer() {
-        return proxyAccountId.getBankProxyId();
-    }@Override
+        return moneySackId.getBankProxyId();
+    }
+
+    @Override
     @JsonIgnore
     public boolean isValid() {
-        return proxyAccountId != null
-                && proxyAccountId.isValid()
+        return moneySackId != null
+                && moneySackId.isValid()
                 && ownerProxyId != null && ownerProxyId.isValid()
                 && DateUtils.isValid(creationDate)
                 && DateUtils.isValid(expiryDate)
-                && currency != null
-                && maximumAmountPerTransaction != null && maximumAmountPerTransaction.isValid();
+                && ProxyUtils.isValid(balance);
     }
 
     @JsonIgnore
     public ProxyId getBankProxyId() {
-        return proxyAccountId.getBankProxyId();
+        return moneySackId.getBankProxyId();
     }
 
     @JsonIgnore
     public String getProxyUniverse() {
-        return proxyAccountId.getProxyUniverse();
+        return moneySackId.getProxyUniverse();
     }
 }

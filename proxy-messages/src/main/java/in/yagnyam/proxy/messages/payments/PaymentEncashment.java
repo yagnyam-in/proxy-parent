@@ -38,11 +38,6 @@ public class PaymentEncashment implements SignableRequestMessage, AddressableMes
   }
 
   @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
   @JsonIgnore
   public boolean isValid() {
     boolean valid = paymentAuthorization != null && paymentAuthorization.isValid()

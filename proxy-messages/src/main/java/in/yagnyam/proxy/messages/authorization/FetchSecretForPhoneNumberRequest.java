@@ -27,14 +27,7 @@ public class FetchSecretForPhoneNumberRequest implements SignableMessage, Addres
     @Override
     public ProxyId signer() {
         return phoneNumberAuthorization.getMessage().getAuthorizedProxyId();
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
+    }@Override
     @JsonIgnore
     public boolean isValid() {
         return ProxyUtils.isValid(phoneNumberAuthorization)

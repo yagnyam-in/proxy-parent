@@ -27,14 +27,7 @@ public class FetchSecretForEmailRequest implements SignableMessage, AddressableM
     @Override
     public ProxyId signer() {
         return emailAuthorization.getMessage().getAuthorizedProxyId();
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
+    }@Override
     @JsonIgnore
     public boolean isValid() {
         return ProxyUtils.isValid(emailAuthorization)

@@ -66,11 +66,6 @@ public class DeleteAlertsRequest implements SignableRequestMessage, AddressableM
     }
 
     @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
     @JsonIgnore
     public boolean isValid() {
         return ProxyUtils.isValid(proxyId)
