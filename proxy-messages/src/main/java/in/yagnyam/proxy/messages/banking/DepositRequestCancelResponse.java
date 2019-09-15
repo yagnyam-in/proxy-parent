@@ -33,14 +33,7 @@ public class DepositRequestCancelResponse implements SignableMessage, Addressabl
     @JsonIgnore
     public String getRequestId() {
         return request.getMessage().getRequestId();
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
+    }@Override
     @JsonIgnore
     public boolean isValid() {
         return request != null && request.isValid()

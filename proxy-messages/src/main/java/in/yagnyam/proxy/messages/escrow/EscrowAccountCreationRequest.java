@@ -49,14 +49,7 @@ public class EscrowAccountCreationRequest implements SignableRequestMessage, Add
   @Override
   public ProxyId signer() {
     return getPayerProxyId();
-  }
-
-  @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
+  }@Override
   @JsonIgnore
   public boolean isValid() {
     return StringUtils.isValid(escrowNegotiationId)

@@ -51,14 +51,7 @@ public class EscrowAccount implements SignableMessage {
   @Override
   public ProxyId signer() {
     return escrowAccountId.getBankProxyId();
-  }
-
-  @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
+  }@Override
   @JsonIgnore
   public boolean isValid() {
     return ProxyUtils.isValid(payerProxyId)

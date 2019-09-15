@@ -31,14 +31,7 @@ public class EmailAuthorizationChallengeResponse implements SignableMessage, Add
     @Override
     public ProxyId signer() {
         return getRequesterProxyId();
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
+    }@Override
     @JsonIgnore
     public boolean isValid() {
         return ProxyUtils.isValid(challenge)

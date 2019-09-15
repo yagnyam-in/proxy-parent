@@ -11,30 +11,30 @@ import lombok.*;
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class FetchSecretForEmailRequest implements SignableMessage, AddressableMessage {
+public class FetchSecretForPhoneNumberRequest implements SignableMessage, AddressableMessage {
 
     @NonNull
-    public SignedMessage<EmailAuthorization> emailAuthorization;
+    public SignedMessage<PhoneNumberAuthorization> phoneNumberAuthorization;
 
     @NonNull
     private Hash secretHash;
 
     @Override
     public ProxyId address() {
-        return emailAuthorization.getMessage().getAuthorizerProxyId();
+        return phoneNumberAuthorization.getMessage().getAuthorizerProxyId();
     }
 
     @Override
     public ProxyId signer() {
-        return emailAuthorization.getMessage().getAuthorizedProxyId();
+        return phoneNumberAuthorization.getMessage().getAuthorizedProxyId();
     }@Override
     @JsonIgnore
     public boolean isValid() {
-        return ProxyUtils.isValid(emailAuthorization)
+        return ProxyUtils.isValid(phoneNumberAuthorization)
                 && ProxyUtils.isValid(secretHash);
     }
 
     public ProxyId getRequesterProxyId() {
-        return emailAuthorization.getMessage().getAuthorizedProxyId();
+        return phoneNumberAuthorization.getMessage().getAuthorizedProxyId();
     }
 }

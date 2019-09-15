@@ -38,14 +38,7 @@ public class EscrowAccountUpdatedAlert implements SignableAlertMessage {
   @Override
   public ProxyId signer() {
     return escrowAccountId.getBankProxyId();
-  }
-
-  @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
+  }@Override
   public boolean isValid() {
     return StringUtils.isValid(alertId)
         && escrowAccountId != null && escrowAccountId.isValid()

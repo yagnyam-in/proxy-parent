@@ -30,14 +30,7 @@ public class EscrowAccountProposalPayeeAck implements SignableMessage {
   @Override
   public ProxyId signer() {
     return payeeProxyId;
-  }
-
-  @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
+  }@Override
   public boolean isValid() {
     return ProxyUtils.isValid(payeeProxyId) && ProxyUtils.isValid(escrowAccountProposal);
   }

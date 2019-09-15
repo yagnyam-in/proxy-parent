@@ -27,14 +27,7 @@ public class SendSecretsResponse implements SignableMessage, AddressableMessage 
     @Override
     public ProxyId signer() {
         return request.getMessage().getRouterProxyId();
-    }
-
-    @Override
-    public String toReadableString() {
-        return null;
-    }
-
-    @Override
+    }@Override
     @JsonIgnore
     public boolean isValid() {
         return ProxyUtils.isValid(request);

@@ -1,7 +1,10 @@
 package in.yagnyam.proxy.messages.authorization;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import in.yagnyam.proxy.*;
+import in.yagnyam.proxy.AddressableMessage;
+import in.yagnyam.proxy.ProxyId;
+import in.yagnyam.proxy.SignableMessage;
+import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.utils.ProxyUtils;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
@@ -12,10 +15,10 @@ import lombok.*;
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class FetchSecretForEmailResponse implements SignableMessage, AddressableMessage {
+public class FetchSecretForPhoneNumberResponse implements SignableMessage, AddressableMessage {
 
     @NonNull
-    public SignedMessage<FetchSecretForEmailRequest> request;
+    public SignedMessage<FetchSecretForPhoneNumberRequest> request;
 
     @NonNull
     private String secret;
@@ -27,7 +30,7 @@ public class FetchSecretForEmailResponse implements SignableMessage, Addressable
 
     @Override
     public ProxyId signer() {
-        return request.getMessage().emailAuthorization.getMessage().getAuthorizerProxyId();
+        return request.getMessage().phoneNumberAuthorization.getMessage().getAuthorizerProxyId();
     }@Override
     @JsonIgnore
     public boolean isValid() {

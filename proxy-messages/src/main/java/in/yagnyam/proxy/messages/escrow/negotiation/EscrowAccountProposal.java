@@ -51,14 +51,7 @@ public class EscrowAccountProposal implements SignableRequestMessage {
   @Override
   public ProxyId signer() {
     return payerProxyId;
-  }
-
-  @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
+  }@Override
   public boolean isValid() {
     return StringUtils.isValid(negotiationId)
         && StringUtils.isValid(proxyUniverse)

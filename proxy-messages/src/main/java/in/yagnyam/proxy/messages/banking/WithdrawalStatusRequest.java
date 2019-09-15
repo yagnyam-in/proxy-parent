@@ -34,14 +34,7 @@ public class WithdrawalStatusRequest implements SignableRequestMessage, Addressa
   @Override
   public ProxyId signer() {
     return request.getSignedBy();
-  }
-
-  @Override
-  public String toReadableString() {
-    return null;
-  }
-
-  @Override
+  }@Override
   @JsonIgnore
   public boolean isValid() {
     return request != null && request.isValid();
