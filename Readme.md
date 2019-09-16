@@ -11,3 +11,8 @@ Contains Objects required by all Proxy Modules
 ```
 ./mvnw -N io.takari:maven:wrapper
 ```
+
+## Dependency Check
+```
+mvn org.owasp:dependency-check-maven:check
+```
