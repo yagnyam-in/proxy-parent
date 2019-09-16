@@ -15,21 +15,21 @@ import lombok.*;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class MoneySackId implements ProxyBaseObject {
 
-    @NonNull
-    private String proxyUniverse;
+  @NonNull
+  private String proxyUniverse;
 
-    @NonNull
-    private ProxyId bankProxyId;
+  @NonNull
+  private ProxyId sackProviderProxyId;
 
-    @NonNull
-    private String id;
+  @NonNull
+  private String id;
 
-    @JsonIgnore
-    @Override
-    public boolean isValid() {
-        return StringUtils.isValid(proxyUniverse)
-                && ProxyUtils.isValid(bankProxyId)
-                && StringUtils
-                .isValid(id);
-    }
+  @JsonIgnore
+  @Override
+  public boolean isValid() {
+    return StringUtils.isValid(proxyUniverse)
+        && ProxyUtils.isValid(sackProviderProxyId)
+        && StringUtils
+        .isValid(id);
+  }
 }
