@@ -182,7 +182,7 @@
       <dependency>
         <groupId>com.google.http-client</groupId>
           <artifactId>google-http-client</artifactId>
-        <version>1.32.0</version>
+        <version>1.32.1</version>
         <exclusions>
           <exclusion>
             <groupId>com.google.code.findbugs</groupId>
@@ -331,7 +331,7 @@
           <plugin>
             <groupId>org.owasp</groupId>
             <artifactId>dependency-check-maven</artifactId>
-            <version>5.2.1</version>
+            <version>5.2.2</version>
             <executions>
               <execution>
                 <goals>
