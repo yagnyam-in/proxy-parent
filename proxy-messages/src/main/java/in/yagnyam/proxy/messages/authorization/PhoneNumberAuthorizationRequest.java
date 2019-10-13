@@ -28,6 +28,10 @@ public class PhoneNumberAuthorizationRequest implements SignableRequestMessage, 
     @NonNull
     private ProxyId authorizerProxyId;
 
+    // Human readable index to identify the challenge by end user.
+    // Should not be used for anything else.
+    private String index;
+
     @Override
     public ProxyId address() {
         return authorizerProxyId;
@@ -41,14 +45,15 @@ public class PhoneNumberAuthorizationRequest implements SignableRequestMessage, 
     @Override
     public ProxyId signer() {
         return requesterProxyId;
-    }@Override
+    }
+
+    @Override
     @JsonIgnore
     public boolean isValid() {
         return StringUtils.isValid(authorizationId)
                 && ProxyUtils.isValid(requesterProxyId)
                 && StringUtils.isValid(phoneNumber)
-                && ProxyUtils.isValid(authorizerProxyId)
-                ;
+                && ProxyUtils.isValid(authorizerProxyId);
     }
 
 }

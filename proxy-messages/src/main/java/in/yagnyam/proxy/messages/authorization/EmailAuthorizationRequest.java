@@ -28,6 +28,10 @@ public class EmailAuthorizationRequest implements SignableRequestMessage, Addres
     @NonNull
     private ProxyId authorizerProxyId;
 
+    // Human readable index to identify the challenge by end user.
+    // Should not be used for anything else.
+    private String index;
+
     @Override
     public ProxyId address() {
         return authorizerProxyId;
@@ -41,7 +45,9 @@ public class EmailAuthorizationRequest implements SignableRequestMessage, Addres
     @Override
     public ProxyId signer() {
         return requesterProxyId;
-    }@Override
+    }
+
+    @Override
     @JsonIgnore
     public boolean isValid() {
         return StringUtils.isValid(authorizationId)
