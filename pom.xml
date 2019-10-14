@@ -37,7 +37,7 @@
     <maven.compiler.target>1.8</maven.compiler.target>
     <maven.compiler.source>1.8</maven.compiler.source>
 
-    <jacoco-maven-plugin>0.8.4</jacoco-maven-plugin>
+    <jacoco-maven-plugin>0.8.5</jacoco-maven-plugin>
     <plexus-compiler-javac-errorprone>2.8.4</plexus-compiler-javac-errorprone>
     <error_prone_core>2.3.1</error_prone_core>
 
