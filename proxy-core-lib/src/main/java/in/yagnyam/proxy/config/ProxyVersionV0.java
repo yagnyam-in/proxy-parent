@@ -50,4 +50,9 @@ public class ProxyVersionV0 implements ProxyVersion {
   public int getKeySize() {
     return 2048;
   }
+
+  @Override
+  public String getPreferredHashAlgorithm() {
+    return "SHA256";
+  }
 }

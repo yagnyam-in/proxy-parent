@@ -73,4 +73,12 @@ public interface ProxyVersion {
   static ProxyVersion latestVersion() {
     return ProxyVersionV0.instance();
   }
+
+  /**
+   * Preferred Hash Algorithm
+   *
+   * @return Hash Algorithm
+   */
+  String getPreferredHashAlgorithm();
+
 }

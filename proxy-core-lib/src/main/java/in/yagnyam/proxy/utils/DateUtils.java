@@ -43,6 +43,18 @@ public class DateUtils {
     return today.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
   }
 
+  public static Date forDate(int year, int month, int day) {
+    Calendar cal = Calendar.getInstance(UTC_TIME_ZONE);
+    cal.set(Calendar.HOUR_OF_DAY, 0);
+    cal.set(Calendar.MINUTE, 0);
+    cal.set(Calendar.SECOND, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    cal.set(Calendar.YEAR, year);
+    cal.set(Calendar.MONTH, month);
+    cal.set(Calendar.DAY_OF_MONTH, day);
+    return cal.getTime();
+  }
+
   public static boolean isValid(Date date) {
     return date != null;
   }
