@@ -12,8 +12,11 @@ import java.util.Date;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class SubjectDetails implements ProxyBaseObject {
+    private SubjectIdTypeEnum subjectIdType;
 
     private String nationality;
+
+    private String aadhaarNumber;
 
     private String name;
 
