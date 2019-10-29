@@ -20,16 +20,13 @@ public class AadhaarVerificationRequest implements SignableRequestMessage, Addre
     private String requestId;
 
     @NonNull
-    private String proxyUniverse;
-
-    @NonNull
     private ProxyId ownerProxyId;
 
     @NonNull
     private String aadhaarNumber;
 
     @NonNull
-    private ProxyId issuerProxyId;
+    private ProxyId identityProviderProxyId;
 
     @Override
     public String requestId() {
@@ -45,14 +42,13 @@ public class AadhaarVerificationRequest implements SignableRequestMessage, Addre
     @JsonIgnore
     public boolean isValid() {
         return StringUtils.isValid(requestId)
-                && StringUtils.isValid(proxyUniverse)
                 && ProxyUtils.isValid(ownerProxyId)
-                && ProxyUtils.isValid(issuerProxyId)
+                && ProxyUtils.isValid(identityProviderProxyId)
                 && StringUtils.isValid(aadhaarNumber);
     }
 
     @Override
     public ProxyId address() {
-        return issuerProxyId;
+        return identityProviderProxyId;
     }
 }

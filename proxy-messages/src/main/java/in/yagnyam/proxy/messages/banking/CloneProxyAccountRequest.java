@@ -1,0 +1,51 @@
+package in.yagnyam.proxy.messages.banking;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import in.yagnyam.proxy.AddressableMessage;
+import in.yagnyam.proxy.ProxyId;
+import in.yagnyam.proxy.SignableRequestMessage;
+import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.utils.StringUtils;
+import lombok.*;
+
+@Builder
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Getter
+@ToString
+@EqualsAndHashCode(of = {"requestId"})
+public class CloneProxyAccountRequest implements SignableRequestMessage, AddressableMessage {
+
+  @NonNull
+  private String requestId;
+
+  @NonNull
+  public SignedMessage<ProxyAccount> proxyAccount;
+
+  @Override
+  public ProxyId address() {
+    return proxyAccount.getSignedBy();
+  }
+
+  @Override
+  public String requestId() {
+    return requestId;
+  }
+
+  @Override
+  public ProxyId signer() {
+    return proxyAccount.getMessage().getOwnerProxyId();
+  }@Override
+  @JsonIgnore
+  public boolean isValid() {
+    return StringUtils.isValid(requestId)
+        && proxyAccount != null && proxyAccount.isValid();
+  }
+
+  @JsonIgnore
+  public ProxyAccountId getProxyAccountId() {
+    return proxyAccount != null && proxyAccount.getMessage() != null
+        ? proxyAccount.getMessage().getProxyAccountId() : null;
+  }
+
+}

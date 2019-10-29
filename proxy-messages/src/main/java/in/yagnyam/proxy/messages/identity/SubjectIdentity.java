@@ -16,19 +16,19 @@ import java.util.Date;
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class ProxySubject implements SignableMessage {
+public class SubjectIdentity implements SignableMessage {
 
     @NonNull
-    private String relyingPartyId;
+    private ProxyId identityProviderProxyId;
 
     @NonNull
-    private ProxySubjectId proxySubjectId;
+    private SubjectIdTypeEnum subjectIdType;
+
+    @NonNull
+    private String subjectId;
 
     @NonNull
     private ProxyId ownerProxyId;
-
-    @NonNull
-    private ProxyId relyingPartyProxyId;
 
     @NonNull
     private Date creationDate;
@@ -36,24 +36,23 @@ public class ProxySubject implements SignableMessage {
     @NonNull
     private Date expiryDate;
 
+    @NonNull
+    private SubjectDetails subjectDetails;
+
     @Override
     public ProxyId signer() {
-        return proxySubjectId.getIdentityProviderProxyId();
+        return identityProviderProxyId;
     }
 
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return StringUtils.isValid(relyingPartyId)
-                && ProxyUtils.isValid(proxySubjectId)
+        return ProxyUtils.isValid(identityProviderProxyId)
+                && subjectIdType != null
+                && StringUtils.isValid(subjectId)
                 && ProxyUtils.isValid(ownerProxyId)
-                && ProxyUtils.isValid(relyingPartyProxyId)
                 && DateUtils.isValid(creationDate)
-                && DateUtils.isValid(expiryDate);
-    }
-
-    @JsonIgnore
-    public ProxyId getIdentityProviderProxyId() {
-        return proxySubjectId.getIdentityProviderProxyId();
+                && DateUtils.isValid(expiryDate)
+                && ProxyUtils.isValid(subjectDetails);
     }
 }

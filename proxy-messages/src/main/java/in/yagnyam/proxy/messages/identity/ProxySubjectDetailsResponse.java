@@ -1,7 +1,10 @@
-package in.yagnyam.proxy.messages.identity.aadhaar;
+package in.yagnyam.proxy.messages.identity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import in.yagnyam.proxy.*;
+import in.yagnyam.proxy.AddressableMessage;
+import in.yagnyam.proxy.ProxyId;
+import in.yagnyam.proxy.SignableMessage;
+import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.utils.ProxyUtils;
 import lombok.*;
 
@@ -11,28 +14,28 @@ import lombok.*;
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class AadhaarVerificationChallenge implements SignableMessage, AddressableMessage {
+public class ProxySubjectDetailsResponse implements SignableMessage, AddressableMessage {
 
     @NonNull
-    public SignedMessage<AadhaarVerificationRequest> request;
+    public SignedMessage<ProxySubjectDetailsRequest> request;
 
     @NonNull
-    private Hash challengeHash;
+    private SubjectDetails subjectDetails;
 
     @Override
     public ProxyId signer() {
-        return request.getMessage().getIdentityProviderProxyId();
+        return getIdentityProviderProxyId();
     }
 
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return ProxyUtils.isValid(request) && ProxyUtils.isValid(challengeHash);
+        return ProxyUtils.isValid(request) && ProxyUtils.isValid(subjectDetails);
     }
 
     @Override
     public ProxyId address() {
-        return getOwnerProxyId();
+        return request.getSignedBy();
     }
 
     @JsonIgnore
@@ -46,7 +49,7 @@ public class AadhaarVerificationChallenge implements SignableMessage, Addressabl
     }
 
     @JsonIgnore
-    public String getAadhaarNumber() {
-        return request.getMessage().getAadhaarNumber();
+    public ProxySubjectId getProxySubjectId() {
+        return request.getMessage().getProxySubjectId();
     }
 }

@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.util.Date;
 
+// This should only contain fields from SubjectFieldEnum. It can be implemented as Map, but we would loose type safety. Continuing for now like this.
 @Getter
 @Builder
 @ToString

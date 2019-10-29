@@ -19,10 +19,7 @@ import lombok.*;
 public class ProxySubjectId implements ProxyBaseObject {
 
     @NonNull
-    private String proxyUniverse;
-
-    @NonNull
-    private ProxyId issuerProxyId;
+    private ProxyId identityProviderProxyId;
 
     @NonNull
     private String subjectId;
@@ -30,13 +27,12 @@ public class ProxySubjectId implements ProxyBaseObject {
     @JsonIgnore
     @Override
     public boolean isValid() {
-        return StringUtils.isValid(proxyUniverse)
-                && ProxyUtils.isValid(issuerProxyId)
+        return ProxyUtils.isValid(identityProviderProxyId)
                 && StringUtils.isValid(subjectId);
     }
 
     @JsonIgnore
-    public String getIssuerId() {
-        return issuerProxyId.getId();
+    public String getIdentityProviderId() {
+        return identityProviderProxyId.getId();
     }
 }
