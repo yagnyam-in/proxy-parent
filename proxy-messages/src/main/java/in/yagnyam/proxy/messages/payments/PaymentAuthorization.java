@@ -75,11 +75,6 @@ public class PaymentAuthorization implements SignableRequestMessage {
     }
 
     @JsonIgnore
-    public String getProxyUniverse() {
-        return proxyAccount.getMessage().getProxyUniverse();
-    }
-
-    @JsonIgnore
     public ProxyId getPayerBankProxyId() {
         return proxyAccount.getSignedBy();
     }

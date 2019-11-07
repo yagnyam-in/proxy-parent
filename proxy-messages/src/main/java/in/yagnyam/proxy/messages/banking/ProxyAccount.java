@@ -11,12 +11,12 @@ import java.util.Date;
 /**
  * Proxy Account
  */
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
+@Builder
 @ToString
 @EqualsAndHashCode
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ProxyAccount implements SignableMessage {
 
     @NonNull
@@ -43,7 +43,9 @@ public class ProxyAccount implements SignableMessage {
     @Override
     public ProxyId signer() {
         return proxyAccountId.getBankProxyId();
-    }@Override
+    }
+
+    @Override
     @JsonIgnore
     public boolean isValid() {
         return proxyAccountId != null
@@ -58,10 +60,5 @@ public class ProxyAccount implements SignableMessage {
     @JsonIgnore
     public ProxyId getBankProxyId() {
         return proxyAccountId.getBankProxyId();
-    }
-
-    @JsonIgnore
-    public String getProxyUniverse() {
-        return proxyAccountId.getProxyUniverse();
     }
 }

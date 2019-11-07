@@ -5,47 +5,60 @@ import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.utils.CollectionUtils;
+import in.yagnyam.proxy.utils.ProxyUtils;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
+import java.util.List;
+
+@Getter
 @Builder
+@ToString
+@EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Getter
-@ToString
-@EqualsAndHashCode(of = {"requestId"})
 public class CloneProxyAccountRequest implements SignableRequestMessage, AddressableMessage {
 
-  @NonNull
-  private String requestId;
+    @NonNull
+    private String requestId;
 
-  @NonNull
-  public SignedMessage<ProxyAccount> proxyAccount;
+    @NonNull
+    public SignedMessage<ProxyAccount> proxyAccount;
 
-  @Override
-  public ProxyId address() {
-    return proxyAccount.getSignedBy();
-  }
+    @NonNull
+    private ProxyId newOwnerProxyId;
 
-  @Override
-  public String requestId() {
-    return requestId;
-  }
+    @NonNull
+    private List<ProxyAccountPermissions> permissions;
 
-  @Override
-  public ProxyId signer() {
-    return proxyAccount.getMessage().getOwnerProxyId();
-  }@Override
-  @JsonIgnore
-  public boolean isValid() {
-    return StringUtils.isValid(requestId)
-        && proxyAccount != null && proxyAccount.isValid();
-  }
+    @Override
+    public ProxyId address() {
+        return proxyAccount.getMessage().getBankProxyId();
+    }
 
-  @JsonIgnore
-  public ProxyAccountId getProxyAccountId() {
-    return proxyAccount != null && proxyAccount.getMessage() != null
-        ? proxyAccount.getMessage().getProxyAccountId() : null;
-  }
+    @Override
+    public String requestId() {
+        return requestId;
+    }
+
+    @Override
+    public ProxyId signer() {
+        return proxyAccount.getMessage().getOwnerProxyId();
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isValid() {
+        return StringUtils.isValid(requestId)
+                && ProxyUtils.isValid(proxyAccount)
+                && ProxyUtils.isValid(newOwnerProxyId)
+                && CollectionUtils.isNotEmpty(permissions);
+    }
+
+    @JsonIgnore
+    public ProxyAccountId getProxyAccountId() {
+        return proxyAccount.getMessage().getProxyAccountId();
+    }
 
 }
