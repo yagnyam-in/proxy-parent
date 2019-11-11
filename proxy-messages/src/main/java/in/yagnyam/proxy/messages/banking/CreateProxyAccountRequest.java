@@ -18,7 +18,7 @@ import java.util.List;
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class CloneProxyAccountRequest implements SignableRequestMessage, AddressableMessage {
+public class CreateProxyAccountRequest implements SignableRequestMessage, AddressableMessage {
 
     @NonNull
     private String requestId;
@@ -30,7 +30,7 @@ public class CloneProxyAccountRequest implements SignableRequestMessage, Address
     private ProxyId newOwnerProxyId;
 
     @NonNull
-    private List<ProxyAccountPermissions> permissions;
+    private List<ProxyAccountPermissionEnum> permissions;
 
     @Override
     public ProxyId address() {

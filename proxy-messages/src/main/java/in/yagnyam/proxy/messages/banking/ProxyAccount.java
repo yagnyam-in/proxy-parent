@@ -6,7 +6,9 @@ import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.utils.DateUtils;
 import lombok.*;
 
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Proxy Account
@@ -33,6 +35,10 @@ public class ProxyAccount implements SignableMessage {
 
     @NonNull
     private String currency;
+
+    // TODO: Remove default list and make it non null
+    @Builder.Default
+    private List<ProxyAccountPermissionEnum> permissions = Collections.emptyList();
 
     /**
      * Maximum amount for which *each* PaymentAuthorization can be made

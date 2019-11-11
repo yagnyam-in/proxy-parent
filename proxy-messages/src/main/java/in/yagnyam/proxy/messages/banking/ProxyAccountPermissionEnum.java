@@ -1,7 +1,8 @@
 package in.yagnyam.proxy.messages.banking;
 
-public enum ProxyAccountPermissions {
+public enum ProxyAccountPermissionEnum {
+    InquireAccountDetails,
     InquireBalance,
     AuthorizeProxy,
-    Payment,
+    MakePayment,
 }
