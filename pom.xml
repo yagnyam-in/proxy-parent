@@ -61,7 +61,7 @@
     <maven-gpg-plugin>1.6</maven-gpg-plugin>
     <gpg.keyname>8AD2E469B4C10B660728D2A24279690FEED8CAB5</gpg.keyname>
 
-    <appengine.sdk.version>1.9.76</appengine.sdk.version>
+    <appengine.sdk.version>1.9.77</appengine.sdk.version>
   </properties>
 
   <modules>
