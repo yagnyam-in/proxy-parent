@@ -1,12 +1,12 @@
-package in.yagnyam.proxy.messages.identity.aadhaar;
+package in.yagnyam.proxy.messages.geo;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import in.yagnyam.proxy.AddressableMessage;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.utils.ProxyUtils;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
+
 
 @Getter
 @Builder
@@ -14,41 +14,37 @@ import lombok.*;
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class AadhaarVerificationRequest implements SignableRequestMessage, AddressableMessage {
+public class FindCircleRequest implements SignableRequestMessage {
 
     @NonNull
     private String requestId;
 
     @NonNull
-    private ProxyId ownerProxyId;
+    private ProxyId serviceProviderProxyId;
 
     @NonNull
-    private String aadhaarNumber;
+    private ProxyId requesterProxyId;
 
     @NonNull
-    private ProxyId identityProviderProxyId;
-
-    @Override
-    public String requestId() {
-        return requestId;
-    }
+    private GeoPoint geoLocation;
 
     @Override
     public ProxyId signer() {
-        return ownerProxyId;
+        return requesterProxyId;
     }
 
     @Override
     @JsonIgnore
     public boolean isValid() {
         return StringUtils.isValid(requestId)
-                && ProxyUtils.isValid(ownerProxyId)
-                && ProxyUtils.isValid(identityProviderProxyId)
-                && StringUtils.isValid(aadhaarNumber);
+                && ProxyUtils.isValid(serviceProviderProxyId)
+                && ProxyUtils.isValid(requesterProxyId)
+                && ProxyUtils.isValid(geoLocation);
     }
 
     @Override
-    public ProxyId address() {
-        return identityProviderProxyId;
+    public String requestId() {
+        return requestId;
     }
+
 }

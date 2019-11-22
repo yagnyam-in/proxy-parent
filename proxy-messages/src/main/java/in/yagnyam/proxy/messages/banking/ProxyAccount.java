@@ -6,17 +6,19 @@ import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.utils.DateUtils;
 import lombok.*;
 
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Proxy Account
  */
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
+@Builder
 @ToString
 @EqualsAndHashCode
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ProxyAccount implements SignableMessage {
 
     @NonNull
@@ -34,6 +36,10 @@ public class ProxyAccount implements SignableMessage {
     @NonNull
     private String currency;
 
+    // TODO: Remove default list and make it non null
+    @Builder.Default
+    private List<ProxyAccountPermissionEnum> permissions = Collections.emptyList();
+
     /**
      * Maximum amount for which *each* PaymentAuthorization can be made
      */
@@ -43,7 +49,9 @@ public class ProxyAccount implements SignableMessage {
     @Override
     public ProxyId signer() {
         return proxyAccountId.getBankProxyId();
-    }@Override
+    }
+
+    @Override
     @JsonIgnore
     public boolean isValid() {
         return proxyAccountId != null
@@ -58,10 +66,5 @@ public class ProxyAccount implements SignableMessage {
     @JsonIgnore
     public ProxyId getBankProxyId() {
         return proxyAccountId.getBankProxyId();
-    }
-
-    @JsonIgnore
-    public String getProxyUniverse() {
-        return proxyAccountId.getProxyUniverse();
     }
 }

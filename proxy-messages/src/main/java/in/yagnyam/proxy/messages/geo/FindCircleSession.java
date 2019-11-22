@@ -1,11 +1,10 @@
-package in.yagnyam.proxy.messages.identity;
+package in.yagnyam.proxy.messages.geo;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.utils.DateUtils;
 import in.yagnyam.proxy.utils.ProxyUtils;
-import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
 import java.util.Date;
@@ -16,19 +15,17 @@ import java.util.Date;
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class ProxySubject implements SignableMessage {
+public class FindCircleSession implements SignableMessage {
 
     @NonNull
-    private String relyingPartyId;
+    private FindCircleSessionId sessionId;
 
     @NonNull
-    private ProxySubjectId proxySubjectId;
+    private ProxyId requesterProxyId;
 
-    @NonNull
-    private ProxyId ownerProxyId;
-
-    @NonNull
-    private ProxyId relyingPartyProxyId;
+    // As WebSockets are not yet supported, and FCM alerts are too slow, using Firestore location to send updates.
+    // TODO: This should be removed.
+    private String alertLocation;
 
     @NonNull
     private Date creationDate;
@@ -38,22 +35,16 @@ public class ProxySubject implements SignableMessage {
 
     @Override
     public ProxyId signer() {
-        return proxySubjectId.getIdentityProviderProxyId();
+        return sessionId.getServiceProviderId();
     }
 
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return StringUtils.isValid(relyingPartyId)
-                && ProxyUtils.isValid(proxySubjectId)
-                && ProxyUtils.isValid(ownerProxyId)
-                && ProxyUtils.isValid(relyingPartyProxyId)
+        return ProxyUtils.isValid(sessionId)
+                && ProxyUtils.isValid(requesterProxyId)
                 && DateUtils.isValid(creationDate)
                 && DateUtils.isValid(expiryDate);
     }
 
-    @JsonIgnore
-    public ProxyId getIdentityProviderProxyId() {
-        return proxySubjectId.getIdentityProviderProxyId();
-    }
 }

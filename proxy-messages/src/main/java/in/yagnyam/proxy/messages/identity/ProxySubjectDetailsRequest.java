@@ -1,4 +1,4 @@
-package in.yagnyam.proxy.messages.identity.aadhaar;
+package in.yagnyam.proxy.messages.identity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.AddressableMessage;
@@ -6,8 +6,11 @@ import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
 import in.yagnyam.proxy.utils.ProxyUtils;
-import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Builder
@@ -15,13 +18,10 @@ import lombok.*;
 @EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class AadhaarVerificationChallengeResponse implements SignableMessage, AddressableMessage {
+public class ProxySubjectDetailsRequest implements SignableMessage, AddressableMessage {
 
     @NonNull
-    public SignedMessage<AadhaarVerificationChallenge> challenge;
-
-    @NonNull
-    private String response;
+    public SignedMessage<ProxySubject> proxySubject;
 
     @Override
     public ProxyId signer() {
@@ -29,9 +29,14 @@ public class AadhaarVerificationChallengeResponse implements SignableMessage, Ad
     }
 
     @Override
+    public Set<ProxyId> validSigners() {
+        return new HashSet<>(Arrays.asList(getOwnerProxyId(), getRelyingPartyProxyId()));
+    }
+
+    @Override
     @JsonIgnore
     public boolean isValid() {
-        return ProxyUtils.isValid(challenge) && StringUtils.isValid(response);
+        return ProxyUtils.isValid(proxySubject);
     }
 
     @Override
@@ -40,17 +45,22 @@ public class AadhaarVerificationChallengeResponse implements SignableMessage, Ad
     }
 
     @JsonIgnore
+    public ProxyId getRelyingPartyProxyId() {
+        return proxySubject.getMessage().getRelyingPartyProxyId();
+    }
+
+    @JsonIgnore
     public ProxyId getOwnerProxyId() {
-        return challenge.getMessage().getOwnerProxyId();
+        return proxySubject.getMessage().getOwnerProxyId();
     }
 
     @JsonIgnore
     public ProxyId getIdentityProviderProxyId() {
-        return challenge.getMessage().getIdentityProviderProxyId();
+        return proxySubject.getMessage().getIdentityProviderProxyId();
     }
 
     @JsonIgnore
-    public String getAadhaarNumber() {
-        return challenge.getMessage().getAadhaarNumber();
+    public ProxySubjectId getProxySubjectId() {
+        return proxySubject.getMessage().getProxySubjectId();
     }
 }

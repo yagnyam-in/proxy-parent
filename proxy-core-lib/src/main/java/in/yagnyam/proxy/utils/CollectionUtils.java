@@ -18,4 +18,9 @@ public class CollectionUtils {
         .addAll(list)
         .build();
   }
+
+
+  public static <T> boolean isNotEmpty(List<T> list) {
+    return list != null && !list.isEmpty();
+  }
 }

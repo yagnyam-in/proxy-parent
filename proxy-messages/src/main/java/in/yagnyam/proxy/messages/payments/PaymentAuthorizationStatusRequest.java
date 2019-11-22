@@ -64,9 +64,4 @@ public class PaymentAuthorizationStatusRequest implements SignableRequestMessage
         return paymentAuthorization.getMessage().getCurrency();
     }
 
-    @JsonIgnore
-    public String getProxyUniverse() {
-        return paymentAuthorization.getMessage().getProxyUniverse();
-    }
-
 }

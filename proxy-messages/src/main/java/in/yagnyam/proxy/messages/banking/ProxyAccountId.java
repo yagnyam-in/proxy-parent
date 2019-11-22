@@ -26,6 +26,7 @@ import lombok.ToString;
 @EqualsAndHashCode
 public class ProxyAccountId implements ProxyBaseObject {
 
+  // TODO: Remove this. This should be part of Bank Configuration
   @NonNull
   private String proxyUniverse;
 

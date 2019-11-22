@@ -34,6 +34,13 @@ public class DateUtils {
     return c.getTime();
   }
 
+  public static Date afterMinutes(int minutes) {
+    Calendar c = Calendar.getInstance(UTC_TIME_ZONE);
+    c.add(Calendar.MINUTE, minutes);
+    return c.getTime();
+  }
+
+
   public static int age(Date dateOfBirth) {
     Calendar today = Calendar.getInstance(UTC_TIME_ZONE);
 

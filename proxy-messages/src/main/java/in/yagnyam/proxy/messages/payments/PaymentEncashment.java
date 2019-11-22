@@ -123,9 +123,4 @@ public class PaymentEncashment implements SignableRequestMessage, AddressableMes
     return payeeAccount.getSignedBy();
   }
 
-  @JsonIgnore
-  public String getProxyUniverse() {
-    return paymentAuthorization.getMessage().getProxyUniverse();
-  }
-
 }
