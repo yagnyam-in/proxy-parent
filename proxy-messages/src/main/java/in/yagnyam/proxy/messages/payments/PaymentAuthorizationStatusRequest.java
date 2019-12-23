@@ -27,7 +27,7 @@ public class PaymentAuthorizationStatusRequest implements SignableRequestMessage
 
     @Override
     public ProxyId signer() {
-        return getPayerId();
+        return getPayerProxyId();
     }@Override
     @JsonIgnore
     public boolean isValid() {
@@ -50,8 +50,8 @@ public class PaymentAuthorizationStatusRequest implements SignableRequestMessage
     }
 
     @JsonIgnore
-    public ProxyId getPayerId() {
-        return paymentAuthorization.getMessage().getPayerId();
+    public ProxyId getPayerProxyId() {
+        return paymentAuthorization.getMessage().getPayerProxyId();
     }
 
     @JsonIgnore

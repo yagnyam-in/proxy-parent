@@ -21,7 +21,7 @@ public class PaymentRequest {
 
   private String requestId;
 
-  private ProxyId payeeId;
+  private ProxyId payeeProxyId;
 
   private String payeeName;
 

@@ -1,11 +1,12 @@
 package in.yagnyam.proxy.services;
 
-import in.yagnyam.proxy.MultiSignableMessage;
-import in.yagnyam.proxy.MultiSignedMessage;
-import in.yagnyam.proxy.SignableMessage;
-import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.*;
+
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Collection;
+import java.util.List;
+
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -135,16 +136,32 @@ public class MessageBuilder {
       // See if any signed message fields are there
       for (Field f : fields) {
         if (f.getType().isAssignableFrom(SignedMessage.class)) {
-          log.debug("verifying field of type " + f.getType());
+          log.debug("populating field of type " + f.getType());
           SignedMessage signedMessage = (SignedMessage) f.get(message);
+          populateSignedMessage(signedMessage);
           // TODO: Use Setter instead of directly setting the field
-          f.set(message, populateSignedMessage(signedMessage));
+          // f.set(message, populateSignedMessage(signedMessage));
         }
         if (f.getType().isAssignableFrom(MultiSignedMessage.class)) {
-          log.debug("verifying field of type " + f.getType());
+          log.debug("populating field of type " + f.getType());
           MultiSignedMessage signedMessage = (MultiSignedMessage) f.get(message);
+          populateMultiSignedMessage(signedMessage);
           // TODO: Use Setter instead of directly setting the field
-          f.set(message, populateMultiSignedMessage(signedMessage));
+          // f.set(message, populateMultiSignedMessage(signedMessage));
+        }
+        if (f.getType().isAssignableFrom(Collection.class)) {
+          for (Object i: (Collection) f.get(message)) {
+            if (i.getClass().isAssignableFrom(SignedMessage.class)) {
+              log.debug("populating collection item of type " + i.getClass());
+              SignedMessage signedMessage = (SignedMessage) i;
+              populateSignedMessage(signedMessage);
+            }
+            if (i.getClass().isAssignableFrom(MultiSignedMessage.class)) {
+              log.debug("populating collection item of type " + i.getClass());
+              MultiSignedMessage signedMessage = (MultiSignedMessage) i;
+              populateMultiSignedMessage(signedMessage);
+            }
+          }
         }
       }
     } catch (IllegalAccessException e) {

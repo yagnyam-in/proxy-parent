@@ -7,6 +7,9 @@ import in.yagnyam.proxy.SignedMessage;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.security.GeneralSecurityException;
+import java.util.Collection;
+import java.util.List;
+
 import lombok.Builder;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -99,6 +102,20 @@ public class MessageFactory {
           log.debug("verifying field of type " + f.getType());
           MultiSignedMessage childMultiSignedMessage = (MultiSignedMessage) f.get(message);
           verifyMultiSignedMessage(childMultiSignedMessage);
+        }
+        if (f.getType().isAssignableFrom(Collection.class)) {
+          for (Object i: (Collection) f.get(message)) {
+            if (i.getClass().isAssignableFrom(SignedMessage.class)) {
+              log.debug("verifying collection item of type " + i.getClass());
+              SignedMessage signedMessage = (SignedMessage) i;
+              verifySignedMessage(signedMessage);
+            }
+            if (i.getClass().isAssignableFrom(MultiSignedMessage.class)) {
+              log.debug("verifying collection item of type " + i.getClass());
+              MultiSignedMessage signedMessage = (MultiSignedMessage) i;
+              verifyMultiSignedMessage(signedMessage);
+            }
+          }
         }
       }
     } catch (IllegalAccessException e) {

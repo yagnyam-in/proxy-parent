@@ -41,6 +41,10 @@ public class MessageVerificationService {
      */
     public <T extends SignableMessage> void verify(@NonNull SignedMessage<T> signedMessage)
             throws GeneralSecurityException {
+        if (signedMessage.isVerified()) {
+            log.info("Message {} already verified", signedMessage);
+            return;
+        }
         if (!signedMessage.isValid()) {
             log.info("Message validation failed for {}", signedMessage);
             throw new IllegalArgumentException("Message validation failed");
@@ -68,6 +72,8 @@ public class MessageVerificationService {
         }
         validateSignaturesBySingleProxy(signedMessage.getSignedBy(), signedMessage.getPayload(),
                 signedMessage.getSignatures(), signedMessage);
+        // TODO: Double check this
+        signedMessage.setVerified(true);
     }
 
 
@@ -83,6 +89,10 @@ public class MessageVerificationService {
      */
     public <T extends MultiSignableMessage> void verify(@NonNull MultiSignedMessage<T> multiSignedMessage)
             throws GeneralSecurityException {
+        if (multiSignedMessage.isVerified()) {
+            log.info("Message {} already verified", multiSignedMessage);
+            return;
+        }
         if (!multiSignedMessage.isValid()) {
             log.info("Message validation failed for {}", multiSignedMessage);
             throw new IllegalArgumentException("Message validation failed");
@@ -92,6 +102,8 @@ public class MessageVerificationService {
             throw new IllegalStateException("Message must be de-serialized before verify");
         }
         validateMultiSignatures(multiSignedMessage);
+        // TODO: Double check this
+        multiSignedMessage.setVerified(true);
     }
 
 

@@ -1,22 +1,18 @@
-package in.yagnyam.proxy.messages.payments;
+package in.yagnyam.proxy.messages.payments.offline;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.SignableRequestMessage;
 import in.yagnyam.proxy.SignedMessage;
-import in.yagnyam.proxy.messages.banking.Amount;
 import in.yagnyam.proxy.messages.banking.ProxyAccount;
 import in.yagnyam.proxy.messages.banking.ProxyAccountId;
+import in.yagnyam.proxy.utils.ProxyUtils;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
-/**
- * Payment Authorization
- */
 @Builder
 @Getter
 @ToString
@@ -24,19 +20,16 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class PaymentAuthorization implements SignableRequestMessage {
+public class BuyOfflineMoneyRequest implements SignableRequestMessage {
 
     @NonNull
-    private String paymentAuthorizationId;
+    private String requestId;
 
     @NonNull
     public SignedMessage<ProxyAccount> proxyAccount;
 
     @NonNull
-    private Amount amount;
-
-    @NonNull
-    private List<Payee> payees;
+    private Map<Integer, Integer> denominations;
 
     @Override
     public ProxyId signer() {
@@ -46,17 +39,14 @@ public class PaymentAuthorization implements SignableRequestMessage {
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return StringUtils.isValid(paymentAuthorizationId)
-                && proxyAccount != null && proxyAccount.isValid()
-                && amount != null && amount.isValid()
-                && payees != null && !payees.isEmpty() && payees.stream().allMatch(Payee::isValid)
-                // Ensure payment encashement ids are unique
-                && payees.stream().map(Payee::getPaymentEncashmentId).collect(Collectors.toSet()).size() == payees.size();
+        return StringUtils.isValid(requestId)
+                && ProxyUtils.isValid(proxyAccount)
+                && denominations != null && !denominations.isEmpty();
     }
 
     @Override
     public String requestId() {
-        return paymentAuthorizationId;
+        return requestId;
     }
 
     @JsonIgnore

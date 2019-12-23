@@ -34,7 +34,7 @@ public class PaymentEncashment implements SignableRequestMessage, AddressableMes
 
   @Override
   public ProxyId signer() {
-    return getPayeeId();
+    return getPayeeProxyId();
   }
 
   @Override
@@ -48,7 +48,7 @@ public class PaymentEncashment implements SignableRequestMessage, AddressableMes
     Payee payee = getPayee();
     switch (payee.getPayeeType()) {
       case ProxyId:
-        return payee.getProxyId().equals(getPayeeId());
+        return payee.getProxyId().equals(getPayeeProxyId());
       case Email:
       case Phone:
       case AnyoneWithSecret:
@@ -89,8 +89,8 @@ public class PaymentEncashment implements SignableRequestMessage, AddressableMes
   }
 
   @JsonIgnore
-  public ProxyId getPayerId() {
-    return paymentAuthorization.getMessage().getPayerId();
+  public ProxyId getPayerProxyId() {
+    return paymentAuthorization.getMessage().getPayerProxyId();
   }
 
   @JsonIgnore
@@ -104,7 +104,7 @@ public class PaymentEncashment implements SignableRequestMessage, AddressableMes
   }
 
   @JsonIgnore
-  public ProxyId getPayeeId() {
+  public ProxyId getPayeeProxyId() {
     return payeeAccount.getMessage().getOwnerProxyId();
   }
 
