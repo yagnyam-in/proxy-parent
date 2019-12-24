@@ -1,39 +1,52 @@
 package in.yagnyam.proxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import in.yagnyam.proxy.utils.ProxyUtils;
 import in.yagnyam.proxy.utils.StringUtils;
-import java.security.PrivateKey;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
-@Builder
+import java.security.PrivateKey;
+import java.security.PublicKey;
+
 @Getter
-@ToString(of = {"id", "name"})
+@Builder(toBuilder = true)
+@ToString(of = {"id", "name", "localAlias"})
 public class ProxyKey implements ProxyBaseObject {
 
-  @NonNull
-  private ProxyId id;
+    @NonNull
+    private ProxyId id;
 
-  private String name;
+    private String name;
 
-  @NonNull
-  private String privateKeyEncoded;
+    private String localAlias;
 
-  @JsonIgnore
-  @Setter
-  private PrivateKey privateKey;
+    private String privateKeyEncoded;
 
-  public String getUniqueId() {
-    return id.uniqueId();
-  }
+    private CipherText privateKeyEncodedEncrypted;
 
-  @Override
-  @JsonIgnore
-  public boolean isValid() {
-    return id != null && id.isValid()
-        && StringUtils.isValid(privateKeyEncoded);
-  }
+    private String privateKeySha256Thumbprint;
+
+    private String publicKeyEncoded;
+
+    private String publicKeySha256Thumbprint;
+
+    @Setter
+    @JsonIgnore
+    private PublicKey publicKey;
+
+    @Setter
+    @JsonIgnore
+    private PrivateKey privateKey;
+
+    @JsonIgnore
+    public String getUniqueId() {
+        return id.uniqueId();
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isValid() {
+        return ProxyUtils.isValid(id)
+                && (StringUtils.isValid(privateKeyEncoded) || ProxyUtils.isValid(privateKeyEncodedEncrypted));
+    }
 }

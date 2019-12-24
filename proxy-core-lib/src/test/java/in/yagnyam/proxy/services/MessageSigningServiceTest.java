@@ -9,6 +9,9 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.Security;
+
+import in.yagnyam.proxy.bootstrap.BcProxyKeyFactory;
+import in.yagnyam.proxy.bootstrap.ProxyKeyFactory;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -30,22 +33,23 @@ public class MessageSigningServiceTest {
 
   private CryptographyService cryptographyService = BcCryptographyService.builder().build();
 
+
   @SneakyThrows
-  private PrivateKey samplePrivateKey() {
-    KeyPairGenerator generator = KeyPairGenerator
-        .getInstance("RSA", BouncyCastleProvider.PROVIDER_NAME);
-    generator.initialize(2048, new SecureRandom());
-    return generator.generateKeyPair().getPrivate();
+  private ProxyKey sampleProxyKey() {
+    ProxyKeyFactory proxyKeyFactory = BcProxyKeyFactory.builder()
+            .cryptographyService(BcCryptographyService.builder().build())
+            .pemService(PemService.builder().build())
+            .build();
+    return proxyKeyFactory.createProxyKey("dummy", "RSA", 2048)
+            .toBuilder()
+            .id(ProxyId.of("dummy", "SHA256"))
+            .build();
   }
+
 
   @Test
   public void testSign() throws IOException, GeneralSecurityException {
-    ProxyId proxyId = ProxyId.of("dummy", "SHA256");
-    ProxyKey proxyKey = ProxyKey.builder()
-        .id(proxyId)
-        .privateKey(samplePrivateKey())
-        .privateKeyEncoded("PKE")
-        .build();
+    ProxyKey proxyKey = sampleProxyKey();
 
     SignableMessage signableMessage = new SignableMessage() {
       @Override
@@ -69,17 +73,11 @@ public class MessageSigningServiceTest {
 
   @Test(expected = IllegalStateException.class)
   public void testSignWithDifferentSha() throws IOException, GeneralSecurityException {
-    ProxyId proxyId = ProxyId.of("dummy", "DifferentSha256");
-    ProxyKey proxyKey = ProxyKey.builder()
-        .id(proxyId)
-        .privateKey(samplePrivateKey())
-        .privateKeyEncoded("PKE")
-        .build();
-
+    ProxyKey proxyKey = sampleProxyKey();
     SignableMessage signableMessage = new SignableMessage() {
       @Override
       public ProxyId signer() {
-        return ProxyId.of("dummy", "SHA256");
+        return ProxyId.of("dummy", "DifferentSha256");
       }
 
       @Override
@@ -97,13 +95,7 @@ public class MessageSigningServiceTest {
 
   @Test
   public void testSignForProxyIdWithoutSha() throws IOException, GeneralSecurityException {
-    ProxyId proxyId = ProxyId.of("dummy", "DifferentSha256");
-    ProxyKey proxyKey = ProxyKey.builder()
-        .id(proxyId)
-        .privateKey(samplePrivateKey())
-        .privateKeyEncoded("PKE")
-        .build();
-
+    ProxyKey proxyKey = sampleProxyKey();
     SignableMessage signableMessage = new SignableMessage() {
       @Override
       public ProxyId signer() {

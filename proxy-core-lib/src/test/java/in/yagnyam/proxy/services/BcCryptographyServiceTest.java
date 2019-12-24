@@ -1,25 +1,23 @@
 package in.yagnyam.proxy.services;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
+import in.yagnyam.proxy.CipherText;
 import in.yagnyam.proxy.Hash;
 import in.yagnyam.proxy.Hmac;
 import in.yagnyam.proxy.TestUtils;
 import in.yagnyam.proxy.config.ProxyVersion;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.runners.MockitoJUnitRunner;
 
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.cert.Certificate;
 
-import org.bouncycastle.operator.OperatorCreationException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.runners.MockitoJUnitRunner;
+import static org.junit.Assert.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BcCryptographyServiceTest {
@@ -54,7 +52,7 @@ public class BcCryptographyServiceTest {
     }
 
     @Test
-    public void testEncryptAndDecrypt()
+    public void testAsymmetricEncryptAndDecrypt()
             throws GeneralSecurityException, IOException, OperatorCreationException {
         BcCryptographyService cryptographyService = BcCryptographyService.builder().build();
 
@@ -62,15 +60,28 @@ public class BcCryptographyServiceTest {
                 .generateKeyPair(proxyVersion.getKeyGenerationAlgorithm(), proxyVersion.getKeySize());
         Certificate certificate = TestUtils.createCertificate(keyPair);
         String inputData = "Dummy data";
-        String encryptionAlgorithm = ProxyVersion.latestVersion().getPreferredEncryptionAlgorithm();
+        String encryptionAlgorithm = ProxyVersion.latestVersion().getPreferredAsymmetricEncryptionAlgorithm();
 
-        String cipher = cryptographyService.encrypt(encryptionAlgorithm, certificate, inputData);
+        CipherText cipher = cryptographyService.encrypt(certificate, encryptionAlgorithm, inputData);
         System.out.println("Cipher: " + cipher);
-        assertNotEquals(cipher,
-                cryptographyService.encrypt(encryptionAlgorithm, certificate, inputData));
-        assertEquals("Dummy data",
-                cryptographyService.decrypt(encryptionAlgorithm, keyPair.getPrivate(), cipher));
+        assertNotEquals(cipher, cryptographyService.encrypt(certificate, encryptionAlgorithm, inputData));
+        assertEquals("Dummy data", cryptographyService.decrypt(keyPair.getPrivate(), cipher));
     }
+
+
+    @Test
+    public void testSymmetricEncryptAndDecrypt() throws GeneralSecurityException {
+        BcCryptographyService cryptographyService = BcCryptographyService.builder().build();
+        SecretKey secretKey = KeyGenerator.getInstance("AES").generateKey();
+        String inputData = "Dummy data";
+        String encryptionAlgorithm = "AES/CTR/NoPadding";
+
+        CipherText cipher = cryptographyService.encrypt(secretKey, encryptionAlgorithm, inputData);
+        System.out.println("Cipher: " + cipher);
+        assertNotEquals(cipher, cryptographyService.encrypt(secretKey, encryptionAlgorithm, inputData));
+        assertEquals("Dummy data", cryptographyService.decrypt(secretKey, cipher));
+    }
+
 
     @Test
     public void testHash()

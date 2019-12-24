@@ -34,14 +34,29 @@ public interface ProxyVersion {
    *
    * @return List of valid encryption algorithms
    */
-  List<String> getValidEncryptionAlgorithms();
+  List<String> getValidAsymmetricEncryptionAlgorithms();
 
   /**
    * Returns preferred Encryption Algorithm to encrypt/decrypt messages
    *
    * @return Preferred Encryption Algorithm
    */
-  String getPreferredEncryptionAlgorithm();
+  String getPreferredAsymmetricEncryptionAlgorithm();
+
+  /**
+   * Valid encryption algorithms to encrypt/decrypt messages
+   *
+   * @return List of valid encryption algorithms
+   */
+  List<String> getValidSymmetricEncryptionAlgorithms();
+
+  /**
+   * Returns preferred Encryption Algorithm to encrypt/decrypt messages
+   *
+   * @return Preferred Encryption Algorithm
+   */
+  String getPreferredSymmetricEncryptionAlgorithm();
+
 
   /**
    * Signature algorithm that should be used to create Certificate Request which is part of Proxy

@@ -5,6 +5,8 @@ import in.yagnyam.proxy.ProxyId;
 import in.yagnyam.proxy.ProxyKey;
 import in.yagnyam.proxy.SignableMessage;
 import in.yagnyam.proxy.SignedMessage;
+import in.yagnyam.proxy.bootstrap.BcProxyKeyFactory;
+import in.yagnyam.proxy.bootstrap.ProxyKeyFactory;
 import lombok.SneakyThrows;
 import lombok.ToString;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -44,14 +46,13 @@ public class MessageFactoryTest {
 
     @SneakyThrows
     private ProxyKey sampleProxyKey() {
-        KeyPairGenerator generator = KeyPairGenerator
-                .getInstance("RSA", BouncyCastleProvider.PROVIDER_NAME);
-        generator.initialize(2048, new SecureRandom());
-        PrivateKey privateKey = generator.generateKeyPair().getPrivate();
-        return ProxyKey.builder()
-                .id(sampleProxyId())
-                .privateKey(privateKey)
-                .privateKeyEncoded("PKE")
+        ProxyKeyFactory proxyKeyFactory = BcProxyKeyFactory.builder()
+                .cryptographyService(BcCryptographyService.builder().build())
+                .pemService(PemService.builder().build())
+                .build();
+        return proxyKeyFactory.createProxyKey("dummy", "RSA", 2048)
+                .toBuilder()
+                .id(ProxyId.of("dummy", "SHA256"))
                 .build();
     }
 

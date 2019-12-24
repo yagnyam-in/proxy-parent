@@ -27,13 +27,23 @@ public class ProxyVersionV0 implements ProxyVersion {
   }
 
   @Override
-  public List<String> getValidEncryptionAlgorithms() {
+  public List<String> getValidAsymmetricEncryptionAlgorithms() {
     return Collections.singletonList("RSA/NONE/OAEPwithSHA-256andMGF1Padding");
   }
 
   @Override
-  public String getPreferredEncryptionAlgorithm() {
+  public String getPreferredAsymmetricEncryptionAlgorithm() {
     return "RSA/NONE/OAEPwithSHA-256andMGF1Padding";
+  }
+
+  @Override
+  public List<String> getValidSymmetricEncryptionAlgorithms() {
+    return Collections.singletonList("AES/CTR/NoPadding");
+  }
+
+  @Override
+  public String getPreferredSymmetricEncryptionAlgorithm() {
+    return "AES/CTR/NoPadding";
   }
 
   @Override
