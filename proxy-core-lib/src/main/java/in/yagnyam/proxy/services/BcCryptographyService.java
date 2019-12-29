@@ -139,7 +139,7 @@ public class BcCryptographyService implements CryptographyService {
         cipher.init(Cipher.ENCRYPT_MODE, certificate);
         byte[] cipherText = cipher.doFinal(input.getBytes(StandardCharsets.UTF_8));
         return CipherText.builder()
-                .algorithm(encryptionAlgorithm)
+                .encryptionAlgorithm(encryptionAlgorithm)
                 .cipherText(Base64.toBase64String(cipherText))
                 .build();
     }
@@ -147,7 +147,7 @@ public class BcCryptographyService implements CryptographyService {
     @Override
     public String decrypt(PrivateKey privateKey, CipherText cipherText)
             throws GeneralSecurityException {
-        Cipher cipher = getCipherInstance(cipherText.getAlgorithm());
+        Cipher cipher = getCipherInstance(cipherText.getEncryptionAlgorithm());
         cipher.init(Cipher.DECRYPT_MODE, privateKey);
         byte[] originalText = cipher.doFinal(Base64.decode(cipherText.getCipherText().getBytes(StandardCharsets.UTF_8)));
         return new String(originalText, StandardCharsets.UTF_8);
@@ -161,7 +161,7 @@ public class BcCryptographyService implements CryptographyService {
         cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
         byte[] cipherText = cipher.doFinal(input.getBytes(StandardCharsets.UTF_8));
         return CipherText.builder()
-                .algorithm(encryptionAlgorithm)
+                .encryptionAlgorithm(encryptionAlgorithm)
                 .iv(Base64.toBase64String(iv))
                 .cipherText(Base64.toBase64String(cipherText))
                 .build();
@@ -171,7 +171,7 @@ public class BcCryptographyService implements CryptographyService {
     public String decrypt(SecretKey secretKey, CipherText cipherText) throws GeneralSecurityException {
         final byte[] iv = Base64.decode(cipherText.getIv());
         final IvParameterSpec ivSpec = new IvParameterSpec(iv);
-        Cipher cipher = getCipherInstance(cipherText.getAlgorithm());
+        Cipher cipher = getCipherInstance(cipherText.getEncryptionAlgorithm());
         cipher.init(Cipher.DECRYPT_MODE, secretKey, ivSpec);
         byte[] originalText = cipher.doFinal(Base64.decode(cipherText.getCipherText().getBytes(StandardCharsets.UTF_8)));
         return new String(originalText, StandardCharsets.UTF_8);

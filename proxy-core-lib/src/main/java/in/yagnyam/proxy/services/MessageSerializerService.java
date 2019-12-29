@@ -1,5 +1,6 @@
 package in.yagnyam.proxy.services;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -22,6 +23,7 @@ public class MessageSerializerService {
 
   protected ObjectMapper objectMapper() {
     ObjectMapper objectMapper = new ObjectMapper();
+    objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     objectMapper.registerModule(new JavaTimeModule());
     objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
     return objectMapper;

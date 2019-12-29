@@ -1,7 +1,6 @@
 package in.yagnyam.proxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import in.yagnyam.proxy.utils.StringUtils;
 import lombok.*;
 
@@ -9,7 +8,6 @@ import lombok.*;
 @Builder
 @ToString
 @EqualsAndHashCode
-@JsonIgnoreProperties(ignoreUnknown = true)
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class CipherText implements ProxyBaseObject {
@@ -18,7 +16,7 @@ public class CipherText implements ProxyBaseObject {
     private String iv;
 
     @NonNull
-    private String algorithm;
+    private String encryptionAlgorithm;
 
     @NonNull
     private String cipherText;
@@ -30,7 +28,7 @@ public class CipherText implements ProxyBaseObject {
     @Override
     @JsonIgnore
     public boolean isValid() {
-        return StringUtils.isValid(algorithm) && StringUtils.isValid(cipherText);
+        return StringUtils.isValid(encryptionAlgorithm) && StringUtils.isValid(cipherText);
     }
 
 }

@@ -11,6 +11,8 @@ import java.security.PublicKey;
 @Getter
 @Builder(toBuilder = true)
 @ToString(of = {"id", "name", "localAlias"})
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ProxyKey implements ProxyBaseObject {
 
     @NonNull

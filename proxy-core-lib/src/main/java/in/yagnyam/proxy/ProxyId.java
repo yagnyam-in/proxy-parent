@@ -2,12 +2,14 @@ package in.yagnyam.proxy;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import in.yagnyam.proxy.utils.StringUtils;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@EqualsAndHashCode
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@Setter(AccessLevel.PRIVATE)
-@EqualsAndHashCode(of = {"id", "sha256Thumbprint"})
 public class ProxyId implements ProxyBaseObject {
 
     private String id;
