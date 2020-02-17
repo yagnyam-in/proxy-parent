@@ -43,7 +43,7 @@
 
         <maven-failsafe-plugin>2.22.2</maven-failsafe-plugin>
         <maven-surefire-plugin>2.22.2</maven-surefire-plugin>
-        <maven-checkstyle-plugin>3.1.0</maven-checkstyle-plugin>
+        <maven-checkstyle-plugin>3.1.1</maven-checkstyle-plugin>
         <maven-clean-plugin>3.0.0</maven-clean-plugin>
         <maven-deploy-plugin>2.8.2</maven-deploy-plugin>
         <maven-install-plugin>2.5.2</maven-install-plugin>
