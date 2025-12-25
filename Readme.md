@@ -2,17 +2,17 @@
 Contains Objects required by all Proxy Modules
 
 ## Install Locally
-```
+```shell
 ./mvnw clean source:jar install
 ```
 
 
 ## Update Maven Wrapper
-```
+```shell
 ./mvnw -N io.takari:maven:wrapper
 ```
 
 ## Dependency Check
-```
-mvn org.owasp:dependency-check-maven:check
+```shell
+./mvnw org.owasp:dependency-check-maven:check
 ```
