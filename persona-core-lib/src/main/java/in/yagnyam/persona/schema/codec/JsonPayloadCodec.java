@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -60,6 +61,13 @@ public final class JsonPayloadCodec implements PayloadCodec {
    * {@link PayloadEncodingException}.
    */
   static final int MAX_NESTING_DEPTH = 1000;
+
+  /**
+   * The cap on array/map sizes in the JSON codec (SCHEMA.md §3.4 rule 1): no array or map may
+   * hold more than this many items on encode or on decode, mirroring the binary codec so that a
+   * value decoded from JSON can always be re-encoded in any payload format.
+   */
+  static final int MAX_COLLECTION_ELEMENTS = 1 << 20;
 
   /**
    * The lowest decodable {@code timestamp-millis} value (SCHEMA.md §3.4): the bottom 808 values of
@@ -177,10 +185,11 @@ public final class JsonPayloadCodec implements PayloadCodec {
     CanonicalJson.writeString(out, symbol);
   }
 
-  /** Writes an array (§4.1), rejecting excessive nesting (§3.4). */
+  /** Writes an array (§4.1), rejecting excessive nesting and oversized collections (§3.4). */
   private static void renderArray(
       StringBuilder out, ArrayType arrayType, Object value, String path, int depth) {
     List<?> items = PayloadValues.requireList(value, path);
+    requireWithinCap(items.size(), "array", path);
     int childDepth = requireDepth(depth, path);
     out.append('[');
     for (int i = 0; i < items.size(); i++) {
@@ -204,6 +213,7 @@ public final class JsonPayloadCodec implements PayloadCodec {
   private static void renderMap(
       StringBuilder out, MapType mapType, Object value, String path, int depth) {
     Map<String, Object> entries = PayloadValues.requireMap(value, path);
+    requireWithinCap(entries.size(), "map", path);
     int childDepth = requireDepth(depth, path);
     Map<String, String> members = new LinkedHashMap<>();
     for (Map.Entry<String, Object> entry : entries.entrySet()) {
@@ -246,6 +256,36 @@ public final class JsonPayloadCodec implements PayloadCodec {
     return depth + 1;
   }
 
+  /** Rejects a collection above the JSON codec's element cap on encode (§3.4 rule 1). */
+  private static void requireWithinCap(int size, String what, String path) {
+    if (size > MAX_COLLECTION_ELEMENTS) {
+      throw new PayloadEncodingException(
+          PayloadValues.at(path)
+              + ": "
+              + what
+              + " has "
+              + size
+              + " element(s), more than the maximum of "
+              + MAX_COLLECTION_ELEMENTS
+              + " (SCHEMA.md §3.4)");
+    }
+  }
+
+  /** Rejects a collection above the JSON codec's element cap on decode (§3.4 rule 1). */
+  private static void requireWithinCapOnDecode(int size, String what, String path) {
+    if (size > MAX_COLLECTION_ELEMENTS) {
+      throw new PayloadDecodingException(
+          PayloadValues.at(path)
+              + ": "
+              + what
+              + " has "
+              + size
+              + " element(s), more than the maximum of "
+              + MAX_COLLECTION_ELEMENTS
+              + " (SCHEMA.md §3.4)");
+    }
+  }
+
   /**
    * Renders an instant as ISO-8601 UTC with exactly three fractional digits (§4.1). Years outside
    * 1–9999 render as signed expanded years (for example {@code -292275055-05-16T16:47:05.000Z}),
@@ -255,7 +295,7 @@ public final class JsonPayloadCodec implements PayloadCodec {
   private static String isoInstant(Instant instant) {
     return UTC_SECONDS.format(instant)
         + "."
-        + String.format("%03d", instant.getNano() / 1_000_000)
+        + String.format(Locale.ROOT, "%03d", instant.getNano() / 1_000_000)
         + "Z";
   }
 
@@ -434,11 +474,12 @@ public final class JsonPayloadCodec implements PayloadCodec {
     return symbol;
   }
 
-  /** Decodes a JSON array. */
+  /** Decodes a JSON array, enforcing the cumulative collection cap (§3.4 rule 1). */
   private static List<Object> decodeArray(JsonNode node, ArrayType arrayType, String path) {
     if (!node.isArray()) {
       throw mismatch(node, path, "a JSON array");
     }
+    requireWithinCapOnDecode(node.size(), "array", path);
     List<Object> items = new ArrayList<>();
     for (int i = 0; i < node.size(); i++) {
       items.add(decodeValue(node.get(i), arrayType.items(), path + "[" + i + "]"));
@@ -455,6 +496,7 @@ public final class JsonPayloadCodec implements PayloadCodec {
     if (!node.isObject()) {
       throw mismatch(node, path, "a JSON object");
     }
+    requireWithinCapOnDecode(node.size(), "map", path);
     Map<String, Object> entries = new LinkedHashMap<>();
     node.fields()
         .forEachRemaining(

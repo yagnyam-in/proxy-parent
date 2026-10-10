@@ -166,14 +166,19 @@ round-trippable.
 
 1. **Collection cap (writer and reader).** No array or map may hold more than
    `2^20` (1048576) items — and the cap is on the *cumulative* item count
-   across all blocks of a single array or map, not per block. Writers reject a
-   value above the cap before encoding any byte; readers reject any single
-   block count above the cap eagerly, and reject a block that would push the
-   running total past the cap. Additionally, a reader rejects any collection
-   element that decodes without consuming at least one input byte: a
-   non-empty array of zero-field records is the only such shape, and without
-   the rule a handful of bytes could otherwise allocate millions of empty
-   records.
+   across all blocks of a single array or map, not per block. The cap applies
+   identically in the binary format (§3) and the canonical JSON format (§4),
+   on encode and on decode, so a value decoded from either format can always
+   be re-encoded in the other. Writers reject a value above the cap before
+   encoding any byte; readers reject any single block count above the cap
+   eagerly, and reject a block that would push the running total past the cap.
+   Additionally, a reader rejects any collection element that decodes without
+   consuming at least one input byte: a non-empty array of zero-field records
+   is the only such shape, and without the rule a handful of bytes could
+   otherwise allocate millions of empty records. Symmetrically, a WRITER must
+   reject a non-empty array or map whose element type encodes to zero bytes
+   (a record chain with no wire fields), because the bytes it would emit are
+   exactly the bytes its own reader must reject (§6.2 closure).
 2. **Nesting depth.** Values nested more than 1000 array/map levels deep are
    rejected on encode (so a cyclic value graph is a hard encoding error, not
    a stack overflow) and on decode.

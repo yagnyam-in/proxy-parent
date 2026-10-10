@@ -203,6 +203,7 @@ public final class BinaryPayloadCodec implements PayloadCodec {
       ByteArrayOutputStream out, ArrayType arrayType, Object value, String path, int depth) {
     List<?> items = PayloadValues.requireList(value, path);
     requireWithinCap(items.size(), "array", path);
+    requireNonZeroByteItems(arrayType.items(), "array", path, !items.isEmpty());
     int childDepth = requireDepth(depth, path);
     if (!items.isEmpty()) {
       writeZigzagLong(out, items.size());
@@ -226,13 +227,20 @@ public final class BinaryPayloadCodec implements PayloadCodec {
       ByteArrayOutputStream out, MapType mapType, Object value, String path, int depth) {
     Map<String, Object> entries = PayloadValues.requireMap(value, path);
     requireWithinCap(entries.size(), "map", path);
+    requireNonZeroByteItems(mapType.values(), "map", path, !entries.isEmpty());
+    // Validate every key BEFORE building the sorted map: getBytes(UTF_8) maps unpaired
+    // surrogates to '?', which could otherwise collide with a genuine '?' key and silently
+    // drop an entry (§3.4 rule 6).
+    for (String key : entries.keySet()) {
+      payloadKey(key, path);
+    }
     int childDepth = requireDepth(depth, path);
     if (!entries.isEmpty()) {
       TreeMap<String, Object> sorted = new TreeMap<>(CanonicalJson.UTF8_ORDER);
       sorted.putAll(entries);
       writeZigzagLong(out, sorted.size());
       for (Map.Entry<String, Object> entry : sorted.entrySet()) {
-        String key = payloadKey(entry.getKey(), path);
+        String key = entry.getKey();
         if (entry.getValue() == null) {
           throw new PayloadEncodingException(
               PayloadValues.at(path + "['" + key + "']") + ": value must not be null");
@@ -257,6 +265,36 @@ public final class BinaryPayloadCodec implements PayloadCodec {
               + maxCollectionElements
               + " (SCHEMA.md §3.4)");
     }
+  }
+
+  /**
+   * Rejects a non-empty collection whose element type encodes to zero bytes (§3.4 rule 1, writer
+   * side): the reader rejects zero-byte elements as a DoS safeguard, so the writer must not emit
+   * bytes its own reader would reject (§6.2 closure).
+   */
+  private static void requireNonZeroByteItems(
+      TypeNode itemType, String what, String path, boolean nonEmpty) {
+    if (nonEmpty && encodesToZeroBytes(itemType)) {
+      throw new PayloadEncodingException(
+          PayloadValues.at(path)
+              + ": "
+              + what
+              + " elements of this type encode to zero bytes (records with no wire fields); a"
+              + " non-empty collection of zero-byte elements cannot round-trip (SCHEMA.md §3.4)");
+    }
+  }
+
+  /**
+   * Returns true only for record types whose every field encodes to zero bytes, recursively —
+   * i.e. records containing nothing but empty records. Every other node kind always consumes at
+   * least one byte on the wire (primitives, enums, collections write at least their length or
+   * value; envelopes carry strings and byte arrays).
+   */
+  private static boolean encodesToZeroBytes(TypeNode type) {
+    if (type instanceof RecordType record) {
+      return record.fields().stream().allMatch(field -> encodesToZeroBytes(field.type()));
+    }
+    return false;
   }
 
   /** Returns the depth of a nested collection value, rejecting excessive nesting (§3.4). */

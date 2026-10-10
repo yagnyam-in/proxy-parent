@@ -181,6 +181,54 @@ class BinaryPayloadCodecLimitsTest {
   }
 
   @Test
+  void encodingNonEmptyArrayOfZeroFieldRecordsIsRejected() {
+    PersonaSchema schema =
+        singleField(
+            "{\"type\":\"array\",\"items\":"
+                + "{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}}");
+
+    // §3.4 rule 1 writer side: the writer must not emit bytes its own reader rejects,
+    // so a non-empty array of zero-byte elements fails at encode instead of at decode
+    assertThatThrownBy(() -> codec.encode(schema, Map.of("v", List.of(Map.of()))))
+        .isInstanceOf(PayloadEncodingException.class)
+        .hasMessageContaining("encode to zero bytes");
+
+    // a record containing only empty records is the same shape and is rejected too
+    PersonaSchema nested =
+        singleField(
+            "{\"type\":\"array\",\"items\":"
+                + "{\"type\":\"record\",\"name\":\"Outer\",\"fields\":[{\"name\":\"e\","
+                + "\"type\":{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}}]}}");
+    assertThatThrownBy(() -> codec.encode(nested, Map.of("v", List.of(Map.of("e", Map.of())))))
+        .isInstanceOf(PayloadEncodingException.class)
+        .hasMessageContaining("encode to zero bytes");
+
+    // empty collections of any element type stay fine
+    assertThat(codec.encode(schema, Map.of("v", List.of()))).containsExactly(0x00);
+  }
+
+  @Test
+  void mapKeysAreValidatedBeforeSorting() {
+    PersonaSchema schema = singleField("{\"type\":\"map\",\"values\":\"int\"}");
+
+    // a genuine '?' key plus an unpaired high surrogate: getBytes(UTF_8) maps the surrogate
+    // to '?', so the keys collide in the sorted map and an entry would be silently dropped
+    // unless keys are validated BEFORE sorting (§3.4 rule 6)
+    Map<String, Object> entries = new LinkedHashMap<>();
+    entries.put("?", 1);
+    entries.put("\ud800", 2);
+
+    assertThatThrownBy(() -> codec.encode(schema, Map.of("v", entries)))
+        .isInstanceOf(PayloadEncodingException.class)
+        .hasMessageContaining("unpaired surrogate");
+
+    // the surrogate alone is rejected as before
+    assertThatThrownBy(() -> codec.encode(schema, Map.of("v", Map.of("\ud800", 2))))
+        .isInstanceOf(PayloadEncodingException.class)
+        .hasMessageContaining("unpaired surrogate");
+  }
+
+  @Test
   void cyclicValueGraphIsRejectedAtEncode() {
     PersonaSchema mapOfMaps =
         singleField("{\"type\":\"map\",\"values\":{\"type\":\"map\",\"values\":\"int\"}}");

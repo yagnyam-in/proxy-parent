@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -333,6 +334,43 @@ class JsonPayloadCodecTest {
                     Map.of("v", "B")))
         .isInstanceOf(PayloadEncodingException.class)
         .hasMessageContaining("is not a symbol");
+  }
+
+  @Test
+  void timestampsRenderLocaleIndependently() {
+    // String.format("%03d") is locale-sensitive: under e.g. ar-EG it emits Arabic-Indic digits,
+    // so the fraction must be formatted with Locale.ROOT (found by PR review)
+    Locale original = Locale.getDefault();
+    try {
+      Locale.setDefault(Locale.forLanguageTag("ar-EG"));
+      assertThat(encodeSingle("\"timestamp-millis\"", Instant.parse("2026-10-10T12:00:00.150Z")))
+          .isEqualTo("{\"v\":\"2026-10-10T12:00:00.150Z\"}");
+    } finally {
+      Locale.setDefault(original);
+    }
+  }
+
+  @Test
+  void collectionCapIsEnforcedOnEncodeAndDecode() {
+    int cap = 1 << 20; // SCHEMA.md §3.4 rule 1
+    PersonaSchema schema = SchemaFixtures.singleField("{\"type\":\"array\",\"items\":\"int\"}");
+
+    // encode: exactly at the cap round-trips
+    List<Integer> atCap = java.util.Collections.nCopies(cap, 0);
+    Map<String, Object> decoded = CODEC.decode(schema, CODEC.encode(schema, Map.of("v", atCap)));
+    assertThat((List<?>) decoded.get("v")).hasSize(cap);
+
+    // encode: above the cap is rejected before any byte is written
+    assertThatThrownBy(
+            () -> CODEC.encode(schema, Map.of("v", java.util.Collections.nCopies(cap + 1, 0))))
+        .isInstanceOf(PayloadEncodingException.class)
+        .hasMessageContaining("more than the maximum of " + cap);
+
+    // decode: above the cap is rejected (map decode shares the same helper)
+    String json = "{\"v\":[" + "0,".repeat(cap) + "0]}";
+    assertThatThrownBy(() -> CODEC.decode(schema, utf8(json)))
+        .isInstanceOf(PayloadDecodingException.class)
+        .hasMessageContaining("more than the maximum of " + cap);
   }
 
   @Test
