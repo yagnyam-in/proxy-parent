@@ -146,6 +146,13 @@
       "description": "Segments may contain digits after the first character.",
       "input": "dev-alice.eu-west-1",
       "expected": true
+    },
+    {
+      "id": "identity/realm/trailing-newline",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "A trailing newline is not part of the segment grammar; full-string matching must reject the whole identifier.",
+      "input": "example.org\n",
+      "expected": false
     }
   ]
 }

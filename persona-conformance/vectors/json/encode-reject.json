@@ -186,6 +186,17 @@
       "value": {
         "v": "@epoch-millis:-9223372036854775800"
       }
+    },
+    {
+      "id": "json/encode-reject/long-field-given-a-value-above-64-bit-range",
+      "spec": "docs/SCHEMA.md §4.3",
+      "description": "2^63 does not fit a signed long; the writer must reject the original value, never a truncated or wrapped form of it.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "value": {
+        "v": 9223372036854775808
+      }
     }
   ]
 }

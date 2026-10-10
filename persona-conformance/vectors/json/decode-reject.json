@@ -295,6 +295,15 @@
       "rejectionRule": "docs/SCHEMA.md §4.1",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
       "inputJson": "{\"v\":[]}"
+    },
+    {
+      "id": "json/decode-reject/timestamp-trailing-newline",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "A trailing newline is not part of the ISO-8601 instant grammar; parsing must consume the string to its true end.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"2026-10-10T12:00:00.000Z\\n\"}"
     }
   ]
 }

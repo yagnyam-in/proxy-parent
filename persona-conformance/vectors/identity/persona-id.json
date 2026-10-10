@@ -185,6 +185,14 @@
       "expect": "reject",
       "rejectionRule": "PERSONA-PROTOCOL.md §3.2",
       "input": "bob#any"
+    },
+    {
+      "id": "identity/persona-id-reject/trailing-newline-in-thumbprint",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "A trailing newline is not part of the thumbprint grammar; full-string matching must reject it.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §3.2",
+      "input": "alice#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
     }
   ]
 }

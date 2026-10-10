@@ -192,9 +192,9 @@ PRIMITIVES = (
     "timestamp-millis",
 )
 
-NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
-NAMESPACE_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$")
-MESSAGE_TYPE_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*@[A-Za-z0-9][A-Za-z0-9._-]*$")
+NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*\Z")
+NAMESPACE_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*\Z")
+MESSAGE_TYPE_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*@[A-Za-z0-9][A-Za-z0-9._-]*\Z")
 
 RECORD_KEYS = {"type", "name", "namespace", "messageType", "fields"}
 ENUM_KEYS = {"type", "name", "namespace", "symbols"}
@@ -1072,7 +1072,7 @@ def _decode_base64(text):
 
 _INSTANT_RE = re.compile(
     r"^([+-]?[0-9]+)-([0-9]{2})-([0-9]{2})[Tt]([0-9]{2}):([0-9]{2}):([0-9]{2})"
-    r"(?:\.([0-9]+))?([Zz]|[+-][0-9]{2}:[0-9]{2})$"
+    r"(?:\.([0-9]+))?([Zz]|[+-][0-9]{2}:[0-9]{2})\Z"
 )
 
 _DAYS_IN_MONTH = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
@@ -1369,8 +1369,8 @@ def first_pem_body(pem_text):
     return "".join(body_lines)
 
 
-PERSONA_ID_RE = re.compile(r"^(?P<id>[^#]+)(?:#(?P<thumbprint>[^#]*))?$")
-THUMBPRINT_RE = re.compile(r"^[0-9a-f]{64}$")
+PERSONA_ID_RE = re.compile(r"^(?P<id>[^#]+)(?:#(?P<thumbprint>[^#]*))?\Z")
+THUMBPRINT_RE = re.compile(r"^[0-9a-f]{64}\Z")
 
 
 def parse_persona_id(text):
@@ -1412,7 +1412,7 @@ def can_sign_on_behalf_of(signer, signed_for):
     return signer == signed_for
 
 
-REALM_SEGMENT_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+REALM_SEGMENT_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*\Z")
 
 
 def is_valid_realm(realm):
@@ -1631,6 +1631,10 @@ def _recompute(report, vector, expects, compute, expected_message):
         report.check(vector, expects == "reject", "reference rejected with %s but the vector expects %s" % (reject, expects))
         return None
     report.check(vector, expects == "accept", expected_message + " (reference accepted)")
+    if expects == "reject":
+        # Unexpected acceptance: the value is not a usable golden, so stop here
+        # instead of letting callers fail on the missing expected output.
+        return None
     return actual
 
 

@@ -228,7 +228,11 @@ final class VectorValues {
       return node.booleanValue();
     }
     if (node.isIntegralNumber()) {
-      return node.canConvertToInt() ? node.intValue() : node.longValue();
+      // Preserve out-of-long-range values as BigInteger so codec range/type
+      // checks reject the original value instead of a wrapped long.
+      return node.canConvertToInt()
+          ? node.intValue()
+          : node.canConvertToLong() ? node.longValue() : node.bigIntegerValue();
     }
     if (node.isNumber()) {
       return node.doubleValue();

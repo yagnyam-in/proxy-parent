@@ -4,7 +4,7 @@
   "kind": "manifest",
   "description": "Index of every vector file (see vectors/README.md). Regenerate with 'python3 tools/reference_vectors.py manifest' after adding, removing or renaming a vector file; the reference check and the Java runner both fail when this index is stale.",
   "fileCount": 27,
-  "vectorCount": 393,
+  "vectorCount": 398,
   "kinds": [
     {
       "kind": "crypto.policy-v0",
@@ -20,7 +20,7 @@
     },
     {
       "kind": "identity.persona-id",
-      "vectorCount": 20
+      "vectorCount": 21
     },
     {
       "kind": "identity.persona-id-delegation",
@@ -28,7 +28,7 @@
     },
     {
       "kind": "identity.realm",
-      "vectorCount": 20
+      "vectorCount": 21
     },
     {
       "kind": "payload.binary.decode",
@@ -36,15 +36,15 @@
     },
     {
       "kind": "payload.binary.encode",
-      "vectorCount": 80
+      "vectorCount": 81
     },
     {
       "kind": "payload.json.decode",
-      "vectorCount": 52
+      "vectorCount": 53
     },
     {
       "kind": "payload.json.encode",
-      "vectorCount": 63
+      "vectorCount": 64
     },
     {
       "kind": "schema.digest",
@@ -75,7 +75,7 @@
     {
       "path": "binary/encode-reject.json",
       "kind": "payload.binary.encode",
-      "vectorCount": 15
+      "vectorCount": 16
     },
     {
       "path": "binary/kitchen-sink.json",
@@ -135,12 +135,12 @@
     {
       "path": "identity/persona-id.json",
       "kind": "identity.persona-id",
-      "vectorCount": 20
+      "vectorCount": 21
     },
     {
       "path": "identity/realm.json",
       "kind": "identity.realm",
-      "vectorCount": 20
+      "vectorCount": 21
     },
     {
       "path": "json/compound-encode.json",
@@ -150,7 +150,7 @@
     {
       "path": "json/decode-reject.json",
       "kind": "payload.json.decode",
-      "vectorCount": 32
+      "vectorCount": 33
     },
     {
       "path": "json/decode.json",
@@ -160,7 +160,7 @@
     {
       "path": "json/encode-reject.json",
       "kind": "payload.json.encode",
-      "vectorCount": 13
+      "vectorCount": 14
     },
     {
       "path": "json/kitchen-sink.json",
