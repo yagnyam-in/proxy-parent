@@ -25,11 +25,14 @@ public record CipherText(Optional<String> iv, String encryptionAlgorithm, String
   /**
    * @return {@code true} when algorithm and cipher text are present and the
    *     optional MAC fields are used consistently (both present or both
-   *     absent)
+   *     absent). An empty cipher text is valid only together with an IV: a
+   *     zero-length symmetric input (e.g. AES/CTR) encrypts to zero bytes
+   *     while still carrying its IV, whereas IV-less asymmetric schemes
+   *     (RSA-OAEP) never produce an empty output.
    */
   public boolean isValid() {
     return !encryptionAlgorithm.isEmpty()
-        && !cipherText.isEmpty()
+        && (!cipherText.isEmpty() || iv.isPresent())
         && hmacAlgorithm.isPresent() == hmac.isPresent();
   }
 }

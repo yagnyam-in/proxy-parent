@@ -205,8 +205,17 @@ public final class InProcessRegistrar implements PersonaRegistrar {
   @Override
   public String issuePersonaId(String requestId) {
     Objects.requireNonNull(requestId, "requestId");
+    // Check BEFORE minting so duplicate-requestId retries do not burn ids
+    // into the lifetime issued-id set (memory would grow per rejected retry).
+    IssuedRequest existing = requestsByRequestId.get(requestId);
+    if (existing != null) {
+      throw new IllegalArgumentException("Duplicate requestId: " + requestId);
+    }
     IssuedRequest request = new IssuedRequest(freshPersonaId());
-    if (requestsByRequestId.putIfAbsent(requestId, request) != null) {
+    IssuedRequest winner = requestsByRequestId.putIfAbsent(requestId, request);
+    if (winner != null) {
+      // Lost a genuine race with a concurrent first submission: free the claim.
+      releasePersonaId(request.personaId());
       throw new IllegalArgumentException("Duplicate requestId: " + requestId);
     }
     return request.personaId();
@@ -342,6 +351,29 @@ public final class InProcessRegistrar implements PersonaRegistrar {
   boolean claimPersonaId(String personaId) {
     Objects.requireNonNull(personaId, "personaId");
     return !certificatesByPersonaId.containsKey(personaId) && issuedPersonaIds.add(personaId);
+  }
+
+  /**
+   * Releases a claim taken by {@link #claimPersonaId(String)} so an id minted
+   * for a submission that lost the requestId race is not retained for the
+   * registrar's lifetime. Only called before any certificate or request has
+   * been recorded for the id.
+   *
+   * @param personaId id whose claim is released
+   */
+  void releasePersonaId(String personaId) {
+    Objects.requireNonNull(personaId, "personaId");
+    issuedPersonaIds.remove(personaId);
+  }
+
+  /**
+   * Number of ids currently claimed by this registrar (registered or issued
+   * but not yet registered). Package-private inspection hook for tests.
+   *
+   * @return count of claimed persona ids
+   */
+  int claimedPersonaIdCount() {
+    return issuedPersonaIds.size();
   }
 
   /**

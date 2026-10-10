@@ -104,6 +104,26 @@ class InProcessRegistrarTest {
     }
 
     /**
+     * The requestId is checked before any id is minted, so repeated retries of
+     * an already-issued request cannot grow the registrar's lifetime claimed-id
+     * set (each rejected retry would otherwise reserve an unreachable id).
+     */
+    @Test
+    void rejectedDuplicateRequestsDoNotClaimNewIds() {
+      registrar.issuePersonaId("req-retry");
+      int claimedAfterFirst = registrar.claimedPersonaIdCount();
+      for (int i = 0; i < 25; i++) {
+        assertThatThrownBy(() -> registrar.issuePersonaId("req-retry"))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Duplicate requestId");
+      }
+      assertThat(registrar.claimedPersonaIdCount()).isEqualTo(claimedAfterFirst);
+      // A new requestId still mints and claims a fresh id.
+      assertThat(registrar.issuePersonaId("req-retry-next")).matches("p-[0-9a-f]{24}");
+      assertThat(registrar.claimedPersonaIdCount()).isEqualTo(claimedAfterFirst + 1);
+    }
+
+    /**
      * Collision guard (protocol §7.1: ids are never reused): an id already
      * claimed — even by an issued-but-never-registered request — can never
      * be handed out again, so a collision can never overwrite another

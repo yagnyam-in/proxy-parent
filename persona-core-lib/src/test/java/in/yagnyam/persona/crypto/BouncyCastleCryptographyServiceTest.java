@@ -245,6 +245,37 @@ class BouncyCastleCryptographyServiceTest {
       assertThatThrownBy(() -> cryptographyService.decrypt(key, withoutIv))
           .isInstanceOf(GeneralSecurityException.class);
     }
+
+    /**
+     * Zero-length input is legal for AES/CTR: the cipher text is empty while
+     * the IV is still present, so an encrypt result MUST round-trip through
+     * {@code decrypt} rather than being rejected as an invalid cipher text.
+     */
+    @Test
+    void roundTripsZeroLengthSymmetricInput() throws GeneralSecurityException {
+      SecretKey key = CryptographyService.asAesKey("abcdefghijklmnop");
+      CipherText cipherText = cryptographyService.encrypt(key, SYMMETRIC_ALGORITHM, new byte[0]);
+      assertThat(cipherText.cipherText()).isEmpty();
+      assertThat(cipherText.iv()).isPresent();
+      assertThat(cipherText.isValid()).isTrue();
+      assertThat(cryptographyService.decrypt(key, cipherText)).isEmpty();
+    }
+
+    /**
+     * An empty cipher text without an IV cannot come from any supported
+     * scheme (IV-less RSA-OAEP always produces a modulus-sized output), so it
+     * stays invalid even though zero-length symmetric cipher texts are legal.
+     */
+    @Test
+    void rejectsEmptyCipherTextWithoutIv() {
+      CipherText withoutIv = new CipherText(Optional.empty(), SYMMETRIC_ALGORITHM, "",
+          Optional.empty(), Optional.empty());
+      assertThat(withoutIv.isValid()).isFalse();
+      assertThatThrownBy(() -> cryptographyService.decrypt(
+          CryptographyService.asAesKey("abcdefghijklmnop"), withoutIv))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("Invalid cipher text");
+    }
   }
 
   @Nested
