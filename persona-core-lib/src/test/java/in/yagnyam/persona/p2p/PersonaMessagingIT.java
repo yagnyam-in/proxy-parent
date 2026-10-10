@@ -16,7 +16,9 @@ import org.junit.jupiter.api.Test;
  * {@link InMemoryTransport} — bytes only at the boundary — bob verifies
  * and materializes it; then a byte flipped <em>in transit</em> (a hostile
  * network) is rejected by bob's verifier with a clear reason, and no
- * payload is exposed.
+ * payload is exposed; and a verbatim transport replay of the genuine wire
+ * bytes reaches bob's handler as a payload exactly once, the replay
+ * surfacing as a distinct {@code replayed} outcome (protocol §5.2).
  */
 class PersonaMessagingIT {
 
@@ -62,6 +64,35 @@ class PersonaMessagingIT {
     });
     // Deliver the tampered bytes as the network would: to bob's address.
     world.transport().send(bobKey.id().id(), tampered);
+  }
+
+  @Test
+  void aTransportReplayOfTheWireBytesReachesBobsHandlerExactlyOnce() throws Exception {
+    TestGreeting greeting =
+        new TestGreeting("greeting-replay", aliceKey.id(), bobKey.id(), "Hello Bob!");
+    ConcurrentLinkedQueue<ReceivedMessage> bobInbox = new ConcurrentLinkedQueue<>();
+
+    try (AutoCloseable ignored = bob.listen(bobInbox::add)) {
+      SignedEnvelope sent = alice.send(greeting, "json");
+      assertThat(bobInbox).hasSize(1);
+
+      // The transport attacker captures the genuine wire bytes and
+      // re-delivers them verbatim to bob's address.
+      byte[] captured = sent.encode(new JsonPayloadCodec());
+      world.transport().send(bobKey.id().id(), captured);
+
+      // Bob's handler fired for both deliveries, but the replay never
+      // reached him as a payload: exactly one verified, one replayed.
+      assertThat(bobInbox).hasSize(2);
+      assertThat(bobInbox.stream().filter(ReceivedMessage::verified).count()).isEqualTo(1);
+      assertThat(bobInbox.stream().filter(ReceivedMessage::replayed).count()).isEqualTo(1);
+      assertThat(bobInbox.stream().filter(m -> m.payload().isPresent()).count()).isEqualTo(1);
+      ReceivedMessage replay = bobInbox.stream()
+          .filter(ReceivedMessage::replayed).findFirst().orElseThrow();
+      assertThat(replay.signers()).containsExactly(aliceKey.id());
+      assertThat(replay.verification().reason()).hasValueSatisfying(
+          reason -> assertThat(reason).contains("duplicate request id"));
+    }
   }
 
   /**

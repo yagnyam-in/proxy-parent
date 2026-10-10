@@ -123,6 +123,18 @@ public final class P2pMessagingDemo {
     }
     System.out.println("  REJECTED, no payload exposed (fail closed, protocol §4)");
 
+    // ---- Step 7: replay protection — the transport attacker re-delivers
+    // the genuine wire bytes verbatim; bob's messenger must dedup them
+    // (protocol §5.2, §11 rule 5).
+    step("hostile network: replay the genuine wire bytes verbatim");
+    ReceivedMessage replay = bob.receive(onTheWire);
+    System.out.println("  " + replay);
+    if (!replay.replayed() || replay.payload().isPresent()) {
+      throw new IllegalStateException("demo failed: a replayed envelope was not deduplicated");
+    }
+    System.out.println("  REPLAYED (duplicate request id), no payload exposed"
+        + " — distinct from a signature rejection (protocol §5.2)");
+
     step("done");
   }
 

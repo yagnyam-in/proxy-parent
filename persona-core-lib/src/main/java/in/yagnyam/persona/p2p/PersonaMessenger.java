@@ -14,6 +14,7 @@ import in.yagnyam.persona.envelope.VerificationResult;
 import in.yagnyam.persona.message.AddressableMessage;
 import in.yagnyam.persona.message.AlertMessage;
 import in.yagnyam.persona.message.MultiSignableMessage;
+import in.yagnyam.persona.message.RequestMessage;
 import in.yagnyam.persona.message.SignableMessage;
 import in.yagnyam.persona.schema.PersonaSchema;
 import in.yagnyam.persona.schema.SchemaId;
@@ -58,11 +59,32 @@ import java.util.function.Consumer;
  * projection a real push substrate would consume (protocol §7.6 delivery
  * substrates are out of scope for this library; see {@code GAPS.md}).
  *
+ * <p>Replay protection (protocol §5.2, §11 rule 5): after an envelope
+ * verifies and its payload materializes as a {@link RequestMessage}, the
+ * receive path atomically checks-and-records the
+ * {@code (recipient, sender, requestId)} triple in a
+ * {@link RequestDeduplicator} — the recipient is this messenger's own bare
+ * persona id, the sender the envelope's <em>verified</em> signer (for a
+ * multi-signed envelope, its first signer, the initiator). A duplicate
+ * delivery surfaces as {@link ReceivedMessage#replayed()} — fail closed,
+ * never an exception, and never exposing the payload to handlers — so
+ * instrumentation can tell attack replays apart from signature failures.
+ * Ordering is deliberate: verification runs <em>first</em>, so only
+ * authenticated duplicates count against a requester and a forged request
+ * id can never poison the dedup store to DoS the real requester. Payloads
+ * that are not {@link RequestMessage}s (alerts, multi-signable charters)
+ * are unaffected by dedup, and dedup applies equally to the
+ * {@link #listen} callback path and to direct {@link #receive(byte[])}
+ * calls (listen is implemented in terms of receive).
+ *
  * <p>Thread-safety: all members are safe for concurrent use (the
- * transport, signer and verifier are thread-safe; the messenger holds no
- * mutable state of its own). Send-time problems (invalid payload,
- * unauthorized signer, undeliverable address) surface as exceptions of the
- * signer or the transport; receive-side problems are values.
+ * transport, signer, verifier and deduplicator are thread-safe; the
+ * messenger holds no other mutable state). The dedup check-and-record of
+ * one triple is atomic, so under concurrent duplicate deliveries of the
+ * same request exactly one is accepted. Send-time problems (invalid
+ * payload, unauthorized signer, undeliverable address) surface as
+ * exceptions of the signer or the transport; receive-side problems are
+ * values.
  */
 public final class PersonaMessenger {
 
@@ -73,9 +95,12 @@ public final class PersonaMessenger {
   private final MessageBindings bindings;
   private final PayloadCodec transportCodec;
   private final PersonaTransport transport;
+  private final RequestDeduplicator deduplicator;
 
   /**
-   * Creates a messenger for one persona.
+   * Creates a messenger for one persona with a default
+   * {@link RequestDeduplicator} (capacity
+   * {@link RequestDeduplicator#DEFAULT_CAPACITY}).
    *
    * @param key            the persona's key (the identity this messenger
    *                       sends as; its bare id is the address
@@ -101,6 +126,46 @@ public final class PersonaMessenger {
       MessageBindings bindings,
       PayloadCodec transportCodec,
       PersonaTransport transport) {
+    this(key, signer, verifier, schemaRegistry, bindings, transportCodec, transport,
+        new RequestDeduplicator());
+  }
+
+  /**
+   * Creates a messenger for one persona with an explicit request
+   * deduplicator (protocol §5.2 replay protection; see the class javadoc
+   * for the keying, ordering and concurrency contract).
+   *
+   * @param key            the persona's key (the identity this messenger
+   *                       sends as; its bare id is the address
+   *                       {@link #listen} registers and the recipient scope
+   *                       of {@code deduplicator})
+   * @param signer         envelope signer (protocol §7.2)
+   * @param verifier       envelope verifier (protocol §7.3)
+   * @param schemaRegistry payload schema registry (for payload
+   *                       materialization of verified envelopes)
+   * @param bindings       message bindings (for payload materialization of
+   *                       verified envelopes)
+   * @param transportCodec transport encoding of the envelope itself —
+   *                       canonical JSON ({@code new JsonPayloadCodec()})
+   *                       is the recommended form ({@code docs/SCHEMA.md}
+   *                       §5); distinct from the payload format carried
+   *                       inside the envelope
+   * @param transport      the transport to send over and listen on
+   * @param deduplicator   the receive-side request deduplicator (protocol
+   *                       §5.2, §11 rule 5); scoped by this messenger's own
+   *                       persona id, so it must not be shared across
+   *                       messengers of different recipient personas unless
+   *                       a shared bounded store is intended
+   */
+  public PersonaMessenger(
+      PersonaKey key,
+      EnvelopeSigner signer,
+      EnvelopeVerifier verifier,
+      SchemaRegistry schemaRegistry,
+      MessageBindings bindings,
+      PayloadCodec transportCodec,
+      PersonaTransport transport,
+      RequestDeduplicator deduplicator) {
     this.key = Objects.requireNonNull(key, "key");
     this.signer = Objects.requireNonNull(signer, "signer");
     this.verifier = Objects.requireNonNull(verifier, "verifier");
@@ -108,6 +173,7 @@ public final class PersonaMessenger {
     this.bindings = Objects.requireNonNull(bindings, "bindings");
     this.transportCodec = Objects.requireNonNull(transportCodec, "transportCodec");
     this.transport = Objects.requireNonNull(transport, "transport");
+    this.deduplicator = Objects.requireNonNull(deduplicator, "deduplicator");
   }
 
   /**
@@ -131,6 +197,32 @@ public final class PersonaMessenger {
       PersonaTransport transport) {
     return new PersonaMessenger(
         key, signer, verifier, schemaRegistry, bindings, new JsonPayloadCodec(), transport);
+  }
+
+  /**
+   * Creates a messenger with the recommended canonical-JSON transport
+   * encoding and an explicit request deduplicator (see the constructor
+   * javadoc for the scoping contract).
+   *
+   * @param key            the persona's key
+   * @param signer         envelope signer
+   * @param verifier       envelope verifier
+   * @param schemaRegistry payload schema registry
+   * @param bindings       message bindings
+   * @param transport      the transport
+   * @param deduplicator   the receive-side request deduplicator
+   * @return the messenger
+   */
+  public static PersonaMessenger overJson(
+      PersonaKey key,
+      EnvelopeSigner signer,
+      EnvelopeVerifier verifier,
+      SchemaRegistry schemaRegistry,
+      MessageBindings bindings,
+      PersonaTransport transport,
+      RequestDeduplicator deduplicator) {
+    return new PersonaMessenger(key, signer, verifier, schemaRegistry, bindings,
+        new JsonPayloadCodec(), transport, deduplicator);
   }
 
   /**
@@ -265,8 +357,11 @@ public final class PersonaMessenger {
    *
    * @param handler consumer of received messages; invoked on the
    *                transport's delivery thread, must not block; receives
-   *                verified and rejected outcomes alike (instrumentation is
-   *                the handler's job, protocol §14 item 9)
+   *                verified, rejected and {@linkplain
+   *                ReceivedMessage#replayed() replayed} outcomes alike
+   *                (instrumentation is the handler's job, protocol §14
+   *                item 9); replay dedup applies here exactly as in
+   *                {@link #receive(byte[])}
    * @return a handle whose {@code close()} stops receiving
    */
   public AutoCloseable listen(Consumer<ReceivedMessage> handler) {
@@ -280,8 +375,11 @@ public final class PersonaMessenger {
    * <p>Never throws for verification or decode failures: every outcome —
    * including bytes that are not an envelope at all — is a
    * {@link ReceivedMessage} whose {@code verification} carries the reason.
-   * The payload is present only when verification succeeded (fail closed,
-   * protocol §4).
+   * The payload is present only when verification succeeded <em>and</em>
+   * the request is not a replay (fail closed, protocol §4 and §5.2); a
+   * verified-but-duplicate request surfaces as {@link
+   * ReceivedMessage#replayed()} with no payload, distinct from a
+   * verification rejection.
    *
    * @param envelopeBytes encoded envelope bytes, may be {@code null}
    * @return the received message
@@ -318,7 +416,7 @@ public final class PersonaMessenger {
       return ReceivedMessage.rejected(false, envelope.messageType(), signers,
           result.reason().orElse("?"));
     }
-    return ReceivedMessage.verified(false, envelope.messageType(), signers,
+    return dedupChecked(false, envelope.messageType(), signers,
         materialize(envelope.messageType(), envelope.payloadFormat(), envelope.schemaId(),
             envelope.payload()));
   }
@@ -340,9 +438,37 @@ public final class PersonaMessenger {
       return ReceivedMessage.rejected(true, envelope.messageType(), signers,
           result.reason().orElse("?"));
     }
-    return ReceivedMessage.verified(true, envelope.messageType(), signers,
+    return dedupChecked(true, envelope.messageType(), signers,
         materialize(envelope.messageType(), envelope.payloadFormat(), envelope.schemaId(),
             envelope.payload()));
+  }
+
+  /**
+   * Applies protocol §5.2 replay protection to a <em>verified</em>,
+   * materialized payload (see the class javadoc for the full contract):
+   * payloads that are not {@link RequestMessage}s pass through untouched;
+   * a request payload is atomically checked-and-recorded under
+   * {@code (this persona, verified requester, requestId)} and either
+   * returned as {@link ReceivedMessage#verified} (first occurrence) or
+   * {@link ReceivedMessage#replayed} (duplicate — fail closed, no payload
+   * exposed, never an exception).
+   *
+   * <p>Runs only after {@link EnvelopeVerifier} success, so the requester
+   * identity is authenticated: a forged or tampered envelope can neither
+   * produce a replay outcome nor poison the dedup store against the real
+   * requester. The requester of a multi-signed envelope is its first
+   * (initiating) signer.
+   */
+  private ReceivedMessage dedupChecked(
+      boolean multiSigned, String messageType, List<PersonaId> signers, Validatable payload) {
+    if (payload instanceof RequestMessage request
+        && !deduplicator.checkAndRecord(key.id(), signers.get(0), request.requestId())) {
+      return ReceivedMessage.replayed(multiSigned, messageType, signers,
+          "duplicate request id '" + request.requestId() + "' from persona '"
+              + signers.get(0).uniqueId() + "' (protocol §5.2, §11 rule 5):"
+              + " this (recipient, sender, requestId) triple was already processed");
+    }
+    return ReceivedMessage.verified(multiSigned, messageType, signers, payload);
   }
 
   /**

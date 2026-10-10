@@ -23,14 +23,32 @@ import java.util.Optional;
  * useful for instrumenting rejections (protocol §14 item 9) — and is
  * {@code null}/empty when the bytes were not even a decodable envelope.
  *
+ * <p><strong>Replay outcome.</strong> A {@linkplain #replayed() replayed}
+ * message is a third, distinct outcome alongside verified and rejected: the
+ * envelope <em>did</em> pass the full §7.3 verification (its signer and
+ * request id are authenticated), but its {@code (recipient, sender,
+ * requestId)} triple was already recorded — a transport-level replay of an
+ * already-delivered request (protocol §5.2, §11 rule 5). Replays fail
+ * closed exactly like rejections ({@link #verified()} is {@code false},
+ * {@link #payload()} is empty), but are distinguishable from verification
+ * rejections via {@link #replayed()} so instrumentation can tell attack
+ * replays from signature failures (protocol §14 item 9). Only verified
+ * envelopes reach the dedup check, so an unauthenticated forged request id
+ * can never produce a replay outcome (or poison the dedup store).
+ *
  * @param multiSigned  {@code true} when the envelope was a
  *     {@code MultiSignedEnvelope} (protocol §6.2)
  * @param messageType  wire message type of the envelope, or {@code null}
  *     when the bytes were not decodable
  * @param signers      the signers declared by the envelope (one entry for a
  *     single-signed envelope), empty when undecodable; for a rejected
- *     message these are <em>claimed</em>, not verified, identities
- * @param verification the verification outcome with its reason
+ *     message these are <em>claimed</em> identities; for a replayed
+ *     message they are <em>verified</em> identities (the envelope verified;
+ *     only the replay check rejected it)
+ * @param verification the verification outcome with its reason; a replayed
+ *     message carries a failed verification whose reason names the replay
+ * @param replayed     {@code true} when a fully verified envelope was
+ *     rejected solely as a duplicate request (protocol §5.2)
  * @param payload      the materialized domain message, present only when
  *     {@code verification.verified()}
  */
@@ -39,6 +57,7 @@ public record ReceivedMessage(
     String messageType,
     List<PersonaId> signers,
     VerificationResult verification,
+    boolean replayed,
     Optional<Validatable> payload) {
 
   public ReceivedMessage {
@@ -52,6 +71,10 @@ public record ReceivedMessage(
     if (!verification.verified() && payload.isPresent()) {
       throw new IllegalArgumentException(
           "A rejected received message must not expose its payload (fail closed)");
+    }
+    if (replayed && verification.verified()) {
+      throw new IllegalArgumentException(
+          "A replayed received message fails closed and cannot be verified");
     }
   }
 
@@ -67,7 +90,8 @@ public record ReceivedMessage(
   public static ReceivedMessage verified(
       boolean multiSigned, String messageType, List<PersonaId> signers, Validatable payload) {
     return new ReceivedMessage(multiSigned, Objects.requireNonNull(messageType, "messageType"),
-        signers, VerificationResult.ok(), Optional.of(Objects.requireNonNull(payload, "payload")));
+        signers, VerificationResult.ok(), false,
+        Optional.of(Objects.requireNonNull(payload, "payload")));
   }
 
   /**
@@ -78,7 +102,7 @@ public record ReceivedMessage(
    */
   public static ReceivedMessage rejected(String reason) {
     return new ReceivedMessage(false, null, List.of(), VerificationResult.fail(reason),
-        Optional.empty());
+        false, Optional.empty());
   }
 
   /**
@@ -94,7 +118,28 @@ public record ReceivedMessage(
   public static ReceivedMessage rejected(
       boolean multiSigned, String messageType, List<PersonaId> signers, String reason) {
     return new ReceivedMessage(multiSigned, messageType, signers, VerificationResult.fail(reason),
-        Optional.empty());
+        false, Optional.empty());
+  }
+
+  /**
+   * A replay rejection of a <em>verified</em> envelope whose
+   * {@code (recipient, sender, requestId)} triple was already recorded
+   * (protocol §5.2, §11 rule 5). Distinct from {@link #rejected}: the
+   * envelope's signature and signer are authentic — only the duplicate
+   * delivery is refused — so {@link #replayed()} is {@code true} and the
+   * (verified) signers are retained for instrumentation. Fails closed: no
+   * payload is exposed.
+   *
+   * @param multiSigned whether the envelope was multi-signed
+   * @param messageType wire message type of the decoded envelope
+   * @param signers     the envelope's verified signer identities
+   * @param reason      why the delivery was rejected as a replay
+   * @return the received message
+   */
+  public static ReceivedMessage replayed(
+      boolean multiSigned, String messageType, List<PersonaId> signers, String reason) {
+    return new ReceivedMessage(multiSigned, messageType, signers, VerificationResult.fail(reason),
+        true, Optional.empty());
   }
 
   /**
@@ -114,6 +159,7 @@ public record ReceivedMessage(
     return "ReceivedMessage[" + (multiSigned ? "multi" : "single")
         + ", messageType=" + messageType
         + ", signers=" + signers
+        + (replayed ? ", REPLAYED" : "")
         + ", " + verification + "]";
   }
 }

@@ -15,6 +15,11 @@ import in.yagnyam.persona.schema.codec.JsonPayloadCodec;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -193,8 +198,186 @@ class PersonaMessengerTest {
   }
 
   // -------------------------------------------------------------------------------------
+  // Replay protection (protocol §5.2, §11 rule 5)
+  // -------------------------------------------------------------------------------------
+
+  @Test
+  void identicalBytesDeliveredTwiceAreAcceptedExactlyOnce() {
+    byte[] wire = captureWireBytes(() -> alice.send(greeting("Hello Bob!"), "json"));
+
+    ReceivedMessage first = bob.receive(wire);
+    ReceivedMessage replay = bob.receive(wire);
+
+    assertThat(first.verified()).isTrue();
+    assertThat(first.replayed()).isFalse();
+    assertThat(first.payload()).isPresent();
+
+    // The replay is a distinct outcome from a verification rejection: the
+    // envelope DID verify; only the duplicate delivery is refused.
+    assertThat(replay.verified()).isFalse();
+    assertThat(replay.replayed()).isTrue();
+    assertThat(replay.payload()).isEmpty();
+    assertThat(replay.messageType()).isEqualTo(TestGreeting.MESSAGE_TYPE);
+    assertThat(replay.signers()).containsExactly(aliceKey.id());
+    assertThat(replay.verification().reason()).hasValueSatisfying(
+        reason -> assertThat(reason).contains("duplicate request id"));
+  }
+
+  @Test
+  void theListenCallbackPathDeduplicatesToo() throws Exception {
+    byte[] wire = captureWireBytes(() -> alice.send(greeting("Hello Bob!"), "json"));
+    ConcurrentLinkedQueue<ReceivedMessage> inbox = new ConcurrentLinkedQueue<>();
+    try (AutoCloseable ignored = bob.listen(inbox::add)) {
+      world.transport().send(bobKey.id().id(), wire);
+      world.transport().send(bobKey.id().id(), wire);
+    }
+
+    assertThat(inbox).hasSize(2);
+    assertThat(inbox.stream().filter(ReceivedMessage::verified).count()).isEqualTo(1);
+    assertThat(inbox.stream().filter(ReceivedMessage::replayed).count()).isEqualTo(1);
+    assertThat(inbox.stream().filter(m -> m.payload().isPresent()).count()).isEqualTo(1);
+  }
+
+  @Test
+  void theSameRequestDeliveredToTwoRecipientsIsProcessedByEach() {
+    PersonaMessenger carol = world.messenger(world.mint());
+    TestGreeting forBob = greeting("shared-request");
+    // Same sender, same requestId, addressed to carol.
+    TestGreeting forCarol = new TestGreeting(
+        "shared-request", aliceKey.id(), carol.personaId(), "Hello Carol!");
+
+    assertThat(bob.receive(
+        world.signer().sign(forBob, aliceKey, "json").encode(new JsonPayloadCodec()))
+        .verified()).isTrue();
+    assertThat(carol.receive(
+        world.signer().sign(forCarol, aliceKey, "json").encode(new JsonPayloadCodec()))
+        .verified()).isTrue();
+  }
+
+  @Test
+  void aForgedRequestIdIsRejectedWithoutPoisoningTheVictimsDedupStore() {
+    // Attacker captures alice's envelope for request "req-poison" and
+    // tampers it: verification must fail BEFORE the dedup check, so the
+    // forged requestId never enters bob's store.
+    SignedEnvelope genuine = world.signer().sign(
+        new TestGreeting("req-poison", aliceKey.id(), bobKey.id(), "Hello Bob!"),
+        aliceKey, "json");
+    byte[] forged = tamperPayloadByte(genuine);
+
+    ReceivedMessage rejected = bob.receive(forged);
+    assertThat(rejected.verified()).isFalse();
+    assertThat(rejected.replayed()).isFalse();
+    assertThat(rejected.verification().reason()).hasValueSatisfying(
+        reason -> assertThat(reason).contains("does not verify"));
+
+    // The victim's genuine request with the very same requestId is still
+    // accepted: the forgery did not poison the dedup store.
+    ReceivedMessage accepted = bob.receive(genuine.encode(new JsonPayloadCodec()));
+    assertThat(accepted.verified()).isTrue();
+    assertThat(accepted.payload()).isPresent();
+  }
+
+  @Test
+  void afterEvictionARerequestIsProcessedAgainAndThenDeduplicated() {
+    PersonaMessenger bobBounded = world.messenger(bobKey, new RequestDeduplicator(2));
+
+    byte[] req1 = captureWireBytes(() -> alice.send(
+        new TestGreeting("req-1", aliceKey.id(), bobKey.id(), "one"), "json"));
+    byte[] req2 = captureWireBytes(() -> alice.send(
+        new TestGreeting("req-2", aliceKey.id(), bobKey.id(), "two"), "json"));
+    byte[] req3 = captureWireBytes(() -> alice.send(
+        new TestGreeting("req-3", aliceKey.id(), bobKey.id(), "three"), "json"));
+
+    assertThat(bobBounded.receive(req1).verified()).isTrue();
+    assertThat(bobBounded.receive(req1).replayed()).isTrue();
+    assertThat(bobBounded.receive(req2).verified()).isTrue();
+    assertThat(bobBounded.receive(req3).verified()).isTrue();
+
+    // Capacity exceeded: req-1 was evicted, so its re-request is processed
+    // again (the safe eviction direction) — and then deduplicated anew.
+    assertThat(bobBounded.receive(req1).verified()).isTrue();
+    assertThat(bobBounded.receive(req1).replayed()).isTrue();
+  }
+
+  @Test
+  void concurrentDuplicateDeliveriesAreAcceptedExactlyOnce() throws InterruptedException {
+    byte[] wire = captureWireBytes(() -> alice.send(greeting("Hello Bob!"), "json"));
+    int threads = 32;
+    AtomicInteger verified = new AtomicInteger();
+    AtomicInteger replayed = new AtomicInteger();
+    ExecutorService pool = Executors.newFixedThreadPool(threads);
+    CountDownLatch start = new CountDownLatch(1);
+    for (int t = 0; t < threads; t++) {
+      pool.submit(() -> {
+        try {
+          start.await();
+          ReceivedMessage received = bob.receive(wire);
+          if (received.verified()) {
+            verified.incrementAndGet();
+          } else if (received.replayed()) {
+            replayed.incrementAndGet();
+          }
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      });
+    }
+    start.countDown();
+    pool.shutdown();
+    assertThat(pool.awaitTermination(30, TimeUnit.SECONDS)).isTrue();
+
+    assertThat(verified.get()).isEqualTo(1);
+    assertThat(replayed.get()).isEqualTo(threads - 1);
+  }
+
+  @Test
+  void nonRequestPayloadsAreNotDeduplicated() {
+    // A multi-signed charter is not a RequestMessage: delivering the same
+    // completed envelope twice is not a replay.
+    TestCharter charter = new TestCharter(
+        "charter-1", Set.of(aliceKey.id(), bobKey.id()), 2, "the terms");
+    MultiSignedEnvelope opened =
+        world.signer().signMulti(TestCharter.MESSAGE_TYPE, charter, aliceKey, "json");
+    MultiSignedEnvelope completed = bob.coSign(opened);
+    byte[] wire = completed.encode(new JsonPayloadCodec());
+
+    assertThat(alice.receive(wire).verified()).isTrue();
+    assertThat(alice.receive(wire).verified()).isTrue();
+
+    // Nor is an alert: the same alert bytes broadcast twice both verify.
+    TestAlert alert = new TestAlert(
+        "alert-1", P2pWorld.REALM, aliceKey.id(), List.of(bobKey.id()), "heads up");
+    SignedEnvelope alertEnvelope = world.signer().sign(alert, aliceKey, "json");
+    byte[] alertWire = alertEnvelope.encode(new JsonPayloadCodec());
+
+    assertThat(bob.receive(alertWire).verified()).isTrue();
+    assertThat(bob.receive(alertWire).verified()).isTrue();
+  }
+
+  // -------------------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------------------
+
+  /**
+   * Runs {@code send} while capturing the raw bytes delivered to bob's
+   * address off the wire (a raw transport listener, bypassing bob's
+   * messenger, so deliveries can be replayed at will).
+   */
+  private byte[] captureWireBytes(Runnable send) {
+    ConcurrentLinkedQueue<byte[]> wire = new ConcurrentLinkedQueue<>();
+    AutoCloseable tap = world.transport().listen(bobKey.id().id(), wire::add);
+    try {
+      send.run();
+    } finally {
+      try {
+        tap.close();
+      } catch (Exception e) {
+        throw new IllegalStateException(e);
+      }
+    }
+    assertThat(wire).hasSize(1);
+    return wire.peek();
+  }
 
   /**
    * Flips one byte of the payload text ({@code "Hello"} → {@code "Xello"})

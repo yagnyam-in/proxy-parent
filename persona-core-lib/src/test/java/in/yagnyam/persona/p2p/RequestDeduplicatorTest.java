@@ -28,21 +28,33 @@ class RequestDeduplicatorTest {
   void firstOccurrenceIsAcceptedAndDuplicatesAreRejected() {
     RequestDeduplicator dedup = new RequestDeduplicator();
 
-    assertThat(dedup.checkAndRecord(ALICE, "req-1")).isTrue();
-    assertThat(dedup.checkAndRecord(ALICE, "req-1")).isFalse();
-    assertThat(dedup.checkAndRecord(ALICE, "req-1")).isFalse();
-    assertThat(dedup.checkAndRecord(ALICE, "req-2")).isTrue();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "req-1")).isTrue();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "req-1")).isFalse();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "req-1")).isFalse();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "req-2")).isTrue();
     assertThat(dedup.size()).isEqualTo(2);
   }
 
   @Test
-  void duplicatesAreScopedPerPersona() {
+  void duplicatesAreScopedPerSenderPersona() {
     RequestDeduplicator dedup = new RequestDeduplicator();
 
-    assertThat(dedup.checkAndRecord(ALICE, "req-1")).isTrue();
-    // The same requestId from a different persona is a different request.
-    assertThat(dedup.checkAndRecord(BOB, "req-1")).isTrue();
-    assertThat(dedup.checkAndRecord(BOB, "req-1")).isFalse();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "req-1")).isTrue();
+    // The same requestId from a different sender is a different request.
+    assertThat(dedup.checkAndRecord(BOB, BOB, "req-1")).isTrue();
+    assertThat(dedup.checkAndRecord(BOB, BOB, "req-1")).isFalse();
+  }
+
+  @Test
+  void duplicatesAreScopedPerRecipientPersona() {
+    RequestDeduplicator dedup = new RequestDeduplicator();
+
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "req-1")).isTrue();
+    // The same request delivered to a different recipient is processed by
+    // each recipient; only a replay to the SAME recipient is rejected.
+    assertThat(dedup.checkAndRecord(ALICE, ALICE, "req-1")).isTrue();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "req-1")).isFalse();
+    assertThat(dedup.checkAndRecord(ALICE, ALICE, "req-1")).isFalse();
   }
 
   @Test
@@ -51,40 +63,40 @@ class RequestDeduplicatorTest {
     PersonaId pinned = PersonaId.of("alice#"
         + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
 
-    assertThat(dedup.checkAndRecord(pinned, "req-1")).isTrue();
-    assertThat(dedup.checkAndRecord(ALICE, "req-1")).isFalse();
+    assertThat(dedup.checkAndRecord(BOB, pinned, "req-1")).isTrue();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "req-1")).isFalse();
   }
 
   @Test
   void evictionIsBoundedAndARerequestAfterEvictionIsProcessedAgain() {
     RequestDeduplicator dedup = new RequestDeduplicator(2);
 
-    assertThat(dedup.checkAndRecord(ALICE, "req-1")).isTrue();
-    assertThat(dedup.checkAndRecord(ALICE, "req-2")).isTrue();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "req-1")).isTrue();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "req-2")).isTrue();
     // Capacity exceeded: req-1 (least recently used) is evicted.
-    assertThat(dedup.checkAndRecord(ALICE, "req-3")).isTrue();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "req-3")).isTrue();
     assertThat(dedup.size()).isEqualTo(2);
 
     // The evicted id is accepted again — eviction must never turn into a
     // wrong rejection of a re-request.
-    assertThat(dedup.checkAndRecord(ALICE, "req-1")).isTrue();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "req-1")).isTrue();
     // ...and it is once again deduplicated.
-    assertThat(dedup.checkAndRecord(ALICE, "req-1")).isFalse();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "req-1")).isFalse();
   }
 
   @Test
   void lruKeepsLiveEntriesOverColdOnes() {
     RequestDeduplicator dedup = new RequestDeduplicator(2);
 
-    dedup.checkAndRecord(ALICE, "hot");
-    dedup.checkAndRecord(ALICE, "cold");
+    dedup.checkAndRecord(BOB, ALICE, "hot");
+    dedup.checkAndRecord(BOB, ALICE, "cold");
     // Touch "hot": "cold" becomes the eviction candidate.
-    assertThat(dedup.checkAndRecord(ALICE, "hot")).isFalse();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "hot")).isFalse();
 
-    dedup.checkAndRecord(ALICE, "new");
+    dedup.checkAndRecord(BOB, ALICE, "new");
 
-    assertThat(dedup.checkAndRecord(ALICE, "hot")).isFalse();
-    assertThat(dedup.checkAndRecord(ALICE, "cold")).isTrue();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "hot")).isFalse();
+    assertThat(dedup.checkAndRecord(BOB, ALICE, "cold")).isTrue();
   }
 
   @Test
@@ -98,7 +110,7 @@ class RequestDeduplicatorTest {
       pool.submit(() -> {
         try {
           start.await();
-          if (dedup.checkAndRecord(ALICE, "same-request")) {
+          if (dedup.checkAndRecord(BOB, ALICE, "same-request")) {
             accepted.incrementAndGet();
           }
         } catch (InterruptedException e) {
@@ -128,7 +140,7 @@ class RequestDeduplicatorTest {
           start.await();
           for (int i = 0; i < requestsPerThread; i++) {
             String requestId = "t" + thread + "-" + i;
-            if (!dedup.checkAndRecord(ALICE, requestId)) {
+            if (!dedup.checkAndRecord(BOB, ALICE, requestId)) {
               rejected.add(requestId);
             }
           }
@@ -150,9 +162,11 @@ class RequestDeduplicatorTest {
     assertThatThrownBy(() -> new RequestDeduplicator(0))
         .isInstanceOf(IllegalArgumentException.class);
     RequestDeduplicator dedup = new RequestDeduplicator(1);
-    assertThatThrownBy(() -> dedup.checkAndRecord(null, "req"))
+    assertThatThrownBy(() -> dedup.checkAndRecord(null, ALICE, "req"))
         .isInstanceOf(NullPointerException.class);
-    assertThatThrownBy(() -> dedup.checkAndRecord(ALICE, null))
+    assertThatThrownBy(() -> dedup.checkAndRecord(BOB, null, "req"))
+        .isInstanceOf(NullPointerException.class);
+    assertThatThrownBy(() -> dedup.checkAndRecord(BOB, ALICE, null))
         .isInstanceOf(NullPointerException.class);
   }
 }

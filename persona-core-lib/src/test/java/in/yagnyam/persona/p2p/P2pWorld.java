@@ -116,4 +116,16 @@ final class P2pWorld {
         Clock.systemUTC());
     return PersonaMessenger.overJson(key, signer, verifier, schemaRegistry, bindings, transport);
   }
+
+  /** A messenger for {@code key} with an explicit request deduplicator. */
+  PersonaMessenger messenger(PersonaKey key, RequestDeduplicator deduplicator) {
+    EnvelopeSigner signer = signer();
+    EnvelopeVerifier verifier = new EnvelopeVerifier(
+        PersonaVersion.latestVersion(), CRYPTO, schemaRegistry, bindings,
+        new InMemoryPersonaResolver(registrar),
+        new TrustValidator(registrar.trustedRoots(), registrar::isRevoked),
+        Clock.systemUTC());
+    return PersonaMessenger.overJson(
+        key, signer, verifier, schemaRegistry, bindings, transport, deduplicator);
+  }
 }

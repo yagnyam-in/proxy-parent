@@ -29,13 +29,22 @@ import java.util.Objects;
  * dedup set alongside the processed-request journal, which is out of scope
  * for this library (see {@code GAPS.md}).
  *
- * <p>Keying: duplicates are per <em>persona</em> (protocol §5.2), so the
- * key is the sender's bare persona id together with the request id — the
- * same request id from two different personas is two different requests.
+ * <p>Keying: duplicates are per <em>recipient</em> and per <em>sender</em>
+ * persona (protocol §5.2), so the key is the recipient's bare persona id,
+ * the sender's bare persona id and the request id together. Recipient
+ * scoping is required because the same request (same sender, same request
+ * id) legitimately delivered to two different personas must be processed
+ * by each of them, while a replay of that request to the <em>same</em>
+ * persona must be rejected; sender scoping follows directly from §5.2
+ * ("duplicate request ids <em>from the same persona</em>") — the same
+ * request id from two different senders is two different requests. Bare
+ * ids are used so pinned and unpinned spellings of one persona share a
+ * namespace.
  *
  * <p>Thread-safety: all methods are safe for concurrent use; the
  * check-and-record of one key is atomic, so under concurrent duplicates of
- * the same {@code (sender, requestId)} exactly one caller is accepted.
+ * the same {@code (recipient, sender, requestId)} exactly one caller is
+ * accepted.
  */
 public final class RequestDeduplicator {
 
@@ -55,8 +64,9 @@ public final class RequestDeduplicator {
   /**
    * Creates a deduplicator holding at most {@code capacity} request ids.
    *
-   * @param capacity maximum number of remembered {@code (sender, requestId)}
-   *                 pairs; must be at least 1
+   * @param capacity maximum number of remembered
+   *                 {@code (recipient, sender, requestId)} triples; must be
+   *                 at least 1
    * @throws IllegalArgumentException if {@code capacity} is less than 1
    */
   public RequestDeduplicator(int capacity) {
@@ -78,21 +88,28 @@ public final class RequestDeduplicator {
    * Checks a request id against the store and records it when new
    * (protocol §5.2).
    *
+   * @param recipient the persona the request was delivered to (the dedup
+   *                  scope: a replay to the same recipient is rejected,
+   *                  while the same request reaching a different recipient
+   *                  is a distinct delivery)
    * @param sender    the persona the request claims to come from — already
    *                  verified by the envelope layer before this check is
-   *                  meaningful (an unverified sender id is attacker-chosen)
+   *                  meaningful (an unverified sender id is attacker-chosen
+   *                  and must never reach this store, or a forged request id
+   *                  would poison it and DoS the real requester)
    * @param requestId the payload's {@code requestId()} (protocol §5.2)
-   * @return {@code true} if this is the first occurrence of the pair and
+   * @return {@code true} if this is the first occurrence of the triple and
    *     the request should be processed; {@code false} if it is a duplicate
    *     and MUST be rejected (protocol §11 rule 5)
    */
-  public boolean checkAndRecord(PersonaId sender, String requestId) {
+  public boolean checkAndRecord(PersonaId recipient, PersonaId sender, String requestId) {
+    Objects.requireNonNull(recipient, "recipient");
     Objects.requireNonNull(sender, "sender");
     Objects.requireNonNull(requestId, "requestId");
-    // NUL separates the two free-form strings: persona ids are "any
+    // NUL separates the free-form strings: persona ids are "any
     // URL-safe string" (protocol §3.2) and request ids are
     // application-chosen, so a printable separator could be spoofed.
-    String key = sender.id() + '\u0000' + requestId;
+    String key = recipient.id() + '\u0000' + sender.id() + '\u0000' + requestId;
     synchronized (seen) {
       if (seen.containsKey(key)) {
         // Touch for LRU: a live conversation's ids must not age out.
@@ -105,8 +122,8 @@ public final class RequestDeduplicator {
   }
 
   /**
-   * @return the number of remembered {@code (sender, requestId)} pairs
-   *     (at most the capacity)
+   * @return the number of remembered {@code (recipient, sender, requestId)}
+   *     triples (at most the capacity)
    */
   public int size() {
     synchronized (seen) {
@@ -115,7 +132,7 @@ public final class RequestDeduplicator {
   }
 
   /**
-   * @return the maximum number of remembered pairs
+   * @return the maximum number of remembered triples
    */
   public int capacity() {
     return capacity;
