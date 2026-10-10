@@ -4,7 +4,7 @@
   "kind": "manifest",
   "description": "Index of every vector file (see vectors/README.md). Regenerate with 'python3 tools/reference_vectors.py manifest' after adding, removing or renaming a vector file; the reference check and the Java runner both fail when this index is stale.",
   "fileCount": 27,
-  "vectorCount": 401,
+  "vectorCount": 405,
   "kinds": [
     {
       "kind": "crypto.policy-v0",
@@ -40,7 +40,7 @@
     },
     {
       "kind": "payload.json.decode",
-      "vectorCount": 56
+      "vectorCount": 57
     },
     {
       "kind": "payload.json.encode",
@@ -48,7 +48,7 @@
     },
     {
       "kind": "schema.digest",
-      "vectorCount": 51
+      "vectorCount": 54
     }
   ],
   "files": [
@@ -150,7 +150,7 @@
     {
       "path": "json/decode-reject.json",
       "kind": "payload.json.decode",
-      "vectorCount": 36
+      "vectorCount": 37
     },
     {
       "path": "json/decode.json",
@@ -185,7 +185,7 @@
     {
       "path": "schema-digest/schema-reject.json",
       "kind": "schema.digest",
-      "vectorCount": 35
+      "vectorCount": 38
     }
   ]
 }

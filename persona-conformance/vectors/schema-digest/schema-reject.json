@@ -284,6 +284,30 @@
       "rejectionRule": "docs/SCHEMA.md §1.3 rule 5 (no unions and no optional fields; every field carries exactly one type)",
       "expect": "reject",
       "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"a\",\"type\":[\"null\",\"string\"]}]}"
+    },
+    {
+      "id": "schema-reject/null-namespace",
+      "spec": "docs/SCHEMA.md §1.3 rule 2",
+      "description": "An explicitly null namespace is malformed, not absent: present attributes must match their grammars.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 2",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"namespace\":null,\"fields\":[]}"
+    },
+    {
+      "id": "schema-reject/null-message-type",
+      "spec": "docs/SCHEMA.md §1.3 rule 3",
+      "description": "An explicitly null messageType is malformed, not absent.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 3",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"messageType\":null,\"fields\":[]}"
+    },
+    {
+      "id": "schema-reject/null-enum-namespace",
+      "spec": "docs/SCHEMA.md §1.3 rule 2",
+      "description": "The null-attribute rule applies to enum namespaces as well.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 2",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"enum\",\"name\":\"E\",\"namespace\":null,\"symbols\":[\"A\"]}}]}"
     }
   ]
 }

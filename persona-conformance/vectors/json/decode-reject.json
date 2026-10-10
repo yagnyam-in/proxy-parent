@@ -331,6 +331,15 @@
       "rejectionRule": "docs/SCHEMA.md §4.1",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
       "inputJson": "{\"v\":\"2026-10-10T12:59:60.000Z\"}"
+    },
+    {
+      "id": "json/decode-reject/double-overflowing-json-integer",
+      "spec": "docs/SCHEMA.md §3.4 rule 9",
+      "description": "A JSON integer literal too large for a double converts to infinity; non-finite doubles are rejected (the decoder must not crash on the conversion).",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 9",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "inputJson": "{\"v\":1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}"
     }
   ]
 }

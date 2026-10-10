@@ -283,12 +283,17 @@ def _parse_record(node, root, where):
     name = _require_text(node, "name", where)
     if not NAME_RE.match(name):
         raise Reject("SCHEMA.md §1.3 rule 1", "%s: invalid record name %r" % (where, name))
-    namespace = node.get("namespace")
-    if namespace is not None:
+    # Key presence is checked separately from value: an explicitly null
+    # optional attribute is malformed, not absent (§1.3; Java optionalText
+    # rejects null the same way).
+    namespace = None
+    message_type = None
+    if "namespace" in node:
+        namespace = node["namespace"]
         if not isinstance(namespace, str) or not NAMESPACE_RE.match(namespace):
             raise Reject("SCHEMA.md §1.3 rule 2", "%s: invalid namespace %r" % (where, namespace))
-    message_type = node.get("messageType")
-    if message_type is not None:
+    if "messageType" in node:
+        message_type = node["messageType"]
         if not isinstance(message_type, str) or not MESSAGE_TYPE_RE.match(message_type):
             raise Reject(
                 "SCHEMA.md §1.3 rule 3", "%s: invalid messageType %r" % (where, message_type)
@@ -331,8 +336,9 @@ def _parse_enum(node, where):
     name = _require_text(node, "name", where)
     if not NAME_RE.match(name):
         raise Reject("SCHEMA.md §1.3 rule 1", "%s: invalid enum name %r" % (where, name))
-    namespace = node.get("namespace")
-    if namespace is not None:
+    namespace = None
+    if "namespace" in node:
+        namespace = node["namespace"]
         if not isinstance(namespace, str) or not NAMESPACE_RE.match(namespace):
             raise Reject("SCHEMA.md §1.3 rule 2", "%s: invalid namespace %r" % (where, namespace))
     if "symbols" not in node:
@@ -980,7 +986,12 @@ def _decode_json_value(node, document, depth):
         if name == "double":
             if isinstance(document, bool) or not isinstance(document, (int, float)):
                 raise Reject("SCHEMA.md §4.1", "expected a JSON number")
-            value = float(document)
+            try:
+                value = float(document)
+            except OverflowError:
+                # A JSON integer too large for a double (Java converts it to
+                # infinity and rejects under the same rule).
+                raise Reject("SCHEMA.md §3.4 rule 9", "non-finite double")
             if value != value or value in (float("inf"), float("-inf")):
                 raise Reject("SCHEMA.md §3.4 rule 9", "non-finite double")
             return value
