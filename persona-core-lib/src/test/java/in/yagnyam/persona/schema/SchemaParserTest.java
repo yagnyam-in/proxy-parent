@@ -135,6 +135,23 @@ class SchemaParserTest {
   }
 
   @Test
+  void rejectsDuplicateJsonKeys() {
+    // duplicate JSON object keys are rejected while parsing (SCHEMA.md §3.4 rule 8): a document
+    // whose two spellings disagree must not parse at all, or two intents would share one digest
+    assertRejected(
+        "{\"type\":\"record\",\"name\":\"A\",\"name\":\"B\",\"fields\":[]}",
+        "Duplicate field 'name'");
+    assertRejected(
+        "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"x\",\"type\":\"int\"}],"
+            + "\"fields\":[{\"name\":\"y\",\"type\":\"int\"}]}",
+        "Duplicate field 'fields'");
+    assertRejected(
+        "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"a\",\"name\":\"b\","
+            + "\"type\":\"int\"}]}",
+        "Duplicate field 'name'");
+  }
+
+  @Test
   void rejectsDuplicateAndEmptyEnumSymbols() {
     assertRejected(
         "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"x\",\"type\":"

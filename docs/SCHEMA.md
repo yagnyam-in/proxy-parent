@@ -157,6 +157,50 @@ Decoders MUST reject: trailing bytes after the root record; truncated input;
 an enum index outside `symbols`; a negative block count; UTF-8 decode
 failures. Errors are hard rejections.
 
+### 3.4 Reference implementation strictness (normative)
+
+The rules in this subsection are normative for the reference implementation
+and RECOMMENDED for every implementation of §3 and §4. They exist to keep
+decoding safe against hostile input and to keep every decoded value
+round-trippable.
+
+1. **Collection cap (writer and reader).** No array or map may hold more than
+   `2^20` (1048576) items — and the cap is on the *cumulative* item count
+   across all blocks of a single array or map, not per block. Writers reject a
+   value above the cap before encoding any byte; readers reject any single
+   block count above the cap eagerly, and reject a block that would push the
+   running total past the cap. Additionally, a reader rejects any collection
+   element that decodes without consuming at least one input byte: a
+   non-empty array of zero-field records is the only such shape, and without
+   the rule a handful of bytes could otherwise allocate millions of empty
+   records.
+2. **Nesting depth.** Values nested more than 1000 array/map levels deep are
+   rejected on encode (so a cyclic value graph is a hard encoding error, not
+   a stack overflow) and on decode.
+3. **Varint leniency.** Readers accept non-minimal (padded) LEB128 varints;
+   writers always emit the minimal form.
+4. **Booleans.** Exactly `0x01` (true) or `0x00` (false); any other byte is
+   rejected.
+5. **UTF-8.** Decoding is strict: malformed sequences, overlong forms (e.g.
+   `0xC0 0x80`) and encoded surrogates are rejected.
+6. **Strings.** String values, enum symbols and map keys must be well-formed
+   UTF-16 with no unpaired surrogates — on encode and on decode, in both
+   codecs.
+7. **timestamp-millis range.** Values MUST lie within
+   [-9223372036854775000, 9223372036854775807] epoch milliseconds. The bottom
+   808 values of the signed 64-bit range cannot round-trip `Instant`
+   re-encoding (the `epochSecond × 1000` computation overflows) and are
+   rejected on decode in both codecs.
+8. **Duplicate keys.** JSON parsing — schema documents and canonical JSON
+   payloads — rejects duplicate object keys rather than keeping the last
+   spelling.
+9. **Non-finite doubles.** `NaN` and ±Infinity are rejected on encode (§4.3)
+   and on decode in both codecs: a binary payload carries the raw IEEE 754
+   bits, a JSON number beyond the double range overflows to infinity.
+10. **Base64 (JSON codec).** `bytes` values decode only from standard base64
+    with padding: the length must be a multiple of 4 and the alphabet the
+    standard one; unpadded or otherwise lenient input is rejected.
+
 ## 4. Canonical JSON Payload Encoding (payloadFormat = `json`)
 
 The payload as a canonical JSON string using the writer rules of §2.1, with
@@ -172,6 +216,11 @@ type renderings:
 - record → JSON object (keys sorted per §2.1)
 - array → JSON array; map → JSON object (keys sorted)
 - envelope → nested JSON object per §5 with `payload` and signature `value` fields rendered as base64 strings
+
+Conformance vectors for this format SHOULD restrict `timestamp-millis`
+values to years 1–9999: years outside that range render as signed expanded
+years (e.g. `-292275055-05-16T16:47:05.000Z`), which many ISO-8601 parsers
+reject.
 
 ### 4.2 Value model
 

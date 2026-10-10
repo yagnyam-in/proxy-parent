@@ -30,7 +30,9 @@ import java.util.regex.Pattern;
  *
  * <p>Additionally every node object must be written with exactly the keys of §1.1 — unknown keys
  * are rejected rather than silently dropped, because the schema digest (§2) only covers the parsed
- * model and an ignored key would otherwise let two different documents share a digest.
+ * model and an ignored key would otherwise let two different documents share a digest. For the
+ * same reason duplicate JSON object keys are rejected while parsing (SCHEMA.md §3.4 rule 8): a
+ * document whose two spellings disagree must not parse at all.
  */
 public final class SchemaParser {
 
@@ -48,7 +50,9 @@ public final class SchemaParser {
   private static final Set<String> MAP_KEYS = Set.of("type", "values");
   private static final Set<String> FIELD_KEYS = Set.of("name", "type");
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  // duplicate object keys are rejected (SCHEMA.md §3.4 rule 8), not silently last-wins
+  private static final ObjectMapper MAPPER =
+      new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
 
   private SchemaParser() {
   }

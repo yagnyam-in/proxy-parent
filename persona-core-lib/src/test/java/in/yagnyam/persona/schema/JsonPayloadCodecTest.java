@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -208,6 +209,67 @@ class JsonPayloadCodecTest {
     assertDecodeRejected(
         "{\"type\":\"record\",\"name\":\"Inner\",\"fields\":[]}", "[]", "expected a JSON object");
     assertDecodeRejected("\"envelope\"", "[]", "expected a JSON object");
+  }
+
+  @Test
+  void decoderRejectsLenientBase64() {
+    // Java's basic decoder accepts unpadded input; §3.4 rule 10 requires padding, so the length
+    // must be a multiple of 4
+    assertDecodeRejected("\"bytes\"", "\"QQ\"", "not standard base64 with padding");
+    assertDecodeRejected("\"bytes\"", "\"QQ=\"", "not standard base64 with padding");
+    assertDecodeRejected("\"bytes\"", "\"QUJDRA\"", "not standard base64 with padding");
+    // exactly at a multiple of 4 but with the padding in the wrong place or a 1-char unit
+    assertDecodeRejected("\"bytes\"", "\"A===\"", "not standard base64");
+    assertDecodeRejected("\"bytes\"", "\"QQ=Q\"", "not standard base64");
+  }
+
+  @Test
+  void decoderRejectsUnpairedSurrogates() {
+    // a JSON escape can spell a lone surrogate; the decoded string must be well-formed UTF-16
+    // (§3.4 rule 6) so that it can round-trip the UTF-8 based encodings
+    assertDecodeRejected("\"string\"", "\"\\ud83d\"", "unpaired surrogate");
+    assertDecodeRejected(
+        "{\"type\":\"map\",\"values\":\"int\"}", "{\"\\ud83d\":1}", "map key contains an unpaired");
+    // a properly paired surrogate escape decodes fine
+    PersonaSchema schema = SchemaFixtures.singleField("\"string\"");
+    assertThat(CODEC.decode(schema, utf8("{\"v\":\"\\ud83d\\ude00\"}")))
+        .containsEntry("v", "\ud83d\ude00");
+  }
+
+  @Test
+  void decoderRejectsTimestampsOutsideTheEpochMillisRange() {
+    // year -300000000 parses as an Instant but overflows the epoch-millis range (§3.4 rule 7)
+    assertDecodeRejected(
+        "\"timestamp-millis\"",
+        "\"-300000000-01-01T00:00:00.000Z\"",
+        "outside the range of timestamp-millis");
+  }
+
+  @Test
+  void encoderRejectsCyclicValueGraph() {
+    PersonaSchema schema =
+        SchemaFixtures.singleField(
+            "{\"type\":\"map\",\"values\":{\"type\":\"map\",\"values\":\"int\"}}");
+    Map<String, Object> cyclic = new LinkedHashMap<>();
+    cyclic.put("a", cyclic);
+
+    // a cycle through a shallow schema is cut off by the schema's own depth (the leaf type
+    // mismatches the map): a PayloadEncodingException, never a StackOverflowError
+    assertThatThrownBy(() -> CODEC.encode(schema, Map.of("v", cyclic)))
+        .isInstanceOf(PayloadEncodingException.class);
+
+    // a cycle through a schema deeper than the nesting limit is caught by the §3.4 depth cap
+    TypeNode deep = new PrimitiveType("int");
+    for (int i = 0; i < 1500; i++) {
+      deep = new MapType(deep);
+    }
+    PersonaSchema deepSchema =
+        new PersonaSchema(
+            new RecordType(
+                "Single", Optional.empty(), Optional.empty(), List.of(new Field("v", deep))));
+    assertThatThrownBy(() -> CODEC.encode(deepSchema, Map.of("v", cyclic)))
+        .isInstanceOf(PayloadEncodingException.class)
+        .hasMessageContaining("nested more than 1000");
   }
 
   @Test

@@ -3,7 +3,8 @@ package in.yagnyam.persona.schema.codec;
 /**
  * Signals that a payload could not be decoded: trailing bytes, truncated input, an enum index
  * outside the declared symbols, a negative block count, invalid UTF-8
- * ({@code docs/SCHEMA.md} §3.3), or a value that does not match the schema.
+ * ({@code docs/SCHEMA.md} §3.3), or a value that does not match the schema or violates the
+ * strictness or resource limits of §3.4.
  *
  * <p>Extends {@link IllegalArgumentException} so callers may treat every decoding rejection as an
  * argument error.

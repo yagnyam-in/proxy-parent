@@ -40,12 +40,33 @@ import java.util.Objects;
  * objects, and envelope fields as nested objects whose {@code payload} and signature {@code value}
  * members are base64 strings.
  *
+ * <p>Decoding is strict per §3.4: duplicate JSON object keys are rejected, strings (values, enum
+ * symbols, map keys) must be well-formed UTF-16 with no unpaired surrogates, non-finite doubles
+ * are rejected, {@code bytes} accepts only standard base64 with padding (length a multiple of 4),
+ * and {@code timestamp-millis} values outside the epoch-millis range of §3.4 rule 7 are rejected.
+ * Encoding rejects values nested more than {@link #MAX_NESTING_DEPTH} array/map levels deep, so a
+ * cyclic value graph fails with {@link PayloadEncodingException} instead of a stack overflow.
+ *
  * <p>The codec is stateless and thread-safe.
  */
 public final class JsonPayloadCodec implements PayloadCodec {
 
   /** The {@code payloadFormat} identifier of this codec (SCHEMA.md §4). */
   public static final String FORMAT = "json";
+
+  /**
+   * The cap on array/map nesting: values nested more than this many collection levels deep are
+   * rejected on encode (SCHEMA.md §3.4), which also turns a cyclic value graph into a
+   * {@link PayloadEncodingException}.
+   */
+  static final int MAX_NESTING_DEPTH = 1000;
+
+  /**
+   * The lowest decodable {@code timestamp-millis} value (SCHEMA.md §3.4): the bottom 808 values of
+   * the signed 64-bit range cannot round-trip the {@code Instant} re-encoding of §4.1 because the
+   * {@code epochSecond × 1000} computation overflows, so they are rejected on decode.
+   */
+  private static final long MIN_EPOCH_MILLIS = -9223372036854775000L;
 
   private static final ObjectMapper MAPPER =
       new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
@@ -67,7 +88,7 @@ public final class JsonPayloadCodec implements PayloadCodec {
     Objects.requireNonNull(schema, "schema");
     Objects.requireNonNull(value, "value");
     StringBuilder out = new StringBuilder();
-    renderRecord(out, schema.rootRecord(), value, "");
+    renderRecord(out, schema.rootRecord(), value, "", 0);
     return out.toString().getBytes(StandardCharsets.UTF_8);
   }
 
@@ -88,29 +109,35 @@ public final class JsonPayloadCodec implements PayloadCodec {
 
   /** Writes a record as a JSON object with sorted keys (§2.1 rule 2). */
   private static void renderRecord(
-      StringBuilder out, RecordType record, Map<String, Object> value, String path) {
+      StringBuilder out, RecordType record, Map<String, Object> value, String path, int depth) {
     PayloadValues.requireKnownFields(record, value, path);
     Map<String, String> members = new LinkedHashMap<>();
     for (Field field : record.fields()) {
       Object fieldValue = PayloadValues.requireField(record, value, field, path);
       members.put(
           field.name(),
-          render(field.type(), fieldValue, PayloadValues.childPath(path, field.name())));
+          render(
+              field.type(),
+              fieldValue,
+              PayloadValues.childPath(path, field.name()),
+              depth));
     }
     CanonicalJson.writeSortedObject(out, members);
   }
 
   /** Writes a value of the given type (§4.1). */
-  private static void renderValue(StringBuilder out, TypeNode type, Object value, String path) {
+  private static void renderValue(
+      StringBuilder out, TypeNode type, Object value, String path, int depth) {
     switch (type) {
       case PrimitiveType primitive -> renderPrimitive(out, primitive, value, path);
       case EnumType enumType -> renderEnum(out, enumType, value, path);
-      case ArrayType arrayType -> renderArray(out, arrayType, value, path);
-      case MapType mapType -> renderMap(out, mapType, value, path);
+      case ArrayType arrayType -> renderArray(out, arrayType, value, path, depth);
+      case MapType mapType -> renderMap(out, mapType, value, path, depth);
       case RecordType recordType ->
-          renderRecord(out, recordType, PayloadValues.requireMap(value, path), path);
+          renderRecord(out, recordType, PayloadValues.requireMap(value, path), path, depth);
       case EnvelopeType envelopeType ->
-          renderRecord(out, envelopeType.record(), PayloadValues.requireMap(value, path), path);
+          renderRecord(out, envelopeType.record(), PayloadValues.requireMap(value, path), path,
+              depth);
     }
   }
 
@@ -150,10 +177,11 @@ public final class JsonPayloadCodec implements PayloadCodec {
     CanonicalJson.writeString(out, symbol);
   }
 
-  /** Writes an array (§4.1). */
+  /** Writes an array (§4.1), rejecting excessive nesting (§3.4). */
   private static void renderArray(
-      StringBuilder out, ArrayType arrayType, Object value, String path) {
+      StringBuilder out, ArrayType arrayType, Object value, String path, int depth) {
     List<?> items = PayloadValues.requireList(value, path);
+    int childDepth = requireDepth(depth, path);
     out.append('[');
     for (int i = 0; i < items.size(); i++) {
       if (i > 0) {
@@ -164,14 +192,19 @@ public final class JsonPayloadCodec implements PayloadCodec {
         throw new PayloadEncodingException(
             PayloadValues.at(path + "[" + i + "]") + ": value must not be null");
       }
-      renderValue(out, arrayType.items(), item, path + "[" + i + "]");
+      renderValue(out, arrayType.items(), item, path + "[" + i + "]", childDepth);
     }
     out.append(']');
   }
 
-  /** Writes a map as a JSON object with sorted keys (§2.1 rule 2, §4.1). */
-  private static void renderMap(StringBuilder out, MapType mapType, Object value, String path) {
+  /**
+   * Writes a map as a JSON object with sorted keys (§2.1 rule 2, §4.1), rejecting excessive
+   * nesting (§3.4).
+   */
+  private static void renderMap(
+      StringBuilder out, MapType mapType, Object value, String path, int depth) {
     Map<String, Object> entries = PayloadValues.requireMap(value, path);
+    int childDepth = requireDepth(depth, path);
     Map<String, String> members = new LinkedHashMap<>();
     for (Map.Entry<String, Object> entry : entries.entrySet()) {
       if (!CanonicalJson.isWellFormed(entry.getKey())) {
@@ -185,19 +218,40 @@ public final class JsonPayloadCodec implements PayloadCodec {
       }
       members.put(
           entry.getKey(),
-          render(mapType.values(), entry.getValue(), path + "['" + entry.getKey() + "']"));
+          render(
+              mapType.values(),
+              entry.getValue(),
+              path + "['" + entry.getKey() + "']",
+              childDepth));
     }
     CanonicalJson.writeSortedObject(out, members);
   }
 
   /** Renders a value to a standalone canonical JSON fragment. */
-  private static String render(TypeNode type, Object value, String path) {
+  private static String render(TypeNode type, Object value, String path, int depth) {
     StringBuilder out = new StringBuilder();
-    renderValue(out, type, value, path);
+    renderValue(out, type, value, path, depth);
     return out.toString();
   }
 
-  /** Renders an instant as ISO-8601 UTC with exactly three fractional digits (§4.1). */
+  /** Returns the depth of a nested collection value, rejecting excessive nesting (§3.4). */
+  private static int requireDepth(int depth, String path) {
+    if (depth >= MAX_NESTING_DEPTH) {
+      throw new PayloadEncodingException(
+          PayloadValues.at(path)
+              + ": value is nested more than "
+              + MAX_NESTING_DEPTH
+              + " array/map levels deep (SCHEMA.md §3.4)");
+    }
+    return depth + 1;
+  }
+
+  /**
+   * Renders an instant as ISO-8601 UTC with exactly three fractional digits (§4.1). Years outside
+   * 1–9999 render as signed expanded years (for example {@code -292275055-05-16T16:47:05.000Z}),
+   * which many ISO-8601 parsers reject; conformance vectors therefore SHOULD restrict
+   * {@code timestamp-millis} values to years 1–9999 (§4.1).
+   */
   private static String isoInstant(Instant instant) {
     return UTC_SECONDS.format(instant)
         + "."
@@ -330,20 +384,38 @@ public final class JsonPayloadCodec implements PayloadCodec {
       }
       case PrimitiveType.BYTES -> {
         String text = requireTextual(node, path);
-        try {
-          yield BASE64_DECODER.decode(text);
-        } catch (IllegalArgumentException e) {
-          throw new PayloadDecodingException(
-              PayloadValues.at(path)
-                  + ": '"
-                  + text
-                  + "' is not standard base64 with padding (SCHEMA.md §4.1)",
-              e);
-        }
+        yield decodeBase64(text, path);
       }
       case PrimitiveType.TIMESTAMP_MILLIS -> parseInstant(requireTextual(node, path), path);
       default -> throw new IllegalStateException("unknown primitive type " + primitive.name());
     };
+  }
+
+  /**
+   * Decodes a {@code bytes} value from standard base64 with padding (§4.1, §3.4 rule 10): the
+   * length must be a multiple of 4 (Java's basic decoder otherwise accepts unpadded input) and
+   * the alphabet must be the standard one.
+   */
+  private static byte[] decodeBase64(String text, String path) {
+    if (text.length() % 4 != 0) {
+      throw notBase64(text, path, null);
+    }
+    try {
+      return BASE64_DECODER.decode(text);
+    } catch (IllegalArgumentException e) {
+      throw notBase64(text, path, e);
+    }
+  }
+
+  /** Builds the rejection for base64 text that is not standard-with-padding. */
+  private static PayloadDecodingException notBase64(String text, String path, Throwable cause) {
+    return new PayloadDecodingException(
+        PayloadValues.at(path)
+            + ": '"
+            + text
+            + "' is not standard base64 with padding (SCHEMA.md §4.1); the length must be a"
+            + " multiple of 4 and the alphabet the standard one",
+        cause);
   }
 
   /** Decodes an enum symbol (§4.1). */
@@ -376,7 +448,7 @@ public final class JsonPayloadCodec implements PayloadCodec {
 
   /**
    * Decodes a JSON object into a map value (§4.1: map keys are arbitrary strings, so no
-   * unknown-field check applies).
+   * unknown-field check applies; §3.4 rule 6: keys must be well-formed UTF-16).
    *
    */
   private static Map<String, Object> decodeMap(JsonNode node, MapType mapType, String path) {
@@ -386,15 +458,26 @@ public final class JsonPayloadCodec implements PayloadCodec {
     Map<String, Object> entries = new LinkedHashMap<>();
     node.fields()
         .forEachRemaining(
-            entry ->
-                entries.put(
-                    entry.getKey(),
-                    decodeValue(
-                        entry.getValue(), mapType.values(), path + "['" + entry.getKey() + "']")));
+            entry -> {
+              String key = entry.getKey();
+              if (!CanonicalJson.isWellFormed(key)) {
+                throw new PayloadDecodingException(
+                    PayloadValues.at(path)
+                        + ": map key contains an unpaired surrogate and is not well-formed"
+                        + " UTF-16 (SCHEMA.md §3.4)");
+              }
+              entries.put(
+                  key,
+                  decodeValue(
+                      entry.getValue(), mapType.values(), path + "['" + key + "']"));
+            });
     return entries;
   }
 
-  /** Parses an ISO-8601 instant (§4.1). */
+  /**
+   * Parses an ISO-8601 instant (§4.1) and enforces the §3.4 rule 7 epoch-millis range, so that
+   * every decoded value can be re-encoded.
+   */
   private static Instant parseInstant(String text, String path) {
     Instant instant;
     try {
@@ -413,15 +496,48 @@ public final class JsonPayloadCodec implements PayloadCodec {
               + ": timestamp-millis values must have millisecond precision, found "
               + text);
     }
+    long millis;
+    try {
+      millis =
+          Math.addExact(
+              Math.multiplyExact(instant.getEpochSecond(), 1000L),
+              instant.getNano() / 1_000_000L);
+    } catch (ArithmeticException e) {
+      throw new PayloadDecodingException(
+          PayloadValues.at(path)
+              + ": '"
+              + text
+              + "' is outside the range of timestamp-millis (SCHEMA.md §3.4)",
+          e);
+    }
+    if (millis < MIN_EPOCH_MILLIS) {
+      throw new PayloadDecodingException(
+          PayloadValues.at(path)
+              + ": '"
+              + text
+              + "' is below the minimum timestamp-millis value "
+              + MIN_EPOCH_MILLIS
+              + " (SCHEMA.md §3.4)");
+    }
     return instant;
   }
 
-  /** Requires a textual JSON node. */
+  /**
+   * Requires a textual JSON node that is well-formed UTF-16 (§3.4 rule 6: JSON escapes can spell
+   * an unpaired surrogate, which no encoding can carry as UTF-8).
+   */
   private static String requireTextual(JsonNode node, String path) {
     if (!node.isTextual()) {
       throw mismatch(node, path, "a JSON string");
     }
-    return node.textValue();
+    String text = node.textValue();
+    if (!CanonicalJson.isWellFormed(text)) {
+      throw new PayloadDecodingException(
+          PayloadValues.at(path)
+              + ": string contains an unpaired surrogate and is not well-formed UTF-16"
+              + " (SCHEMA.md §3.4)");
+    }
+    return text;
   }
 
   /** Builds a type mismatch error. */

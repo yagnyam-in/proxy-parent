@@ -42,18 +42,63 @@ import java.util.TreeMap;
  *
  * <p>The codec is stateless and thread-safe.
  *
- * <p>Implementation note (not a wire rule): a single block may not declare more than
- * {@value #MAX_BLOCK_ELEMENTS} elements. The limit exists so that a hostile payload can not force
- * unbounded allocation from a handful of bytes; it is far above any legitimate payload size and
- * never affects the bytes written.
+ * <p>Resource limits (SCHEMA.md §3.4, normative): no array or map may hold more than
+ * {@value #DEFAULT_MAX_COLLECTION_ELEMENTS} elements. The cap is cumulative: it bounds the total
+ * item count of one array or map across all of its blocks, so a hostile payload cannot hide a
+ * huge allocation behind many small blocks. Writers reject a larger value before writing any
+ * byte; readers reject any single block count above the cap eagerly, reject a block that would
+ * push the running item count past the cap, and reject any collection element that decodes
+ * without consuming an input byte (a non-empty array of zero-field records is the only such
+ * shape; without the rule a handful of bytes could otherwise allocate millions of empty records).
+ * Encoders and decoders additionally reject values nested more than {@link #MAX_NESTING_DEPTH}
+ * array/map levels deep, so a cyclic value graph fails with {@link PayloadEncodingException}
+ * instead of a stack overflow. The limits are far above any legitimate payload size and never
+ * affect the bytes written for values within them.
  */
 public final class BinaryPayloadCodec implements PayloadCodec {
 
   /** The {@code payloadFormat} identifier of this codec (SCHEMA.md §3). */
   public static final String FORMAT = "persona-binary";
 
-  /** Upper bound on the element count of a single array/map block, a resource-exhaustion guard. */
-  private static final int MAX_BLOCK_ELEMENTS = 1 << 20;
+  /** The default cap on the total element count of one array/map: 2^20 items (SCHEMA.md §3.4). */
+  public static final int DEFAULT_MAX_COLLECTION_ELEMENTS = 1 << 20;
+
+  /**
+   * The cap on array/map nesting: values nested more than this many collection levels deep are
+   * rejected on encode and on decode (SCHEMA.md §3.4), which also turns a cyclic value graph into
+   * a {@link PayloadEncodingException}.
+   */
+  static final int MAX_NESTING_DEPTH = 1000;
+
+  /**
+   * The lowest decodable {@code timestamp-millis} value (SCHEMA.md §3.4): the bottom 808 values of
+   * the signed 64-bit range cannot round-trip the {@code Instant} re-encoding of §4.1 because the
+   * {@code epochSecond × 1000} computation overflows, so they are rejected on decode.
+   */
+  static final long MIN_EPOCH_MILLIS = -9223372036854775000L;
+
+  /** The per-collection element cap enforced by this instance (SCHEMA.md §3.4). */
+  private final int maxCollectionElements;
+
+  /** Creates a codec enforcing the default cap of {@value #DEFAULT_MAX_COLLECTION_ELEMENTS}. */
+  public BinaryPayloadCodec() {
+    this(DEFAULT_MAX_COLLECTION_ELEMENTS);
+  }
+
+  /**
+   * Creates a codec enforcing a custom per-collection element cap, for tests and for deployments
+   * that want a tighter resource bound than the §3.4 default.
+   *
+   * @param maxCollectionElements the cap on the total element count of one array/map, at least 1
+   * @throws IllegalArgumentException if {@code maxCollectionElements} is below 1
+   */
+  BinaryPayloadCodec(int maxCollectionElements) {
+    if (maxCollectionElements < 1) {
+      throw new IllegalArgumentException(
+          "maxCollectionElements must be at least 1, found " + maxCollectionElements);
+    }
+    this.maxCollectionElements = maxCollectionElements;
+  }
 
   @Override
   public String format() {
@@ -65,7 +110,7 @@ public final class BinaryPayloadCodec implements PayloadCodec {
     Objects.requireNonNull(schema, "schema");
     Objects.requireNonNull(value, "value");
     ByteArrayOutputStream out = new ByteArrayOutputStream();
-    writeRecord(out, schema.rootRecord(), value, "");
+    writeRecord(out, schema.rootRecord(), value, "", 0);
     return out.toByteArray();
   }
 
@@ -73,8 +118,8 @@ public final class BinaryPayloadCodec implements PayloadCodec {
   public Map<String, Object> decode(PersonaSchema schema, byte[] bytes) {
     Objects.requireNonNull(schema, "schema");
     Objects.requireNonNull(bytes, "bytes");
-    Reader reader = new Reader(bytes);
-    Map<String, Object> value = readRecord(reader, schema.rootRecord(), "");
+    Reader reader = new Reader(bytes, maxCollectionElements);
+    Map<String, Object> value = readRecord(reader, schema.rootRecord(), "", 0);
     if (reader.remaining() != 0) {
       throw new PayloadDecodingException(
           reader.remaining()
@@ -85,27 +130,33 @@ public final class BinaryPayloadCodec implements PayloadCodec {
   }
 
   /** Encodes a record as its fields in declaration order (§3.2). */
-  private static void writeRecord(
-      ByteArrayOutputStream out, RecordType record, Map<String, Object> value, String path) {
+  private void writeRecord(
+      ByteArrayOutputStream out,
+      RecordType record,
+      Map<String, Object> value,
+      String path,
+      int depth) {
     PayloadValues.requireKnownFields(record, value, path);
     for (Field field : record.fields()) {
       Object fieldValue = PayloadValues.requireField(record, value, field, path);
-      writeValue(out, field.type(), fieldValue, PayloadValues.childPath(path, field.name()));
+      writeValue(
+          out, field.type(), fieldValue, PayloadValues.childPath(path, field.name()), depth);
     }
   }
 
   /** Encodes a value of the given type (§3.1, §3.2). */
-  private static void writeValue(
-      ByteArrayOutputStream out, TypeNode type, Object value, String path) {
+  private void writeValue(
+      ByteArrayOutputStream out, TypeNode type, Object value, String path, int depth) {
     switch (type) {
       case PrimitiveType primitive -> writePrimitive(out, primitive, value, path);
       case EnumType enumType -> writeEnum(out, enumType, value, path);
-      case ArrayType arrayType -> writeArray(out, arrayType, value, path);
-      case MapType mapType -> writeMap(out, mapType, value, path);
+      case ArrayType arrayType -> writeArray(out, arrayType, value, path, depth);
+      case MapType mapType -> writeMap(out, mapType, value, path, depth);
       case RecordType recordType ->
-          writeRecord(out, recordType, PayloadValues.requireMap(value, path), path);
+          writeRecord(out, recordType, PayloadValues.requireMap(value, path), path, depth);
       case EnvelopeType envelopeType ->
-          writeRecord(out, envelopeType.record(), PayloadValues.requireMap(value, path), path);
+          writeRecord(out, envelopeType.record(), PayloadValues.requireMap(value, path), path,
+              depth);
     }
   }
 
@@ -144,10 +195,15 @@ public final class BinaryPayloadCodec implements PayloadCodec {
     writeZigzagInt(out, index);
   }
 
-  /** Encodes an array as a single block plus the zero terminator (§3.2). */
-  private static void writeArray(
-      ByteArrayOutputStream out, ArrayType arrayType, Object value, String path) {
+  /**
+   * Encodes an array as a single block plus the zero terminator (§3.2), rejecting values above
+   * the collection cap (§3.4).
+   */
+  private void writeArray(
+      ByteArrayOutputStream out, ArrayType arrayType, Object value, String path, int depth) {
     List<?> items = PayloadValues.requireList(value, path);
+    requireWithinCap(items.size(), "array", path);
+    int childDepth = requireDepth(depth, path);
     if (!items.isEmpty()) {
       writeZigzagLong(out, items.size());
       for (int i = 0; i < items.size(); i++) {
@@ -156,7 +212,7 @@ public final class BinaryPayloadCodec implements PayloadCodec {
           throw new PayloadEncodingException(
               PayloadValues.at(path + "[" + i + "]") + ": value must not be null");
         }
-        writeValue(out, arrayType.items(), item, path + "[" + i + "]");
+        writeValue(out, arrayType.items(), item, path + "[" + i + "]", childDepth);
       }
     }
     writeZigzagLong(out, 0L);
@@ -164,12 +220,13 @@ public final class BinaryPayloadCodec implements PayloadCodec {
 
   /**
    * Encodes a map as a single block plus the zero terminator, with keys in ascending UTF-8 byte
-   * order (§3.2).
-   *
+   * order (§3.2), rejecting values above the collection cap (§3.4).
    */
-  private static void writeMap(
-      ByteArrayOutputStream out, MapType mapType, Object value, String path) {
+  private void writeMap(
+      ByteArrayOutputStream out, MapType mapType, Object value, String path, int depth) {
     Map<String, Object> entries = PayloadValues.requireMap(value, path);
+    requireWithinCap(entries.size(), "map", path);
+    int childDepth = requireDepth(depth, path);
     if (!entries.isEmpty()) {
       TreeMap<String, Object> sorted = new TreeMap<>(CanonicalJson.UTF8_ORDER);
       sorted.putAll(entries);
@@ -181,10 +238,49 @@ public final class BinaryPayloadCodec implements PayloadCodec {
               PayloadValues.at(path + "['" + key + "']") + ": value must not be null");
         }
         writeLengthPrefixed(out, CanonicalJson.utf8Bytes(key));
-        writeValue(out, mapType.values(), entry.getValue(), path + "['" + key + "']");
+        writeValue(out, mapType.values(), entry.getValue(), path + "['" + key + "']", childDepth);
       }
     }
     writeZigzagLong(out, 0L);
+  }
+
+  /** Rejects a collection above this codec's element cap (§3.4, writer side). */
+  private void requireWithinCap(int size, String what, String path) {
+    if (size > maxCollectionElements) {
+      throw new PayloadEncodingException(
+          PayloadValues.at(path)
+              + ": "
+              + what
+              + " has "
+              + size
+              + " element(s), more than the maximum of "
+              + maxCollectionElements
+              + " (SCHEMA.md §3.4)");
+    }
+  }
+
+  /** Returns the depth of a nested collection value, rejecting excessive nesting (§3.4). */
+  private static int requireDepth(int depth, String path) {
+    if (depth >= MAX_NESTING_DEPTH) {
+      throw new PayloadEncodingException(
+          PayloadValues.at(path)
+              + ": value is nested more than "
+              + MAX_NESTING_DEPTH
+              + " array/map levels deep (SCHEMA.md §3.4)");
+    }
+    return depth + 1;
+  }
+
+  /** The decode-side twin of {@link #requireDepth}, failing with a decoding error (§3.4). */
+  private static int requireDecodeDepth(int depth, String path) {
+    if (depth >= MAX_NESTING_DEPTH) {
+      throw new PayloadDecodingException(
+          PayloadValues.at(path)
+              + ": input is nested more than "
+              + MAX_NESTING_DEPTH
+              + " array/map levels deep (SCHEMA.md §3.4)");
+    }
+    return depth + 1;
   }
 
   /** Validates a map key. */
@@ -247,24 +343,24 @@ public final class BinaryPayloadCodec implements PayloadCodec {
   }
 
   /** Decodes a record (§3.2). */
-  private static Map<String, Object> readRecord(Reader reader, RecordType record, String path) {
+  private Map<String, Object> readRecord(Reader reader, RecordType record, String path, int depth) {
     Map<String, Object> value = new LinkedHashMap<>();
     for (Field field : record.fields()) {
       String fieldPath = PayloadValues.childPath(path, field.name());
-      value.put(field.name(), readValue(reader, field.type(), fieldPath));
+      value.put(field.name(), readValue(reader, field.type(), fieldPath, depth));
     }
     return value;
   }
 
   /** Decodes a value of the given type. */
-  private static Object readValue(Reader reader, TypeNode type, String path) {
+  private Object readValue(Reader reader, TypeNode type, String path, int depth) {
     return switch (type) {
       case PrimitiveType primitive -> readPrimitive(reader, primitive, path);
       case EnumType enumType -> readEnum(reader, enumType, path);
-      case ArrayType arrayType -> readArray(reader, arrayType, path);
-      case MapType mapType -> readMap(reader, mapType, path);
-      case RecordType recordType -> readRecord(reader, recordType, path);
-      case EnvelopeType envelopeType -> readRecord(reader, envelopeType.record(), path);
+      case ArrayType arrayType -> readArray(reader, arrayType, path, depth);
+      case MapType mapType -> readMap(reader, mapType, path, depth);
+      case RecordType recordType -> readRecord(reader, recordType, path, depth);
+      case EnvelopeType envelopeType -> readRecord(reader, envelopeType.record(), path, depth);
     };
   }
 
@@ -299,52 +395,100 @@ public final class BinaryPayloadCodec implements PayloadCodec {
     return enumType.symbols().get(index);
   }
 
-  /** Decodes array blocks (§3.2: readers loop over blocks until the zero terminator). */
-  private static List<Object> readArray(Reader reader, ArrayType arrayType, String path) {
+  /**
+   * Decodes array blocks (§3.2: readers loop over blocks until the zero terminator) under the
+   * cumulative collection cap and the zero-progress rejection of §3.4.
+   */
+  private List<Object> readArray(Reader reader, ArrayType arrayType, String path, int depth) {
+    int childDepth = requireDecodeDepth(depth, path);
     List<Object> items = new ArrayList<>();
     while (true) {
       int count = reader.readBlockCount(PayloadValues.at(path));
       if (count == 0) {
         return items;
       }
+      requireCumulativeWithinCap(items.size(), count, path);
       for (int i = 0; i < count; i++) {
-        items.add(readValue(reader, arrayType.items(), path + "[" + items.size() + "]"));
+        int index = items.size();
+        int before = reader.position();
+        items.add(readValue(reader, arrayType.items(), path + "[" + index + "]", childDepth));
+        requireProgress(reader.position() - before, path + "[" + index + "]");
       }
     }
   }
 
-  /** Decodes map blocks (§3.2). */
-  private static Map<String, Object> readMap(Reader reader, MapType mapType, String path) {
+  /**
+   * Decodes map blocks (§3.2) under the cumulative collection cap and the zero-progress rejection
+   * of §3.4.
+   */
+  private Map<String, Object> readMap(Reader reader, MapType mapType, String path, int depth) {
+    int childDepth = requireDecodeDepth(depth, path);
     Map<String, Object> entries = new LinkedHashMap<>();
     while (true) {
       int count = reader.readBlockCount(PayloadValues.at(path));
       if (count == 0) {
         return entries;
       }
+      requireCumulativeWithinCap(entries.size(), count, path);
       for (int i = 0; i < count; i++) {
+        int before = reader.position();
         String key = reader.readString("key of " + PayloadValues.at(path));
         if (entries.containsKey(key)) {
           throw new PayloadDecodingException(
               PayloadValues.at(path) + ": map key '" + key + "' appears more than once");
         }
-        entries.put(key, readValue(reader, mapType.values(), path + "['" + key + "']"));
+        entries.put(key, readValue(reader, mapType.values(), path + "['" + key + "']", childDepth));
+        requireProgress(reader.position() - before, path + "['" + key + "']");
       }
     }
   }
 
-  /** The byte-oriented input of §3 with the strictness rules of §3.3. */
+  /**
+   * Rejects a block that would push the running item count of one array/map past the cap
+   * (§3.4: the cap is cumulative across blocks, not per block).
+   */
+  private void requireCumulativeWithinCap(int alreadyDecoded, int count, String path) {
+    if ((long) alreadyDecoded + count > maxCollectionElements) {
+      throw new PayloadDecodingException(
+          PayloadValues.at(path)
+              + ": cumulative element count "
+              + (alreadyDecoded + count)
+              + " exceeds the implementation limit of "
+              + maxCollectionElements
+              + " (SCHEMA.md §3.4)");
+    }
+  }
+
+  /**
+   * Rejects a collection element that consumed no input byte (§3.4). A map entry always consumes
+   * at least its key length prefix; the check is kept for both collections as defense.
+   */
+  private static void requireProgress(int consumed, String path) {
+    if (consumed == 0) {
+      throw new PayloadDecodingException(
+          PayloadValues.at(path)
+              + ": element decoded without consuming any input byte; a non-empty collection of"
+              + " zero-byte elements (an array of zero-field records) is rejected"
+              + " (SCHEMA.md §3.4)");
+    }
+  }
+
+  /** The byte-oriented input of §3 with the strictness rules of §3.3 and §3.4. */
   private static final class Reader {
 
     private final byte[] bytes;
+    private final int maxCollectionElements;
     private int position;
 
     /**
      * Creates a reader.
      *
      * @param bytes the payload bytes
+     * @param maxCollectionElements the per-collection element cap to enforce on block counts
      */
-    Reader(byte[] bytes) {
+    Reader(byte[] bytes, int maxCollectionElements) {
       this.bytes = bytes;
+      this.maxCollectionElements = maxCollectionElements;
     }
 
     /**
@@ -354,6 +498,15 @@ public final class BinaryPayloadCodec implements PayloadCodec {
      */
     int remaining() {
       return bytes.length - position;
+    }
+
+    /**
+     * The index of the next unread byte, used by the caller to detect zero-progress elements.
+     *
+     * @return the current position
+     */
+    int position() {
+      return position;
     }
 
     /**
@@ -482,36 +635,58 @@ public final class BinaryPayloadCodec implements PayloadCodec {
     }
 
     /**
-     * Reads an 8-byte little-endian double (§3.1).
+     * Reads an 8-byte little-endian double (§3.1, §3.4: non-finite doubles are rejected).
      *
      * @param what what is being read, for error messages
      * @return the double
+     * @throws PayloadDecodingException if the value is NaN or infinite
      */
     double readDouble(String what) {
       long bits = 0;
       for (int i = 0; i < 8; i++) {
         bits |= ((long) readByte(what)) << (8 * i);
       }
-      return Double.longBitsToDouble(bits);
+      double value = Double.longBitsToDouble(bits);
+      if (!Double.isFinite(value)) {
+        throw new PayloadDecodingException(
+            "non-finite double "
+                + value
+                + " while reading "
+                + what
+                + "; NaN and infinity are not decodable (SCHEMA.md §3.4)");
+      }
+      return value;
     }
 
     /**
-     * Reads a {@code timestamp-millis} value.
+     * Reads a {@code timestamp-millis} value (§3.4: the bottom 808 values of the long range are
+     * rejected because they cannot round-trip the {@code Instant} re-encoding of §4.1).
      *
      * @param what what is being read, for error messages
      * @return the instant
+     * @throws PayloadDecodingException if the epoch millis is below {@link #MIN_EPOCH_MILLIS}
      */
     Instant readInstant(String what) {
-      // every long is a representable epoch-millisecond value (Instant spans +/-3.15e16 seconds)
-      return Instant.ofEpochMilli(readZigzagLong(what));
+      long millis = readZigzagLong(what);
+      if (millis < MIN_EPOCH_MILLIS) {
+        throw new PayloadDecodingException(
+            what
+                + ": epoch millis "
+                + millis
+                + " is below the minimum timestamp-millis value "
+                + MIN_EPOCH_MILLIS
+                + " (SCHEMA.md §3.4)");
+      }
+      return Instant.ofEpochMilli(millis);
     }
 
     /**
-     * Reads a block count (§3.2, §3.3).
+     * Reads a block count (§3.2, §3.3, §3.4).
      *
      * @param what what is being read, for error messages
      * @return the count, zero for the terminator
-     * @throws PayloadDecodingException if the count is negative or exceeds the implementation limit
+     * @throws PayloadDecodingException if the count is negative or exceeds the implementation
+     *     limit
      */
     int readBlockCount(String what) {
       long count = readZigzagLong("block count of " + what);
@@ -519,19 +694,25 @@ public final class BinaryPayloadCodec implements PayloadCodec {
         throw new PayloadDecodingException(
             "negative block count " + count + " while reading " + what + " (SCHEMA.md §3.3)");
       }
-      if (count > MAX_BLOCK_ELEMENTS) {
+      if (count > maxCollectionElements) {
         throw new PayloadDecodingException(
             "block count "
                 + count
                 + " while reading "
                 + what
                 + " exceeds the implementation limit of "
-                + MAX_BLOCK_ELEMENTS);
+                + maxCollectionElements);
       }
       return (int) count;
     }
 
-  /** Reads a length prefix and validates it against the remaining input. */
+    /**
+     * Reads a length prefix and validates it against the remaining input.
+     *
+     * @param what what is being read, for error messages
+     * @return the length
+     * @throws PayloadDecodingException if the length is negative or the input is truncated
+     */
     private int readLength(String what) {
       long length = readZigzagLong("length of " + what);
       if (length < 0) {

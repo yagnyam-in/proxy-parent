@@ -279,6 +279,50 @@ class BinaryPayloadCodecTest {
   }
 
   @Test
+  void decoderRejectsOverlongUtf8Forms() {
+    PersonaSchema stringSchema = SchemaFixtures.singleField("\"string\"");
+
+    // 0xC0 0x80 is the overlong encoding of NUL; strict UTF-8 decoding rejects it (§3.4 rule 5)
+    assertThatThrownBy(() -> CODEC.decode(stringSchema, bytes(0x04, 0xc0, 0x80)))
+        .isInstanceOf(PayloadDecodingException.class)
+        .hasMessageContaining("not valid UTF-8");
+    // 0xED 0xA0 0x80 encodes a UTF-16 surrogate, which valid UTF-8 never contains
+    assertThatThrownBy(() -> CODEC.decode(stringSchema, bytes(0x06, 0xed, 0xa0, 0x80)))
+        .isInstanceOf(PayloadDecodingException.class)
+        .hasMessageContaining("not valid UTF-8");
+  }
+
+  @Test
+  void decoderAcceptsNonMinimalVarints() {
+    PersonaSchema intSchema = SchemaFixtures.singleField("\"int\"");
+    PersonaSchema longSchema = SchemaFixtures.singleField("\"long\"");
+
+    // readers are lenient about non-minimal LEB128 encodings (§3.4 rule 3): zigzag(5) = 10 = 0x0a
+    // padded to two bytes (0x8a 0x00) and long 0 padded to three bytes all decode
+    assertThat(CODEC.decode(intSchema, bytes(0x8a, 0x00))).containsEntry("v", 5);
+    assertThat(CODEC.decode(longSchema, bytes(0x80, 0x80, 0x00))).containsEntry("v", 0L);
+  }
+
+  @Test
+  void decoderRejectsNonFiniteDoubles() {
+    PersonaSchema schema = SchemaFixtures.singleField("\"double\"");
+
+    // NaN, +Infinity and -Infinity as raw IEEE 754 bits, little-endian (§3.4 rule 9)
+    assertThatThrownBy(
+            () -> CODEC.decode(schema, bytes(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf8, 0x7f)))
+        .isInstanceOf(PayloadDecodingException.class)
+        .hasMessageContaining("non-finite double NaN");
+    assertThatThrownBy(
+            () -> CODEC.decode(schema, bytes(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0x7f)))
+        .isInstanceOf(PayloadDecodingException.class)
+        .hasMessageContaining("non-finite double Infinity");
+    assertThatThrownBy(
+            () -> CODEC.decode(schema, bytes(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf0, 0xff)))
+        .isInstanceOf(PayloadDecodingException.class)
+        .hasMessageContaining("non-finite double -Infinity");
+  }
+
+  @Test
   void decoderRejectsNegativeLengthsAndInvalidBooleanBytes() {
     PersonaSchema stringSchema = SchemaFixtures.singleField("\"string\"");
     PersonaSchema booleanSchema = SchemaFixtures.singleField("\"boolean\"");
@@ -292,13 +336,34 @@ class BinaryPayloadCodecTest {
   }
 
   @Test
-  void decoderAcceptsTheFullTimestampRange() {
+  void decoderEnforcesTheEpochMillisFloor() {
     PersonaSchema schema = SchemaFixtures.singleField("\"timestamp-millis\"");
+    long floor = -9223372036854775000L;
 
-    // every long is a representable epoch-millisecond value, so Long.MIN_VALUE must round-trip
-    assertThat(CODEC.decode(schema, bytes(0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01)))
-        .containsEntry("v", Instant.ofEpochMilli(Long.MIN_VALUE));
-    assertThat(CODEC.decode(schema, bytes(0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01)))
+    // the bottom 808 long values cannot round-trip the Instant re-encoding (the epochSecond ×
+    // 1000 computation overflows) and are rejected on decode (SCHEMA.md §3.4 rule 7)
+    assertThatThrownBy(
+            () ->
+                CODEC.decode(
+                    schema,
+                    bytes(0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01)))
+        .isInstanceOf(PayloadDecodingException.class)
+        .hasMessageContaining("below the minimum timestamp-millis value");
+    assertThatThrownBy(() -> CODEC.decode(schema, zigzagVarint(Long.MIN_VALUE + 1)))
+        .isInstanceOf(PayloadDecodingException.class)
+        .hasMessageContaining("below the minimum timestamp-millis value");
+    assertThatThrownBy(() -> CODEC.decode(schema, zigzagVarint(floor - 1)))
+        .isInstanceOf(PayloadDecodingException.class)
+        .hasMessageContaining("below the minimum timestamp-millis value");
+
+    // floor is the lowest round-trippable value and must round-trip through encode + decode
+    assertThat(CODEC.decode(schema, CODEC.encode(schema, Map.of("v", Instant.ofEpochMilli(floor)))))
+        .containsEntry("v", Instant.ofEpochMilli(floor));
+    // the top of the long range is intact: Long.MAX_VALUE round-trips
+    assertThat(
+            CODEC.decode(
+                schema,
+                bytes(0xfe, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x01)))
         .containsEntry("v", Instant.ofEpochMilli(Long.MAX_VALUE));
   }
 
@@ -467,6 +532,21 @@ class BinaryPayloadCodecTest {
       bytes[i] = (byte) values[i];
     }
     return bytes;
+  }
+
+  /**
+   * An independent encoder of the §3.1 zigzag LEB128 varint, used to build payloads for values
+   * whose golden bytes the fixtures do not pin.
+   */
+  private static byte[] zigzagVarint(long value) {
+    long remaining = (value << 1) ^ (value >> 63);
+    java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+    while ((remaining & ~0x7fL) != 0) {
+      out.write((int) ((remaining & 0x7f) | 0x80));
+      remaining >>>= 7;
+    }
+    out.write((int) remaining);
+    return out.toByteArray();
   }
 
   private static String hex(byte[] bytes) {
