@@ -358,11 +358,16 @@ class PersonaMessengerTest {
 
   // -------------------------------------------------------------------------------------
   // Replay protection of multi-signed requests (protocol §5.2 over §7.4):
-  // the dedup identity must be order-independent and derived from
-  // authenticated data — a transport attacker may legally reorder the
-  // signature entries of a captured envelope (order is not authenticated,
-  // §6.4, and §7.4 requires any order to verify), and that reordered
-  // envelope must still dedup against the original delivery.
+  // two tiers, both enforced before the payload reaches a handler. Tier B
+  // keys on the authenticated §6.4 preimage bytes (order-independent and
+  // spelling-independent, since the signatures array is not
+  // authenticated) and catches every respelling — reorder, respell,
+  // incremental-superset, disjoint-quorum split — of ONE captured
+  // envelope. Tier A keys on (recipient, requestId, bare signer id) and
+  // catches what tier B cannot: a retry from the SAME requester with a
+  // DIFFERENT payload under a reused requestId. A disjoint quorum with a
+  // different payload passes both tiers by design (§5.2 scopes
+  // uniqueness to the requesting Persona).
   // -------------------------------------------------------------------------------------
 
   @Test
@@ -511,6 +516,48 @@ class PersonaMessengerTest {
     assertThat(second.signers()).containsExactlyInAnyOrder(carolKey.id(), daveKey.id());
     assertThat(second.verification().reason()).hasValueSatisfying(
         reason -> assertThat(reason).contains("duplicate request id"));
+    assertThat(handled.get()).isEqualTo(1);
+  }
+
+  @Test
+  void aRetryFromTheSameRequesterWithADifferentPayloadIsRejectedAsDuplicate() {
+    // §5.2/§11 rule 5 scope requestId uniqueness to the requesting
+    // Persona, not to a byte sequence: a second VERIFIED request from the
+    // same requester under the same requestId is a duplicate even when
+    // its authenticated bytes differ (a retry with a changed body, or the
+    // same payload re-encoded under another payloadFormat). A
+    // byte-level key alone would process both; tier A (signer-set
+    // overlap on (recipient, requestId)) rejects the retries and the
+    // handler fires exactly once.
+    AtomicInteger handled = new AtomicInteger();
+    String requestId = "greeting-retry";
+    byte[] original = captureWireBytes(() -> alice.send(
+        new TestGreeting(requestId, aliceKey.id(), bobKey.id(), "Hello Bob!"), "json"));
+    byte[] changedBody = captureWireBytes(() -> alice.send(
+        new TestGreeting(requestId, aliceKey.id(), bobKey.id(), "Hello again, Bob!"),
+        "json"));
+    byte[] changedFormat = captureWireBytes(() -> alice.send(
+        new TestGreeting(requestId, aliceKey.id(), bobKey.id(), "Hello Bob!"),
+        "persona-binary"));
+
+    ReceivedMessage first = bob.receive(original);
+    if (first.verified()) {
+      handled.incrementAndGet();
+    }
+    ReceivedMessage retryBody = bob.receive(changedBody);
+    ReceivedMessage retryFormat = bob.receive(changedFormat);
+
+    assertThat(first.verified()).isTrue();
+    assertThat(first.payload()).isPresent();
+
+    for (ReceivedMessage retry : List.of(retryBody, retryFormat)) {
+      assertThat(retry.verified()).isFalse();
+      assertThat(retry.replayed()).isTrue();
+      assertThat(retry.payload()).isEmpty();
+      assertThat(retry.signers()).containsExactly(aliceKey.id());
+      assertThat(retry.verification().reason()).hasValueSatisfying(
+          reason -> assertThat(reason).contains("duplicate request id"));
+    }
     assertThat(handled.get()).isEqualTo(1);
   }
 
