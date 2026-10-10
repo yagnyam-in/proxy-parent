@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -168,7 +169,16 @@ public final class PemService {
     Objects.requireNonNull(certificatePem, "certificatePem");
     PemObject pemObject = readPem(certificatePem, "CERTIFICATE");
     CertificateFactory factory = CertificateFactory.getInstance("X.509", BouncyCastle.provider());
-    return (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(pemObject.getContent()));
+    Certificate certificate =
+        factory.generateCertificate(new ByteArrayInputStream(pemObject.getContent()));
+    if (certificate == null) {
+      // CertificateFactory returns null (rather than throwing) when the body
+      // holds no certificate — e.g. an empty body. Reject it at the decode
+      // boundary; a silent null would surface as an unrelated failure far
+      // from the malformed input (protocol §9.1).
+      throw new IOException("PEM CERTIFICATE body does not hold a certificate");
+    }
+    return (X509Certificate) certificate;
   }
 
   /**
