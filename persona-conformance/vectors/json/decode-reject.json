@@ -322,6 +322,15 @@
       "rejectionRule": "docs/SCHEMA.md §4.1",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
       "inputJson": "{\"v\":\"+2026-01-01T00:00:00.000Z\"}"
+    },
+    {
+      "id": "json/decode-reject/timestamp-leap-second-outside-23-59",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "A leap second (:60) is accepted only at 23:59 (mirrors java.time.Instant.parse); at any other hour the instant is invalid.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"2026-10-10T12:59:60.000Z\"}"
     }
   ]
 }

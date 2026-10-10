@@ -1124,7 +1124,7 @@ def _parse_instant(text):
     #   - hour 0..23, minute 0..59, second 0..59;
     #   - T24:00:00 (with an absent or all-zero fraction) is the ISO-8601
     #     end-of-day form and rolls into the next day;
-    #   - a leap second (:60) is accepted only at minute 59 and is read as :59,
+    #   - a leap second (:60) is accepted only at 23:59 and is read as :59,
     #     regardless of whether a leap was actually scheduled on that date;
     #   - numeric offsets follow java.time.ZoneOffset: at most ±18:00.
     if hour > 24:
@@ -1134,7 +1134,7 @@ def _parse_instant(text):
             raise Reject("SCHEMA.md §4.1", "%r is not a valid time" % text)
     if not 0 <= minute <= 59:
         raise Reject("SCHEMA.md §4.1", "%r is not a valid time" % text)
-    if second > 60 or (second == 60 and minute != 59):
+    if second > 60 or (second == 60 and (hour != 23 or minute != 59)):
         raise Reject("SCHEMA.md §4.1", "%r is not a valid time" % text)
     try:
         if 1 <= year <= 9999:
