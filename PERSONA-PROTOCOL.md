@@ -341,6 +341,17 @@ Given a payload `P` and a Persona Key `K`:
 ```
 
 Implementations MUST NOT re-serialize `P` between signing and transmission.
+
+**Key-family constraint.** A Persona Version's signature algorithm sets MUST
+be single-key-family: every algorithm in a set MUST be computable with the
+signer's one certified private key and verifiable with the certified public
+key. Sets that mix families (e.g. RSA + Ed25519 in one set) are NOT valid
+under this version of the protocol; they require per-algorithm certified key
+bindings (a future extension where the Registrar certifies a key descriptor
+per family) and MUST be rejected until that extension is specified. Migration
+across key families is instead performed by registering a new Persona
+instance (§3.1) and crossing over via `validSignatureAlgorithmSets` that keep
+the old family's single-algorithm sets valid during the transition.
 Signatures cover the preimage (§6.4), which includes the payload bytes
 exactly as they appear in the envelope.
 
