@@ -304,6 +304,24 @@
       "rejectionRule": "docs/SCHEMA.md §4.1",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
       "inputJson": "{\"v\":\"2026-10-10T12:00:00.000Z\\n\"}"
+    },
+    {
+      "id": "json/decode-reject/timestamp-year-not-four-digits",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Ordinary years are exactly four unsigned digits; '1' is not a valid year spelling (mirrors java.time.Instant.parse).",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"1-01-01T00:00:00.000Z\"}"
+    },
+    {
+      "id": "json/decode-reject/timestamp-signed-four-digit-year",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "A leading plus is valid only on expanded years of five or more digits; '+2026' is rejected (mirrors java.time.Instant.parse).",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"+2026-01-01T00:00:00.000Z\"}"
     }
   ]
 }

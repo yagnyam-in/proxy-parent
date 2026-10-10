@@ -1071,7 +1071,10 @@ def _decode_base64(text):
 
 
 _INSTANT_RE = re.compile(
-    r"^([+-]?[0-9]+)-([0-9]{2})-([0-9]{2})[Tt]([0-9]{2}):([0-9]{2}):([0-9]{2})"
+    # Year grammar mirrors java.time.Instant.parse (probed on JDK 21): exactly
+    # four unsigned digits, a minus with four or more digits, or a plus with
+    # five or more digits ("+2026" and "20260" are both rejected there).
+    r"^([0-9]{4}|-[0-9]{4,}|\+[0-9]{5,})-([0-9]{2})-([0-9]{2})[Tt]([0-9]{2}):([0-9]{2}):([0-9]{2})"
     r"(?:\.([0-9]+))?([Zz]|[+-][0-9]{2}:[0-9]{2})\Z"
 )
 
