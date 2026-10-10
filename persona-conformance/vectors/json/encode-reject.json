@@ -197,6 +197,17 @@
       "value": {
         "v": 9223372036854775808
       }
+    },
+    {
+      "id": "json/encode-reject/timestamp-field-given-a-number",
+      "spec": "docs/SCHEMA.md §4.3",
+      "description": "Type mismatch: a timestamp-millis field requires an instant value; a bare number is not an instant and the writer must reject it rather than read it as epoch milliseconds.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": 42
+      }
     }
   ]
 }

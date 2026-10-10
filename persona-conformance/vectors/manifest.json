@@ -4,7 +4,7 @@
   "kind": "manifest",
   "description": "Index of every vector file (see vectors/README.md). Regenerate with 'python3 tools/reference_vectors.py manifest' after adding, removing or renaming a vector file; the reference check and the Java runner both fail when this index is stale.",
   "fileCount": 27,
-  "vectorCount": 405,
+  "vectorCount": 411,
   "kinds": [
     {
       "kind": "crypto.policy-v0",
@@ -36,7 +36,7 @@
     },
     {
       "kind": "payload.binary.encode",
-      "vectorCount": 81
+      "vectorCount": 82
     },
     {
       "kind": "payload.json.decode",
@@ -44,7 +44,7 @@
     },
     {
       "kind": "payload.json.encode",
-      "vectorCount": 64
+      "vectorCount": 69
     },
     {
       "kind": "schema.digest",
@@ -75,7 +75,7 @@
     {
       "path": "binary/encode-reject.json",
       "kind": "payload.binary.encode",
-      "vectorCount": 16
+      "vectorCount": 17
     },
     {
       "path": "binary/kitchen-sink.json",
@@ -160,7 +160,7 @@
     {
       "path": "json/encode-reject.json",
       "kind": "payload.json.encode",
-      "vectorCount": 14
+      "vectorCount": 15
     },
     {
       "path": "json/kitchen-sink.json",
@@ -175,7 +175,7 @@
     {
       "path": "json/primitive-encode.json",
       "kind": "payload.json.encode",
-      "vectorCount": 27
+      "vectorCount": 31
     },
     {
       "path": "schema-digest/schema-digest.json",

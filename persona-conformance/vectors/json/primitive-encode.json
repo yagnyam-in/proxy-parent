@@ -159,6 +159,46 @@
       "expectedJson": "{\"v\":0.001}"
     },
     {
+      "id": "json/primitive-encode/double-integral-keeps-point-zero",
+      "spec": "docs/SCHEMA.md §4.4",
+      "description": "An integral double renders with a trailing .0, not as a bare integer (golden derived from Java Double.toString).",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": 2.0
+      },
+      "expectedJson": "{\"v\":2.0}"
+    },
+    {
+      "id": "json/primitive-encode/double-scientific-below-plain-floor",
+      "spec": "docs/SCHEMA.md §4.4",
+      "description": "Magnitudes below 1e-3 switch to computerized scientific notation: no '+' and no zero-padding in the exponent (golden derived from Java Double.toString).",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": 0.0001
+      },
+      "expectedJson": "{\"v\":1.0E-4}"
+    },
+    {
+      "id": "json/primitive-encode/double-plain-just-below-scientific-threshold",
+      "spec": "docs/SCHEMA.md §4.4",
+      "description": "9999999.5 is the plain-notation side of the 1e7 boundary (golden derived from Java Double.toString).",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": 9999999.5
+      },
+      "expectedJson": "{\"v\":9999999.5}"
+    },
+    {
+      "id": "json/primitive-encode/double-scientific-at-1e7",
+      "spec": "docs/SCHEMA.md §4.4",
+      "description": "1e7 is the first magnitude that renders in computerized scientific notation (golden derived from Java Double.toString).",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": 10000000.0
+      },
+      "expectedJson": "{\"v\":1.0E7}"
+    },
+    {
       "id": "json/primitive-encode/bytes-three",
       "spec": "docs/SCHEMA.md §4.1",
       "description": "bytes render as standard base64 with padding.",
