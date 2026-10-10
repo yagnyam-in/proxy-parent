@@ -144,6 +144,24 @@
       "inputJson": "{\"v\":\"====\"}"
     },
     {
+      "id": "json/decode-reject/base64-excess-padding",
+      "spec": "docs/SCHEMA.md §3.4 rule 10",
+      "description": "Padding may only complete the final quantum; '=' after a complete quantum is excess padding, which java.util.Base64 rejects with 'wrong 4-byte ending unit'.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 10",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputJson": "{\"v\":\"AAAA====\"}"
+    },
+    {
+      "id": "json/decode-reject/base64-two-padding-after-complete-quantum",
+      "spec": "docs/SCHEMA.md §3.4 rule 10",
+      "description": "Even the legal padding count is excess when the data quantum it follows is already complete.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 10",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputJson": "{\"v\":\"AAAA==\"}"
+    },
+    {
       "id": "json/decode-reject/base64-padding-in-the-middle",
       "spec": "docs/SCHEMA.md §3.4 rule 10",
       "description": "Data after a padding character.",

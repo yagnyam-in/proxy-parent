@@ -229,6 +229,46 @@
       "expectedJson": "{\"v\":\"1969-12-31T23:59:59.999Z\"}"
     },
     {
+      "id": "json/primitive-encode/timestamp-expanded-year-positive",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Years past 9999 render as signed expanded years with a '+' sign, exactly as java.time's uuuu pattern (SignStyle.EXCEEDS_PAD) renders them.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "@epoch-millis:253402300800000"
+      },
+      "expectedJson": "{\"v\":\"+10000-01-01T00:00:00.000Z\"}"
+    },
+    {
+      "id": "json/primitive-encode/timestamp-year-zero",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Year 0 is inside the unpadded range and renders as 0000 (the proleptic Gregorian year 1 BC).",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "@epoch-millis:-62167219200000"
+      },
+      "expectedJson": "{\"v\":\"0000-01-01T00:00:00.000Z\"}"
+    },
+    {
+      "id": "json/primitive-encode/timestamp-expanded-year-negative",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Negative years render signed and zero-padded to four digits: year -1 is -0001.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "@epoch-millis:-62167219200001"
+      },
+      "expectedJson": "{\"v\":\"-0001-12-31T23:59:59.999Z\"}"
+    },
+    {
+      "id": "json/primitive-encode/timestamp-expanded-year-at-floor",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "The inclusive floor of §3.4 rule 7 renders in the expanded-year form §4.1 names for it; the encode side of json/decode/timestamp-expanded-year-at-floor.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "@epoch-millis:-9223372036854775000"
+      },
+      "expectedJson": "{\"v\":\"-292275055-05-16T16:47:05.000Z\"}"
+    },
+    {
       "id": "json/primitive-encode/enum-symbol",
       "spec": "docs/SCHEMA.md §4.1",
       "description": "An enum renders as its symbol string.",

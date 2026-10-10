@@ -250,7 +250,11 @@ vectors pin the reference implementation's behavior and mark it in the vector
   §4.1 itself names for the timestamp floor, as long as the value stays within
   the inclusive `[-9223372036854775000, 9223372036854775807]` epoch-millis
   range of §3.4 rule 7 (`json/decode.json` → `timestamp-expanded-year-at-floor`,
-  and one second below it in `json/decode-reject.json`).
+  and one second below it in `json/decode-reject.json`). On *encode*, the
+  signed expanded-year renderings are pinned by
+  `json/primitive-encode/timestamp-expanded-year-positive` (`+10000-...`),
+  `timestamp-year-zero` (`0000-...`), `timestamp-expanded-year-negative`
+  (`-0001-...`) and `timestamp-expanded-year-at-floor`.
 
 ## Adding vectors
 
