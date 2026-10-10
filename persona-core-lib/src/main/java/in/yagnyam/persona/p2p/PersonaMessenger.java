@@ -61,21 +61,34 @@ import java.util.function.Consumer;
  *
  * <p>Replay protection (protocol §5.2, §11 rule 5): after an envelope
  * verifies and its payload materializes as a {@link RequestMessage}, the
- * receive path atomically checks-and-records the
- * {@code (recipient, sender, requestId)} triple in a
- * {@link RequestDeduplicator} — the recipient is this messenger's own bare
- * persona id, the sender the envelope's <em>verified</em> signer (for a
- * multi-signed envelope, its first signer, the initiator). A duplicate
- * delivery surfaces as {@link ReceivedMessage#replayed()} — fail closed,
- * never an exception, and never exposing the payload to handlers — so
- * instrumentation can tell attack replays apart from signature failures.
- * Ordering is deliberate: verification runs <em>first</em>, so only
- * authenticated duplicates count against a requester and a forged request
- * id can never poison the dedup store to DoS the real requester. Payloads
- * that are not {@link RequestMessage}s (alerts, multi-signable charters)
- * are unaffected by dedup, and dedup applies equally to the
- * {@link #listen} callback path and to direct {@link #receive(byte[])}
- * calls (listen is implemented in terms of receive).
+ * receive path atomically checks-and-records the request in a
+ * {@link RequestDeduplicator} under {@code (recipient, requestId)}, matched
+ * against the <em>verified signer sets</em> already recorded for that pair
+ * — a delivery is a duplicate iff its signer set overlaps a recorded set
+ * (see {@link RequestDeduplicator}'s javadoc for the full keying contract).
+ * The recipient is this messenger's own bare persona id; the signer set is
+ * the sorted set of bare persona ids of the envelope's signers, which is
+ * order-independent by construction. This closes a reorder-replay attack on
+ * multi-signed requests: protocol §7.4 requires verification to accept any
+ * signature order and the §6.4 preimage does not authenticate that order,
+ * so keying on, say, the first signer would let a transport attacker swap
+ * the signature entries of a captured envelope and deliver the same
+ * authenticated request twice. Incremental §7.4 co-signing is also covered:
+ * a re-delivered envelope carrying an <em>additional</em> co-signer for the
+ * same request (same requestId, identical payload bytes, stronger
+ * authorization — protocol §5.5: the new envelope supersedes the previous)
+ * overlaps the recorded set and dedups as a replay, the safe direction (no
+ * double execution). A duplicate delivery surfaces as
+ * {@link ReceivedMessage#replayed()} — fail closed, never an exception, and
+ * never exposing the payload to handlers — so instrumentation can tell
+ * attack replays apart from signature failures. Ordering is deliberate:
+ * verification runs <em>first</em>, so only authenticated duplicates count
+ * against a requester and a forged request id can never poison the dedup
+ * store to DoS the real requester. Payloads that are not
+ * {@link RequestMessage}s (alerts, multi-signable charters) are unaffected
+ * by dedup, and dedup applies equally to the {@link #listen} callback path
+ * and to direct {@link #receive(byte[])} calls (listen is implemented in
+ * terms of receive).
  *
  * <p>Thread-safety: all members are safe for concurrent use (the
  * transport, signer, verifier and deduplicator are thread-safe; the
@@ -448,27 +461,34 @@ public final class PersonaMessenger {
    * materialized payload (see the class javadoc for the full contract):
    * payloads that are not {@link RequestMessage}s pass through untouched;
    * a request payload is atomically checked-and-recorded under
-   * {@code (this persona, verified requester, requestId)} and either
-   * returned as {@link ReceivedMessage#verified} (first occurrence) or
-   * {@link ReceivedMessage#replayed} (duplicate — fail closed, no payload
-   * exposed, never an exception).
+   * {@code (this persona, requestId)} with its verified signer set — the
+   * complete, order-independent set of the envelope's verified signer bare
+   * ids, so a reordered (protocol §7.4) or re-spelled (pinned vs unpinned)
+   * redelivery of the same request keys identically — and either returned
+   * as {@link ReceivedMessage#verified} (first occurrence) or {@link
+   * ReceivedMessage#replayed} (duplicate — fail closed, no payload exposed,
+   * never an exception).
    *
-   * <p>Runs only after {@link EnvelopeVerifier} success, so the requester
-   * identity is authenticated: a forged or tampered envelope can neither
-   * produce a replay outcome nor poison the dedup store against the real
-   * requester. The requester of a multi-signed envelope is its first
-   * (initiating) signer.
+   * <p>Runs only after {@link EnvelopeVerifier} success, so the signer set
+   * is authenticated: a forged or tampered envelope can neither produce a
+   * replay outcome nor poison the dedup store against the real requester.
    */
   private ReceivedMessage dedupChecked(
       boolean multiSigned, String messageType, List<PersonaId> signers, Validatable payload) {
     if (payload instanceof RequestMessage request
-        && !deduplicator.checkAndRecord(key.id(), signers.get(0), request.requestId())) {
+        && !deduplicator.checkAndRecord(key.id(), signers, request.requestId())) {
       return ReceivedMessage.replayed(multiSigned, messageType, signers,
-          "duplicate request id '" + request.requestId() + "' from persona '"
-              + signers.get(0).uniqueId() + "' (protocol §5.2, §11 rule 5):"
-              + " this (recipient, sender, requestId) triple was already processed");
+          "duplicate request id '" + request.requestId() + "' involving signer(s) "
+              + bareIdsOf(signers) + " (protocol §5.2, §11 rule 5): a request of this"
+              + " (recipient, requestId) with an overlapping verified signer set was"
+              + " already processed");
     }
     return ReceivedMessage.verified(multiSigned, messageType, signers, payload);
+  }
+
+  /** The sorted bare persona ids of {@code signers}, for diagnostics. */
+  private static List<String> bareIdsOf(List<PersonaId> signers) {
+    return signers.stream().map(PersonaId::id).sorted().distinct().toList();
   }
 
   /**
