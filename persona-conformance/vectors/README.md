@@ -203,9 +203,10 @@ vectors pin the reference implementation's behavior and mark it in the vector
 `description` so the divergence is visible instead of silent:
 
 * **§3.4 rule 1, array vs. map zero-byte asymmetry** — a non-empty array whose
-  element record encodes to zero bytes is *accepted* by the binary codec (the
-  per-element zero-progress rule only fires when the block count itself is
-  zero) but *rejected* by the JSON encoder. See
+  element record encodes to zero bytes is *accepted* by the JSON encoder (the
+  JSON encoding is self-describing, so the payload is not an amplification
+  vector) but *rejected* by the binary codec, whose reader must reject
+  zero-progress elements. See
   `json/compound-encode.json` → `array-of-zero-byte-elements` and the matching
   reject in `binary/encode-reject.json`. The same value is not portable across
   codecs in this version.
