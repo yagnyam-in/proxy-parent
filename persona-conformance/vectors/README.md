@@ -105,7 +105,7 @@ codec must produce or consume — not embedded JSON values.
 | `payload.binary.encode` | `binary/` | `schema`/`schemaRef`, `value`, `expectedHex` | Encode the value with the §3 binary codec. |
 | `payload.binary.decode` | `binary/` | `schema`/`schemaRef`, `inputHex`, `expectedValue` | Decode the §3 binary codec; trailing bytes and truncation MUST be rejected (`expect: reject` cases with `rejectionRule`). |
 | `payload.json.encode` | `json/` | `schema`/`schemaRef`, `value`, `expectedJson` | Encode the value as §4 canonical JSON. |
-| `payload.json.decode` | `json/` | `schema`, `inputJson`, `expectedValue` | Decode §4 canonical JSON; non-canonical-but-parsable documents are accepted only where §4.4 says so. |
+| `payload.json.decode` | `json/` | `schema`, `inputJson`, `expectedValue` | Decode §4 JSON. The accepted decode vectors pin specific decoder leniencies beyond the canonical form: unsorted record/map keys, timestamps without a fraction and with numeric UTC offsets, and noncanonical base64 trailing bits (each leniency is marked in the vector's description). A conforming decoder MUST accept those inputs; canonical output is required only of the encoder. |
 | `identity.persona-id` | `identity/` | `input`, `expectedId`, `expectedThumbprint`, `expectedCanonical`, `expectedWildcard` | Parse the `<id>#<thumbprint>` grammar of §3.2. `expectedThumbprint` is `null` when unpinned. |
 | `identity.persona-id-delegation` | `identity/` | `signer`, `signedFor`, `expected` | The §3.2 delegation truth table `X.canSignOnBehalfOf(Y)`; `signedFor` may be `null` (never delegable). |
 | `identity.realm` | `identity/` | `input`, `expected` | Realm identifier validity (§3.5). See the caveat in that file's `description`. |

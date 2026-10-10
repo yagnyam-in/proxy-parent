@@ -875,9 +875,15 @@ def encode_json(node, value, depth=0):
         if name == "boolean":
             return "true" if _require(value, bool, "boolean") else "false"
         if name == "int":
-            return str(_require(value, int, "int"))
+            value = _require(value, int, "int")
+            if not INT_MIN <= value <= INT_MAX:
+                raise Reject("SCHEMA.md §4.3", "int field given %r" % (value,))
+            return str(value)
         if name == "long":
-            return str(_require(value, int, "long"))
+            value = _require(value, int, "long")
+            if not LONG_MIN <= value <= LONG_MAX:
+                raise Reject("SCHEMA.md §4.3", "long field given %r" % (value,))
+            return str(value)
         if name == "double":
             return double_literal(_require(value, float, "double"))
         if name == "timestamp-millis":
@@ -2058,7 +2064,7 @@ def main(argv):
             handle.write(json.dumps(manifest, indent=2) + "\n")
         sys.stdout.write("wrote manifest.json: %d files, %d vectors\n" % (len(entries), total))
         return 0
-    if command in ("hash", "encode", "json") and len(argv) >= 4:
+    if (command == "hash" and len(argv) >= 3) or (command in ("encode", "json") and len(argv) >= 4):
         node = parse_schema(argv[2])
         if command == "hash":
             sys.stdout.write("%s\n%s\n" % (canonical_form(node), schema_digest(node)))
