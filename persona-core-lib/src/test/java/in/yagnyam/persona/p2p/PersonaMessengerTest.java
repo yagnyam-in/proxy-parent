@@ -455,6 +455,66 @@ class PersonaMessengerTest {
   }
 
   @Test
+  void aCapturedEnvelopeSplitIntoDisjointQuorumSubsetsIsAcceptedExactlyOnce() {
+    // The disjoint-quorum split replay: a transport attacker captures a
+    // 4-founder joint request with quorum 2, fully signed, and splits the
+    // wire envelope into two deliveries retaining disjoint signature
+    // subsets — {alice,bob} then {carol,dave}. The retained signatures
+    // array is not authenticated (§6.4), so both subsets are legal wire
+    // forms, every retained signature verifies, and each subset meets
+    // quorum — yet both authenticate the SAME preimage bytes, so the
+    // second delivery is a replay and the handler fires exactly once.
+    PersonaKey carolKey = world.mint();
+    PersonaKey daveKey = world.mint();
+    PersonaMessenger erin = world.messenger(world.mint());
+    TestJointRequest request = new TestJointRequest("joint-split",
+        Set.of(aliceKey.id(), bobKey.id(), carolKey.id(), daveKey.id()), 2, "open the vault");
+    MultiSignedEnvelope fullySigned = world.signer().addSignature(
+        world.signer().addSignature(
+            world.signer().addSignature(
+                world.signer().signMulti(
+                    TestJointRequest.MESSAGE_TYPE, request, aliceKey, "json"),
+                bobKey),
+            carolKey),
+        daveKey);
+    assertThat(fullySigned.signatures()).hasSize(4);
+
+    JsonPayloadCodec codec = new JsonPayloadCodec();
+    MultiSignedEnvelope decoded =
+        MultiSignedEnvelope.decode(fullySigned.encode(codec), codec);
+    // Subset {alice,bob} meets quorum; subset {carol,dave} is disjoint
+    // and also meets quorum.
+    MultiSignedEnvelope aliceBob = new MultiSignedEnvelope(
+        decoded.messageType(), decoded.payloadFormat(), decoded.schemaId(), decoded.payload(),
+        List.of(decoded.signatures().get(0), decoded.signatures().get(1)));
+    MultiSignedEnvelope carolDave = new MultiSignedEnvelope(
+        decoded.messageType(), decoded.payloadFormat(), decoded.schemaId(), decoded.payload(),
+        List.of(decoded.signatures().get(2), decoded.signatures().get(3)));
+
+    AtomicInteger handled = new AtomicInteger();
+    ReceivedMessage first = erin.receive(aliceBob.encode(codec));
+    if (first.verified()) {
+      handled.incrementAndGet();
+    }
+    ReceivedMessage second = erin.receive(carolDave.encode(codec));
+    if (second.verified()) {
+      handled.incrementAndGet();
+    }
+
+    assertThat(first.verified()).isTrue();
+    assertThat(first.payload()).contains(request);
+    assertThat(first.signers()).containsExactlyInAnyOrder(aliceKey.id(), bobKey.id());
+
+    assertThat(second.verified()).isFalse();
+    assertThat(second.replayed()).isTrue();
+    assertThat(second.payload()).isEmpty();
+    assertThat(second.signers()).containsExactlyInAnyOrder(carolKey.id(), daveKey.id());
+    assertThat(second.verification().reason()).hasValueSatisfying(
+        reason -> assertThat(reason).contains("duplicate request id"));
+    assertThat(handled.get()).isEqualTo(1);
+  }
+
+  @Test
   void theSameRequestIdFromDisjointSignerSetsAreDifferentRequests() {
     // §5.2 scopes dedup to the requester: a disjoint quorum reusing a
     // request id is a different authorized request and must be processed.
