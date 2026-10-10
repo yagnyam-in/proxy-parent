@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 
 /**
@@ -64,14 +66,17 @@ import java.util.function.Consumer;
  * <p>Replay protection (protocol §5.2, §11 rule 5): after an envelope
  * verifies and its payload materializes as a {@link RequestMessage}, the
  * receive path atomically checks-and-records the request in a
- * {@link RequestDeduplicator} under
- * {@code (recipient, requestId, preimage digest)} — the recipient being
- * this messenger's own bare persona id and the digest being SHA-256 of the
- * envelope's §6.4 signing preimage, the exact bytes every signature
- * authenticated (see {@link RequestDeduplicator}'s javadoc for the full
- * keying contract). Keying on the authenticated bytes — not on any
- * property of the {@code signatures} array, whose order, {@code signedBy}
- * spelling and retained subset are all unauthenticated — closes three
+ * {@link RequestDeduplicator} against two tiers — tier A,
+ * {@code (recipient, requestId, signerId)} per verified signer (identity
+ * uniqueness: a second request from an overlapping signer set under the
+ * same requestId is a duplicate, even with a different payload), and
+ * tier B, {@code (recipient, preimage digest)} with the digest being
+ * SHA-256 of the envelope's §6.4 signing preimage, the exact bytes every
+ * signature authenticated (see {@link RequestDeduplicator}'s javadoc for
+ * the full two-tier contract and which tier catches which attack). Tier
+ * B keys on the authenticated bytes — not on any property of the
+ * {@code signatures} array, whose order, {@code signedBy} spelling and
+ * retained subset are all unauthenticated — which closes three
  * transport-attacker replays of one captured envelope at once: a
  * <em>reordered</em> envelope (protocol §7.4 requires any signature order
  * to verify), a <em>re-spelled</em> envelope (pinned vs unpinned signer
@@ -79,14 +84,19 @@ import java.util.function.Consumer;
  * 4-of-2 envelope delivered once retaining signatures {a,b} and again
  * retaining {c,d} — every retained signature verifies and each subset
  * meets quorum, but the preimage bytes are identical, so the second
- * delivery is a replay). Incremental §7.4 co-signing is covered by the
- * same key: a re-delivered envelope carrying an <em>additional</em>
+ * delivery is a replay). Incremental §7.4 co-signing is covered by both
+ * tiers: a re-delivered envelope carrying an <em>additional</em>
  * co-signer for the same request (same requestId, identical payload
  * bytes, stronger authorization — protocol §5.5: the new envelope
- * supersedes the previous) digests identically and dedups as a replay,
- * the safe direction (no double execution). A genuinely different payload
- * reusing a request id digests differently and is processed (request-id
- * reuse across payloads is a sender bug §5.2 forbids). A duplicate
+ * supersedes the previous) overlaps in signers and digests identically,
+ * so it dedups as a replay, the safe direction (no double execution).
+ * Tier A covers what a byte-level key cannot: a <em>retry from the same
+ * requester</em> reusing a requestId with a <em>different payload</em>
+ * digests differently yet is still a duplicate under §5.2, because
+ * requestId uniqueness is scoped to the requesting Persona, not to a
+ * byte sequence. A genuinely different authorized operation — a
+ * <em>disjoint</em> quorum reusing a requestId with a different payload
+ * — matches neither tier and is processed by design. A duplicate
  * delivery surfaces as
  * {@link ReceivedMessage#replayed()} — fail closed, never an exception, and
  * never exposing the payload to handlers — so instrumentation can tell
@@ -102,8 +112,8 @@ import java.util.function.Consumer;
  * <p>Thread-safety: all members are safe for concurrent use (the
  * transport, signer, verifier and deduplicator are thread-safe; the
  * messenger holds no other mutable state). The dedup check-and-record of
- * one triple is atomic, so under concurrent duplicate deliveries of the
- * same request exactly one is accepted. Send-time problems (invalid
+ * one request across both tiers is atomic, so under concurrent duplicate
+ * deliveries of the same request exactly one is accepted. Send-time problems (invalid
  * payload, unauthorized signer, undeliverable address) surface as
  * exceptions of the signer or the transport; receive-side problems are
  * values.
@@ -473,32 +483,42 @@ public final class PersonaMessenger {
    * Applies protocol §5.2 replay protection to a <em>verified</em>,
    * materialized payload (see the class javadoc for the full contract):
    * payloads that are not {@link RequestMessage}s pass through untouched;
-   * a request payload is atomically checked-and-recorded under
-   * {@code (this persona, requestId, preimageDigest)} — the digest of the
-   * §6.4 signing preimage, the exact bytes every signature of the
-   * envelope authenticated — and either returned as {@link
-   * ReceivedMessage#verified} (first delivery of these authenticated
-   * bytes) or {@link ReceivedMessage#replayed} (duplicate — fail closed,
+   * a request payload is atomically checked-and-recorded against both
+   * dedup tiers — {@code (this persona, requestId, bare signer id)} per
+   * signer (tier A) and {@code (this persona, preimageDigest)} (tier B,
+   * the digest of the §6.4 signing preimage, the exact bytes every
+   * signature of the envelope authenticated) — and either returned as
+   * {@link ReceivedMessage#verified} (first verified delivery under both
+   * tiers) or {@link ReceivedMessage#replayed} (duplicate — fail closed,
    * no payload exposed, never an exception). Because the preimage ignores
    * the {@code signatures} array entirely, a reordered (protocol §7.4),
    * re-spelled (pinned vs unpinned), incrementally co-signed (§5.5) or
    * disjoint-subset-split redelivery of one captured envelope digests
-   * identically and dedups.
+   * identically and dedups at tier B; a retry from the same requester
+   * with a different payload under the same requestId overlaps in signer
+   * ids and dedups at tier A.
    *
-   * <p>Runs only after {@link EnvelopeVerifier} success, so the digest is
-   * authenticated: a forged or tampered envelope can neither produce a
-   * replay outcome nor poison the dedup store against the real requester.
+   * <p>Runs only after {@link EnvelopeVerifier} success, so the digest
+   * and the signer ids are authenticated: a forged or tampered envelope
+   * can neither produce a replay outcome nor poison the dedup store
+   * against the real requester.
    */
   private ReceivedMessage dedupChecked(
       boolean multiSigned, String messageType, List<PersonaId> signers, String preimageDigest,
       Validatable payload) {
-    if (payload instanceof RequestMessage request
-        && !deduplicator.checkAndRecord(key.id(), request.requestId(), preimageDigest)) {
-      return ReceivedMessage.replayed(multiSigned, messageType, signers,
-          "duplicate request id '" + request.requestId() + "' involving signer(s) "
-              + bareIdsOf(signers) + " (protocol §5.2, §11 rule 5): the identical"
-              + " authenticated payload (§6.4 preimage digest " + preimageDigest + ") was"
-              + " already processed for this recipient");
+    if (payload instanceof RequestMessage request) {
+      // The tier-A identity: bare persona ids, so pinned and unpinned
+      // spellings of one persona (protocol §6.2) share one namespace.
+      Set<String> signerIds = new TreeSet<>(bareIdsOf(signers));
+      if (!deduplicator.checkAndRecord(key.id(), request.requestId(), signerIds,
+          preimageDigest)) {
+        return ReceivedMessage.replayed(multiSigned, messageType, signers,
+            "duplicate request id '" + request.requestId() + "' involving signer(s) "
+                + signerIds + " (protocol §5.2, §11 rule 5): either a request from an"
+                + " overlapping signer set was already processed under this request id"
+                + " for this recipient, or the identical authenticated payload (§6.4"
+                + " preimage digest " + preimageDigest + ") was already processed");
+      }
     }
     return ReceivedMessage.verified(multiSigned, messageType, signers, payload);
   }
