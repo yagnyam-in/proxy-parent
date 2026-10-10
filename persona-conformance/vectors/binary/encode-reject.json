@@ -1,0 +1,219 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "payload.binary.encode",
+  "description": "Values that MUST be rejected before any byte is written (docs/SCHEMA.md \u00a73.4 writer strictness, \u00a74.3 encoder strictness).",
+  "spec": [
+    "docs/SCHEMA.md \u00a73.4",
+    "docs/SCHEMA.md \u00a74.3"
+  ],
+  "vectors": [
+    {
+      "id": "binary/encode-reject/double-nan",
+      "spec": "docs/SCHEMA.md \u00a73.4 rule 9",
+      "description": "NaN is not encodable in either codec. The vector extension string \"NaN\" denotes the non-finite double in the input value.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a73.4 rule 9",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": "NaN"
+      }
+    },
+    {
+      "id": "binary/encode-reject/double-infinity",
+      "spec": "docs/SCHEMA.md \u00a73.4 rule 9",
+      "description": "Positive infinity is not encodable.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a73.4 rule 9",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": "Infinity"
+      }
+    },
+    {
+      "id": "binary/encode-reject/double-negative-infinity",
+      "spec": "docs/SCHEMA.md \u00a73.4 rule 9",
+      "description": "Negative infinity is not encodable.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a73.4 rule 9",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": "-Infinity"
+      }
+    },
+    {
+      "id": "binary/encode-reject/array-of-zero-byte-elements",
+      "spec": "docs/SCHEMA.md \u00a73.4 rule 1",
+      "description": "A writer must not emit a non-empty array whose element type encodes to zero bytes: its own reader would reject the payload as zero-progress.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a73.4 rule 1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}}}]}",
+      "value": {
+        "v": [
+          {}
+        ]
+      }
+    },
+    {
+      "id": "binary/encode-reject/array-of-records-containing-only-empty-records",
+      "spec": "docs/SCHEMA.md \u00a73.4 rule 1",
+      "description": "The zero-byte detection is recursive: a record containing only fields that encode to zero bytes encodes to zero bytes too.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a73.4 rule 1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Outer\",\"fields\":[{\"name\":\"e\",\"type\":{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}}]}}}]}",
+      "value": {
+        "v": [
+          {
+            "e": {}
+          }
+        ]
+      }
+    },
+    {
+      "id": "binary/encode-reject/timestamp-below-floor",
+      "spec": "docs/SCHEMA.md \u00a73.4 rule 7",
+      "description": "The bottom 808 values of the signed 64-bit millisecond range cannot round-trip, so the writer rejects them instead of emitting bytes its own reader rejects.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a73.4 rule 7",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "@epoch-millis:-9223372036854775800"
+      }
+    },
+    {
+      "id": "binary/encode-reject/missing-field",
+      "spec": "docs/SCHEMA.md \u00a71.3 rule 5",
+      "description": "All fields are required: a value without 'body' is rejected before any byte is written.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a71.3 rule 5",
+      "schema": "{\"type\":\"record\",\"name\":\"Kitchen\",\"namespace\":\"test\",\"messageType\":\"test.Kitchen@v1\",\"fields\":[{\"name\":\"greetingId\",\"type\":\"string\"},{\"name\":\"from\",\"type\":\"string\"},{\"name\":\"to\",\"type\":\"string\"},{\"name\":\"body\",\"type\":\"string\"},{\"name\":\"issuedAt\",\"type\":\"timestamp-millis\"},{\"name\":\"count\",\"type\":\"int\"},{\"name\":\"score\",\"type\":\"double\"},{\"name\":\"verified\",\"type\":\"boolean\"},{\"name\":\"attachment\",\"type\":\"bytes\"},{\"name\":\"tags\",\"type\":{\"type\":\"array\",\"items\":\"string\"}},{\"name\":\"attributes\",\"type\":{\"type\":\"map\",\"values\":\"string\"}},{\"name\":\"mood\",\"type\":{\"type\":\"enum\",\"name\":\"Mood\",\"symbols\":[\"HAPPY\",\"NEUTRAL\",\"SAD\"]}},{\"name\":\"inner\",\"type\":{\"type\":\"record\",\"name\":\"Inner\",\"fields\":[{\"name\":\"x\",\"type\":\"long\"}]}},{\"name\":\"forwarded\",\"type\":\"envelope\"}]}",
+      "value": {
+        "greetingId": "g-1",
+        "from": "alice",
+        "to": "bob",
+        "issuedAt": "2026-10-10T12:00:00.000Z",
+        "count": 42,
+        "score": 1.5,
+        "verified": true,
+        "attachment": "AAEC/w==",
+        "tags": [
+          "a",
+          "b"
+        ],
+        "attributes": {
+          "z": "1",
+          "\u00e9": "2",
+          "a": "3"
+        },
+        "mood": "NEUTRAL",
+        "inner": {
+          "x": 7
+        },
+        "forwarded": {
+          "messageType": "example.Greeting@v1",
+          "payloadFormat": "json",
+          "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+          "payload": "AQID",
+          "signedBy": "alice",
+          "signatures": [
+            {
+              "algorithm": "SHA256withRSA",
+              "value": "CQg="
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "binary/encode-reject/unknown-field",
+      "spec": "docs/SCHEMA.md \u00a74.3",
+      "description": "Unknown fields are rejected rather than ignored.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a74.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": 1,
+        "w": 2
+      }
+    },
+    {
+      "id": "binary/encode-reject/null-field-value",
+      "spec": "docs/SCHEMA.md \u00a74.3",
+      "description": "JSON null denotes the null value, which no encoder accepts.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a74.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": null
+      }
+    },
+    {
+      "id": "binary/encode-reject/string-with-unpaired-surrogate",
+      "spec": "docs/SCHEMA.md \u00a73.4 rule 6",
+      "description": "A lone high surrogate (spelled \\ud800 in the vector file) cannot be encoded as UTF-8.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a73.4 rule 6",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "value": {
+        "v": "\ud800"
+      }
+    },
+    {
+      "id": "binary/encode-reject/map-key-with-unpaired-surrogate",
+      "spec": "docs/SCHEMA.md \u00a73.4 rule 6",
+      "description": "Map keys are strings and must be well-formed UTF-16 as well. This vector also guards the sort-before-validate hazard: encoding the key as UTF-8 would map the surrogate to '?' and silently drop the entry.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a73.4 rule 6",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"int\"}}]}",
+      "value": {
+        "v": {
+          "\udfff": 1
+        }
+      }
+    },
+    {
+      "id": "binary/encode-reject/int-field-given-a-string",
+      "spec": "docs/SCHEMA.md \u00a74.3",
+      "description": "Encoder type strictness: an int field accepts Integer only, never a string.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a74.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": "5"
+      }
+    },
+    {
+      "id": "binary/encode-reject/int-field-given-a-fraction",
+      "spec": "docs/SCHEMA.md \u00a74.3",
+      "description": "An int field does not accept a floating-point value.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a74.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": 1.5
+      }
+    },
+    {
+      "id": "binary/encode-reject/long-field-given-a-string",
+      "spec": "docs/SCHEMA.md \u00a74.3",
+      "description": "Encoder type strictness for long.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a74.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "value": {
+        "v": "7"
+      }
+    },
+    {
+      "id": "binary/encode-reject/enum-symbol-not-declared",
+      "spec": "docs/SCHEMA.md \u00a73.2",
+      "description": "An enum value must be one of the declared symbols.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a73.2",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"enum\",\"name\":\"M\",\"symbols\":[\"A\",\"B\",\"C\"]}}]}",
+      "value": {
+        "v": "D"
+      }
+    }
+  ]
+}

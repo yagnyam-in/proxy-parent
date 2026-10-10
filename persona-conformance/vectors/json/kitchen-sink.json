@@ -1,0 +1,55 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "payload.json.encode",
+  "description": "The same schema and value in canonical JSON: keys sorted by UTF-8 bytes, bytes as padded base64, the timestamp with exactly three fractional digits.",
+  "spec": [
+    "docs/SCHEMA.md §4.1"
+  ],
+  "vectors": [
+    {
+      "id": "json/compound-encode/kitchen-sink",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Every node kind in one document; the map keys and record fields are emitted in UTF-8 byte order regardless of the vector's key order.",
+      "schema": "{\"type\":\"record\",\"name\":\"Kitchen\",\"namespace\":\"test\",\"messageType\":\"test.Kitchen@v1\",\"fields\":[{\"name\":\"greetingId\",\"type\":\"string\"},{\"name\":\"from\",\"type\":\"string\"},{\"name\":\"to\",\"type\":\"string\"},{\"name\":\"body\",\"type\":\"string\"},{\"name\":\"issuedAt\",\"type\":\"timestamp-millis\"},{\"name\":\"count\",\"type\":\"int\"},{\"name\":\"score\",\"type\":\"double\"},{\"name\":\"verified\",\"type\":\"boolean\"},{\"name\":\"attachment\",\"type\":\"bytes\"},{\"name\":\"tags\",\"type\":{\"type\":\"array\",\"items\":\"string\"}},{\"name\":\"attributes\",\"type\":{\"type\":\"map\",\"values\":\"string\"}},{\"name\":\"mood\",\"type\":{\"type\":\"enum\",\"name\":\"Mood\",\"symbols\":[\"HAPPY\",\"NEUTRAL\",\"SAD\"]}},{\"name\":\"inner\",\"type\":{\"type\":\"record\",\"name\":\"Inner\",\"fields\":[{\"name\":\"x\",\"type\":\"long\"}]}},{\"name\":\"forwarded\",\"type\":\"envelope\"}]}",
+      "value": {
+        "greetingId": "g-1",
+        "from": "alice",
+        "to": "bob",
+        "body": "hello",
+        "issuedAt": "2026-10-10T12:00:00.000Z",
+        "count": 42,
+        "score": 1.5,
+        "verified": true,
+        "attachment": "AAEC/w==",
+        "tags": [
+          "a",
+          "b"
+        ],
+        "attributes": {
+          "z": "1",
+          "é": "2",
+          "a": "3"
+        },
+        "mood": "NEUTRAL",
+        "inner": {
+          "x": 7
+        },
+        "forwarded": {
+          "messageType": "example.Greeting@v1",
+          "payloadFormat": "json",
+          "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+          "payload": "AQID",
+          "signedBy": "alice",
+          "signatures": [
+            {
+              "algorithm": "SHA256withRSA",
+              "value": "CQg="
+            }
+          ]
+        }
+      },
+      "expectedJson": "{\"attachment\":\"AAEC/w==\",\"attributes\":{\"a\":\"3\",\"z\":\"1\",\"é\":\"2\"},\"body\":\"hello\",\"count\":42,\"forwarded\":{\"messageType\":\"example.Greeting@v1\",\"payload\":\"AQID\",\"payloadFormat\":\"json\",\"schemaId\":\"66cd4cc7f890f80cbda43fa5d69efeccadad0833\",\"signatures\":[{\"algorithm\":\"SHA256withRSA\",\"value\":\"CQg=\"}],\"signedBy\":\"alice\"},\"from\":\"alice\",\"greetingId\":\"g-1\",\"inner\":{\"x\":7},\"issuedAt\":\"2026-10-10T12:00:00.000Z\",\"mood\":\"NEUTRAL\",\"score\":1.5,\"tags\":[\"a\",\"b\"],\"to\":\"bob\",\"verified\":true}"
+    }
+  ]
+}

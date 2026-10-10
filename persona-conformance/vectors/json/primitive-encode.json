@@ -1,0 +1,242 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "payload.json.encode",
+  "description": "Byte-exact canonical JSON payload encodings of the §4.1 renderings. The runner encodes the value and compares the resulting UTF-8 text exactly.",
+  "spec": [
+    "docs/SCHEMA.md §4.1",
+    "docs/SCHEMA.md §2.1"
+  ],
+  "vectors": [
+    {
+      "id": "json/primitive-encode/string-foo",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Canonical JSON rendering of §4.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "value": {
+        "v": "foo"
+      },
+      "expectedJson": "{\"v\":\"foo\"}"
+    },
+    {
+      "id": "json/primitive-encode/string-empty",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Canonical JSON rendering of §4.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "value": {
+        "v": ""
+      },
+      "expectedJson": "{\"v\":\"\"}"
+    },
+    {
+      "id": "json/primitive-encode/string-escapes",
+      "spec": "docs/SCHEMA.md §2.1 rule 4",
+      "description": "The canonical writer escapes quote, backslash and the five named control characters; every other character is emitted raw.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "value": {
+        "v": "a\"b\\c\n"
+      },
+      "expectedJson": "{\"v\":\"a\\\"b\\\\c\\n\"}"
+    },
+    {
+      "id": "json/primitive-encode/string-control-character",
+      "spec": "docs/SCHEMA.md §2.1 rule 4",
+      "description": "U+0001 has no named escape, so it is emitted as lowercase \\u0001.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "value": {
+        "v": "\u0001"
+      },
+      "expectedJson": "{\"v\":\"\\u0001\"}"
+    },
+    {
+      "id": "json/primitive-encode/string-two-byte-utf8",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Non-ASCII characters are emitted as raw UTF-8, never as \\u escapes.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "value": {
+        "v": "é"
+      },
+      "expectedJson": "{\"v\":\"é\"}"
+    },
+    {
+      "id": "json/primitive-encode/string-astral-plane",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "U+1F600 is emitted raw as its four UTF-8 bytes.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "value": {
+        "v": "😀"
+      },
+      "expectedJson": "{\"v\":\"😀\"}"
+    },
+    {
+      "id": "json/primitive-encode/boolean-true",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Canonical JSON rendering of §4.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"boolean\"}]}",
+      "value": {
+        "v": true
+      },
+      "expectedJson": "{\"v\":true}"
+    },
+    {
+      "id": "json/primitive-encode/boolean-false",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Canonical JSON rendering of §4.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"boolean\"}]}",
+      "value": {
+        "v": false
+      },
+      "expectedJson": "{\"v\":false}"
+    },
+    {
+      "id": "json/primitive-encode/int-42",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Canonical JSON rendering of §4.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": 42
+      },
+      "expectedJson": "{\"v\":42}"
+    },
+    {
+      "id": "json/primitive-encode/int-min",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Canonical JSON rendering of §4.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": -2147483648
+      },
+      "expectedJson": "{\"v\":-2147483648}"
+    },
+    {
+      "id": "json/primitive-encode/long-max",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Longs render as decimal digits with no exponent and no sign for positive values.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "value": {
+        "v": 9223372036854775807
+      },
+      "expectedJson": "{\"v\":9223372036854775807}"
+    },
+    {
+      "id": "json/primitive-encode/long-min",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Canonical JSON rendering of §4.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "value": {
+        "v": -9223372036854775808
+      },
+      "expectedJson": "{\"v\":-9223372036854775808}"
+    },
+    {
+      "id": "json/primitive-encode/double-one-and-a-half",
+      "spec": "docs/SCHEMA.md §4.4",
+      "description": "Canonical JSON rendering of §4.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": 1.5
+      },
+      "expectedJson": "{\"v\":1.5}"
+    },
+    {
+      "id": "json/primitive-encode/double-negative-zero",
+      "spec": "docs/SCHEMA.md §4.4",
+      "description": "Negative zero renders as -0.0 and must survive a JSON round trip.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": -0.0
+      },
+      "expectedJson": "{\"v\":-0.0}"
+    },
+    {
+      "id": "json/primitive-encode/double-smallest-vector-value",
+      "spec": "docs/SCHEMA.md §4.4",
+      "description": "0.001 is one of the §4.4 values whose shortest representation is identical across implementations.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": 0.001
+      },
+      "expectedJson": "{\"v\":0.001}"
+    },
+    {
+      "id": "json/primitive-encode/bytes-three",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "bytes render as standard base64 with padding.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "value": {
+        "v": "AQID"
+      },
+      "expectedJson": "{\"v\":\"AQID\"}"
+    },
+    {
+      "id": "json/primitive-encode/bytes-with-high-byte",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "0x00 0x01 0x02 0xff is AAEC/w==.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "value": {
+        "v": "AAEC/w=="
+      },
+      "expectedJson": "{\"v\":\"AAEC/w==\"}"
+    },
+    {
+      "id": "json/primitive-encode/bytes-empty",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Zero-length bytes render as the empty base64 string.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "value": {
+        "v": ""
+      },
+      "expectedJson": "{\"v\":\"\"}"
+    },
+    {
+      "id": "json/primitive-encode/timestamp-epoch",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Exactly three fractional digits, always, with a trailing Z.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "@epoch-millis:0"
+      },
+      "expectedJson": "{\"v\":\"1970-01-01T00:00:00.000Z\"}"
+    },
+    {
+      "id": "json/primitive-encode/timestamp-1500-millis",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Sub-second values are padded to three digits: .500.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "@epoch-millis:1500"
+      },
+      "expectedJson": "{\"v\":\"1970-01-01T00:00:01.500Z\"}"
+    },
+    {
+      "id": "json/primitive-encode/timestamp-2026-10-10T12:00:00Z",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Canonical JSON rendering of §4.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "@epoch-millis:1791633600000"
+      },
+      "expectedJson": "{\"v\":\"2026-10-10T12:00:00.000Z\"}"
+    },
+    {
+      "id": "json/primitive-encode/timestamp-negative",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Milliseconds before the epoch render as a normal ISO-8601 instant.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "@epoch-millis:-1"
+      },
+      "expectedJson": "{\"v\":\"1969-12-31T23:59:59.999Z\"}"
+    },
+    {
+      "id": "json/primitive-encode/enum-symbol",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "An enum renders as its symbol string.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"enum\",\"name\":\"M\",\"symbols\":[\"A\",\"B\",\"C\"]}}]}",
+      "value": {
+        "v": "B"
+      },
+      "expectedJson": "{\"v\":\"B\"}"
+    }
+  ]
+}

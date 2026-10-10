@@ -1,0 +1,180 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "payload.binary.decode",
+  "description": "The same envelope encodings decoded back, so a runner checks both directions of its envelope serialization.",
+  "spec": [
+    "docs/SCHEMA.md §5",
+    "docs/SCHEMA.md §3.2"
+  ],
+  "vectors": [
+    {
+      "id": "envelope/binary-decode/signed-envelope",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "A SignedEnvelope record with one signature. The wire shape is the record of persona.SignedEnvelope@v1: six fields in declaration order, 'payload' and every signature 'value' as length-prefixed byte strings.",
+      "schemaRef": "persona.SignedEnvelope@v1",
+      "inputHex": "266578616d706c652e4772656574696e67407631086a736f6e5036366364346363376638393066383063626461343366613564363965666563636164616430383333060102030a616c696365021a5348413235367769746852534104090800",
+      "expectedValue": {
+        "messageType": "example.Greeting@v1",
+        "payloadFormat": "json",
+        "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+        "payload": "AQID",
+        "signedBy": "alice",
+        "signatures": [
+          {
+            "algorithm": "SHA256withRSA",
+            "value": "CQg="
+          }
+        ]
+      }
+    },
+    {
+      "id": "envelope/binary-decode/signed-envelope-two-signatures",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "A pinned signedBy, an empty payload and two signatures: the signatures array is one block of two inline Signature records.",
+      "schemaRef": "persona.SignedEnvelope@v1",
+      "inputHex": "266578616d706c652e4772656574696e674076311c706572736f6e612d62696e6172795036366364346363376638393066383063626461343366613564363965666563636164616430383333008c01616c6963652361616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161616161041a5348413235367769746852534102001a5348413235367769746852534106ffffff00",
+      "expectedValue": {
+        "messageType": "example.Greeting@v1",
+        "payloadFormat": "persona-binary",
+        "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+        "payload": "",
+        "signedBy": "alice#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "signatures": [
+          {
+            "algorithm": "SHA256withRSA",
+            "value": "AA=="
+          },
+          {
+            "algorithm": "SHA256withRSA",
+            "value": "////"
+          }
+        ]
+      }
+    },
+    {
+      "id": "envelope/binary-decode/signed-envelope-empty-signatures-and-empty-schema-id",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "An absent schemaId is the empty string on the wire (§5), an empty signatures array is a lone zero terminator.",
+      "schemaRef": "persona.SignedEnvelope@v1",
+      "inputHex": "20706572736f6e612e416c657274407631086a736f6e000006616e7900",
+      "expectedValue": {
+        "messageType": "persona.Alert@v1",
+        "payloadFormat": "json",
+        "schemaId": "",
+        "payload": "",
+        "signedBy": "any",
+        "signatures": []
+      }
+    },
+    {
+      "id": "envelope/binary-decode/multi-signed-envelope",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "Two signers, the first with two signatures: the outer signatures array holds inline MultiSignature records, each with its own inner signatures array.",
+      "schemaRef": "persona.MultiSignedEnvelope@v1",
+      "inputHex": "246578616d706c652e436861727465724076311c706572736f6e612d62696e6172795036366364346363376638393066383063626461343366613564363965666563636164616430383333040102040a616c696365041a5348413235367769746852534102071a534841323536776974685253410408090006626f62021a53484132353677697468525341040a0b0000",
+      "expectedValue": {
+        "messageType": "example.Charter@v1",
+        "payloadFormat": "persona-binary",
+        "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+        "payload": "AQI=",
+        "signatures": [
+          {
+            "signedBy": "alice",
+            "signatures": [
+              {
+                "algorithm": "SHA256withRSA",
+                "value": "Bw=="
+              },
+              {
+                "algorithm": "SHA256withRSA",
+                "value": "CAk="
+              }
+            ]
+          },
+          {
+            "signedBy": "bob",
+            "signatures": [
+              {
+                "algorithm": "SHA256withRSA",
+                "value": "Cgs="
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "envelope/binary-decode/multi-signed-envelope-empty-inner-signatures",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "An inner signatures array may be empty; the outer array still holds one entry.",
+      "schemaRef": "persona.MultiSignedEnvelope@v1",
+      "inputHex": "246578616d706c652e43686172746572407631086a736f6e503636636434636337663839306638306362646134336661356436396566656363616461643038333306010203020a616c6963650000",
+      "expectedValue": {
+        "messageType": "example.Charter@v1",
+        "payloadFormat": "json",
+        "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+        "payload": "AQID",
+        "signatures": [
+          {
+            "signedBy": "alice",
+            "signatures": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "envelope/binary-decode/signature-record",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "The standalone persona.Signature@v1 record, which exists for digest stability testing (§5).",
+      "schemaRef": "persona.Signature@v1",
+      "inputHex": "1a534841323536776974685253411400010203040506070809",
+      "expectedValue": {
+        "algorithm": "SHA256withRSA",
+        "value": "AAECAwQFBgcICQ=="
+      }
+    },
+    {
+      "id": "envelope/binary-decode/signature-record-empty-value",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "A zero-length signature value is representable.",
+      "schemaRef": "persona.Signature@v1",
+      "inputHex": "1a5348413235367769746852534100",
+      "expectedValue": {
+        "algorithm": "SHA256withRSA",
+        "value": ""
+      }
+    },
+    {
+      "id": "envelope/binary-decode/multi-signature-record",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "The standalone persona.MultiSignature@v1 record with two inline Signature items.",
+      "schemaRef": "persona.MultiSignature@v1",
+      "inputHex": "0a616c696365041a5348413235367769746852534102071a5348413235367769746852534104080900",
+      "expectedValue": {
+        "signedBy": "alice",
+        "signatures": [
+          {
+            "algorithm": "SHA256withRSA",
+            "value": "Bw=="
+          },
+          {
+            "algorithm": "SHA256withRSA",
+            "value": "CAk="
+          }
+        ]
+      }
+    },
+    {
+      "id": "envelope/binary-decode/multi-signature-record-empty-signatures",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "An empty signatures array inside a MultiSignature.",
+      "schemaRef": "persona.MultiSignature@v1",
+      "inputHex": "06626f6200",
+      "expectedValue": {
+        "signedBy": "bob",
+        "signatures": []
+      }
+    }
+  ]
+}

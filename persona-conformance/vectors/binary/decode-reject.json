@@ -1,0 +1,237 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "payload.binary.decode",
+  "description": "persona-binary inputs that MUST be rejected (docs/SCHEMA.md §3.3 decoder strictness, §3.4 resource limits).",
+  "spec": [
+    "docs/SCHEMA.md §3.3",
+    "docs/SCHEMA.md §3.4"
+  ],
+  "vectors": [
+    {
+      "id": "binary/decode-reject/trailing-bytes",
+      "spec": "docs/SCHEMA.md §3.3",
+      "description": "A complete record is followed by a surplus byte.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputHex": "0000"
+    },
+    {
+      "id": "binary/decode-reject/truncated-string",
+      "spec": "docs/SCHEMA.md §3.3",
+      "description": "The length prefix promises two bytes but only one remains.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "inputHex": "0461"
+    },
+    {
+      "id": "binary/decode-reject/truncated-varint",
+      "spec": "docs/SCHEMA.md §3.3",
+      "description": "A continuation bit with no following byte.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputHex": "80"
+    },
+    {
+      "id": "binary/decode-reject/truncated-double",
+      "spec": "docs/SCHEMA.md §3.3",
+      "description": "Fewer than eight bytes for a double.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "inputHex": "000000"
+    },
+    {
+      "id": "binary/decode-reject/varint-longer-than-ten-bytes",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "A varint may not use more than the ten groups a 64-bit value needs.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputHex": "8080808080808080808001"
+    },
+    {
+      "id": "binary/decode-reject/varint-overflow",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "The tenth group carries bits beyond the 64-bit range.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "inputHex": "80808080808080808002"
+    },
+    {
+      "id": "binary/decode-reject/int-out-of-32-bit-range",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "zigzag decodes to 2^31, which no int field can hold.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputHex": "8080808020"
+    },
+    {
+      "id": "binary/decode-reject/negative-length",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "zigzag(0x01) is -1: a negative length prefix.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "inputHex": "01"
+    },
+    {
+      "id": "binary/decode-reject/invalid-boolean-byte",
+      "spec": "docs/SCHEMA.md §3.4 rule 4",
+      "description": "Only 0x00 and 0x01 are booleans.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 4",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"boolean\"}]}",
+      "inputHex": "02"
+    },
+    {
+      "id": "binary/decode-reject/enum-index-above-symbols",
+      "spec": "docs/SCHEMA.md §3.3",
+      "description": "Enum index 5 is outside the three declared symbols.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"enum\",\"name\":\"M\",\"symbols\":[\"A\",\"B\",\"C\"]}}]}",
+      "inputHex": "0a"
+    },
+    {
+      "id": "binary/decode-reject/enum-index-negative",
+      "spec": "docs/SCHEMA.md §3.3",
+      "description": "A negative enum index is rejected.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"enum\",\"name\":\"M\",\"symbols\":[\"A\",\"B\",\"C\"]}}]}",
+      "inputHex": "01"
+    },
+    {
+      "id": "binary/decode-reject/negative-block-count",
+      "spec": "docs/SCHEMA.md §3.3",
+      "description": "A block count is a count, never negative.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}",
+      "inputHex": "0100"
+    },
+    {
+      "id": "binary/decode-reject/block-count-above-collection-cap",
+      "spec": "docs/SCHEMA.md §3.4 rule 1",
+      "description": "A block count of 2^20 + 1 exceeds the cumulative collection cap of 2^20 and is rejected eagerly, before any item is read, so the vector needs no item bytes.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}",
+      "inputHex": "82808001"
+    },
+    {
+      "id": "binary/decode-reject/zero-progress-element",
+      "spec": "docs/SCHEMA.md §3.4 rule 1",
+      "description": "A block of two zero-field records: each element consumes no input byte. Without the rule a handful of bytes could allocate millions of empty records.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}}}]}",
+      "inputHex": "0400"
+    },
+    {
+      "id": "binary/decode-reject/zero-progress-amplification-payload",
+      "spec": "docs/SCHEMA.md §3.4 rule 1",
+      "description": "The amplification shape: one hundred blocks of 2^20 zero-field records in 401 bytes. The reader must reject it without allocating the elements.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}}}]}",
+      "inputHex": "8080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800100"
+    },
+    {
+      "id": "binary/decode-reject/invalid-utf8-in-string",
+      "spec": "docs/SCHEMA.md §3.4 rule 5",
+      "description": "A truncated two-byte UTF-8 sequence.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 5",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "inputHex": "02c3"
+    },
+    {
+      "id": "binary/decode-reject/overlong-utf8",
+      "spec": "docs/SCHEMA.md §3.4 rule 5",
+      "description": "0xC0 0x80 is the overlong encoding of NUL and must be rejected.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 5",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "inputHex": "04c080"
+    },
+    {
+      "id": "binary/decode-reject/encoded-surrogate-utf8",
+      "spec": "docs/SCHEMA.md §3.4 rule 5",
+      "description": "0xED 0xA0 0x80 encodes a UTF-16 surrogate, which valid UTF-8 never contains.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 5",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "inputHex": "06eda080"
+    },
+    {
+      "id": "binary/decode-reject/invalid-utf8-in-map-key",
+      "spec": "docs/SCHEMA.md §3.4 rule 5",
+      "description": "Map keys are UTF-8 strings and are validated like any other string.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 5",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
+      "inputHex": "0202c32800"
+    },
+    {
+      "id": "binary/decode-reject/duplicate-map-key",
+      "spec": "docs/SCHEMA.md §3.3",
+      "description": "The same key appears twice in one block; the second entry would silently win.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
+      "inputHex": "04026102780261027900"
+    },
+    {
+      "id": "binary/decode-reject/double-nan-bits",
+      "spec": "docs/SCHEMA.md §3.4 rule 9",
+      "description": "The raw IEEE 754 bits of NaN.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 9",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "inputHex": "000000000000f87f"
+    },
+    {
+      "id": "binary/decode-reject/double-infinity-bits",
+      "spec": "docs/SCHEMA.md §3.4 rule 9",
+      "description": "The raw IEEE 754 bits of +Infinity.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 9",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "inputHex": "000000000000f07f"
+    },
+    {
+      "id": "binary/decode-reject/double-negative-infinity-bits",
+      "spec": "docs/SCHEMA.md §3.4 rule 9",
+      "description": "The raw IEEE 754 bits of -Infinity.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 9",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "inputHex": "000000000000f0ff"
+    },
+    {
+      "id": "binary/decode-reject/timestamp-below-floor",
+      "spec": "docs/SCHEMA.md §3.4 rule 7",
+      "description": "One millisecond below the floor: the value cannot round-trip the Instant re-encoding of §4.1.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 7",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputHex": "b1f3ffffffffffffff01"
+    },
+    {
+      "id": "binary/decode-reject/timestamp-long-min",
+      "spec": "docs/SCHEMA.md §3.4 rule 7",
+      "description": "The bottom of the long range is the extreme case of the 808 rejected values.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 7",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputHex": "ffffffffffffffffff01"
+    }
+  ]
+}

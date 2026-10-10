@@ -1,0 +1,154 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "payload.json.encode",
+  "description": "Byte-exact canonical JSON encodings of nested structures, key ordering, and the array-vs-map closure rules of §3.4 rule 1.",
+  "spec": [
+    "docs/SCHEMA.md §4.1",
+    "docs/SCHEMA.md §2.1",
+    "docs/SCHEMA.md §3.4 rule 1"
+  ],
+  "vectors": [
+    {
+      "id": "json/compound-encode/record-keys-sorted",
+      "spec": "docs/SCHEMA.md §2.1 rule 2",
+      "description": "Object keys are sorted by UTF-8 bytes regardless of the input key order.",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"z\",\"type\":\"string\"},{\"name\":\"a\",\"type\":\"int\"}]}",
+      "value": {
+        "z": "x",
+        "a": 1
+      },
+      "expectedJson": "{\"a\":1,\"z\":\"x\"}"
+    },
+    {
+      "id": "json/compound-encode/record-keys-sorted-mixed-case",
+      "spec": "docs/SCHEMA.md §2.1 rule 2",
+      "description": "Uppercase sorts before lowercase: A (0x41) < a (0x61) < b (0x62).",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"b\",\"type\":\"int\"},{\"name\":\"A\",\"type\":\"int\"},{\"name\":\"a\",\"type\":\"int\"}]}",
+      "value": {
+        "b": 1,
+        "A": 2,
+        "a": 3
+      },
+      "expectedJson": "{\"A\":2,\"a\":3,\"b\":1}"
+    },
+    {
+      "id": "json/compound-encode/array-of-strings",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Arrays keep their semantic order.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}",
+      "value": {
+        "v": [
+          "a",
+          "b"
+        ]
+      },
+      "expectedJson": "{\"v\":[\"a\",\"b\"]}"
+    },
+    {
+      "id": "json/compound-encode/array-empty",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "An empty array renders as []; it is distinct from an empty map.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}",
+      "value": {
+        "v": []
+      },
+      "expectedJson": "{\"v\":[]}"
+    },
+    {
+      "id": "json/compound-encode/map-empty",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "An empty map renders as {}; it is distinct from an empty array.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
+      "value": {
+        "v": {}
+      },
+      "expectedJson": "{\"v\":{}}"
+    },
+    {
+      "id": "json/compound-encode/map-keys-sorted",
+      "spec": "docs/SCHEMA.md §2.1 rule 2",
+      "description": "Map keys are sorted by UTF-8 byte order: a < z < é.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
+      "value": {
+        "v": {
+          "z": "1",
+          "é": "2",
+          "a": "3"
+        }
+      },
+      "expectedJson": "{\"v\":{\"a\":\"3\",\"z\":\"1\",\"é\":\"2\"}}"
+    },
+    {
+      "id": "json/compound-encode/map-of-arrays",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Nested collections render structurally without whitespace.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"array\",\"items\":\"string\"}}}]}",
+      "value": {
+        "v": {
+          "b": [
+            "x"
+          ],
+          "a": []
+        }
+      },
+      "expectedJson": "{\"v\":{\"a\":[],\"b\":[\"x\"]}}"
+    },
+    {
+      "id": "json/compound-encode/nested-records",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "A nested record is a nested object.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"record\",\"name\":\"Inner\",\"fields\":[{\"name\":\"x\",\"type\":\"long\"}]}}]}",
+      "value": {
+        "v": {
+          "x": 7
+        }
+      },
+      "expectedJson": "{\"v\":{\"x\":7}}"
+    },
+    {
+      "id": "json/compound-encode/envelope-field",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "An envelope field renders as a nested object with 'payload' and every signature 'value' as base64 strings.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"envelope\"}]}",
+      "value": {
+        "v": {
+          "messageType": "example.Greeting@v1",
+          "payloadFormat": "json",
+          "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+          "payload": "AQID",
+          "signedBy": "alice",
+          "signatures": [
+            {
+              "algorithm": "SHA256withRSA",
+              "value": "CQg="
+            }
+          ]
+        }
+      },
+      "expectedJson": "{\"v\":{\"messageType\":\"example.Greeting@v1\",\"payload\":\"AQID\",\"payloadFormat\":\"json\",\"schemaId\":\"66cd4cc7f890f80cbda43fa5d69efeccadad0833\",\"signatures\":[{\"algorithm\":\"SHA256withRSA\",\"value\":\"CQg=\"}],\"signedBy\":\"alice\"}}"
+    },
+    {
+      "id": "json/compound-encode/array-of-zero-byte-elements",
+      "spec": "docs/SCHEMA.md §3.4 rule 1",
+      "description": "Documented asymmetry: the JSON writer accepts a non-empty array of zero-field records (the JSON encoding is self-describing, so the payload is not an amplification vector), while the binary writer rejects the same value because its reader must reject zero-progress elements. §3.4 rule 1 states that the collection cap applies identically in both formats 'so a value decoded from either format can always be re-encoded in the other'; the zero-byte ARRAY shape is the one case where that closure property does not hold across formats.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}}}]}",
+      "value": {
+        "v": [
+          {}
+        ]
+      },
+      "expectedJson": "{\"v\":[{}]}"
+    },
+    {
+      "id": "json/compound-encode/empty-array-of-zero-byte-elements",
+      "spec": "docs/SCHEMA.md §3.4 rule 1",
+      "description": "An EMPTY array of zero-byte elements is accepted by both writers: only a non-empty one is rejected.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}}}]}",
+      "value": {
+        "v": []
+      },
+      "expectedJson": "{\"v\":[]}"
+    }
+  ]
+}

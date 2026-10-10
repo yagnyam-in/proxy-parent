@@ -1,0 +1,160 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "identity.pem",
+  "description": "PEM encoding and decoding of certificates, public keys, private keys and certificate signing requests (protocol §9.1). PEM text is embedded so a foreign implementation can reproduce every value without Java tooling; line wrapping is the standard 64-column form both openssl and the reference BouncyCastle writer produce, and re-encoding must be byte-identical to the embedded text.",
+  "spec": [
+    "PERSONA-PROTOCOL.md §9.1",
+    "PERSONA-PROTOCOL.md §3.1",
+    "PERSONA-PROTOCOL.md §3.2"
+  ],
+  "vectors": [
+    {
+      "id": "identity/pem/certificate",
+      "spec": "PERSONA-PROTOCOL.md §9.1",
+      "description": "A certificate PEM decodes and every §3.1 fact is derivable from it: subject CN is the owner, the serial number, the validity window, the SHA-256 of the DER encoding (the certificate thumbprint of §3.2) and the public key thumbprint. Re-encoding is byte-identical to the input. The fixture was generated once with: openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out key.pem; openssl req -new -key key.pem -subj /CN=alice -out alice.csr.pem; openssl x509 -req -in alice.csr.pem -signkey key.pem -days 3650 -set_serial 4242 -sha256 -out cert.pem. The DER encoding is not bit-reproducible from those commands alone because the validity window is the generation instant; the committed PEM is the fixture, and every expected value here is recomputable from it without Java: SHA-256 of the DER (hashlib or shasum) and 'openssl x509 -noout -subject -serial -dates'.",
+      "objectType": "certificate",
+      "pem": "-----BEGIN CERTIFICATE-----\nMIIClTCCAX0CAhCSMA0GCSqGSIb3DQEBCwUAMBAxDjAMBgNVBAMMBWFsaWNlMB4X\nDTI2MTAxMDEzNDIxNFoXDTM2MTAwNzEzNDIxNFowEDEOMAwGA1UEAwwFYWxpY2Uw\nggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkJCZz+FSytWWTqnCMsSwC\nrGMp2T3hdilR9VtqAtBliMC+iVz1JNaB2Mp1OMJb/txfW2UgWAeFRCXsk6jraL7L\n4uxz5lCdZNXrn+wNk8Enj6HsGnu9sVEfz3OUHNPIUbk+PxmTY0OtgZnP4XkhoHaR\noJMCyJKR6npgL7TJHKKo06LDCHrcAhfNo3JCzIUnFJESPIKoDscwg55Ywfv5uP4B\nqNfLm/xhQERAzo/qrei6FSEwIyd1XjM/+wot1pQYgNToADRr65eJDBEQEhnE8qSr\n3hLGzoBMUU3cZJP/idkzlmETQ4eGHRE9E7aiFcR2M3/13Xcq/reUURJBe1b87gZb\nAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAE4PCIGku9tM2SwvG4E7KWM7tT7kBROu\n5DxOJ1ntqIDk9evaByHwm8VQJGkS8Ov8CfTSh40yOP5hCd98FNHJVN7nq0xHWQgI\nsZBb7gizbmU6UchyJP5ST9VZ25EQ5ZeUCp43p7xMgIXh3P0mqlb3c7Kd4NxDZ7S+\nl+U6dW9l2DoTWSA2mzwhZW39JhF4hYgxK6CxqplS7DUlaFR704clSWBEJczsyppc\neG2zX1OGhXgaDSC2/xkLRkHOPP8K7csFjjU85BMmNy7I9v5bs2+cHCL8qwr+xKRS\nB1oJEqGWa4/iqyzjKLIjpSeyu+rsHqvMZh4UY6wW8cjj1YRUws9HrnY=\n-----END CERTIFICATE-----\n",
+      "expected": {
+        "subjectCn": "alice",
+        "serialNumber": "4242",
+        "sha256Thumbprint": "a2120d227bc0acefe9c644c58e86715f87d8c6f40520d97097e74fc50de64ee7",
+        "validFrom": "2026-10-10T13:42:14Z",
+        "validTill": "2036-10-07T13:42:14Z",
+        "publicKeySha256Thumbprint": "99832dcd46b613a646dffe6d6f405235daaeccf4eedf26ef05157207796681bb",
+        "certificatePem": "-----BEGIN CERTIFICATE-----\nMIIClTCCAX0CAhCSMA0GCSqGSIb3DQEBCwUAMBAxDjAMBgNVBAMMBWFsaWNlMB4X\nDTI2MTAxMDEzNDIxNFoXDTM2MTAwNzEzNDIxNFowEDEOMAwGA1UEAwwFYWxpY2Uw\nggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkJCZz+FSytWWTqnCMsSwC\nrGMp2T3hdilR9VtqAtBliMC+iVz1JNaB2Mp1OMJb/txfW2UgWAeFRCXsk6jraL7L\n4uxz5lCdZNXrn+wNk8Enj6HsGnu9sVEfz3OUHNPIUbk+PxmTY0OtgZnP4XkhoHaR\noJMCyJKR6npgL7TJHKKo06LDCHrcAhfNo3JCzIUnFJESPIKoDscwg55Ywfv5uP4B\nqNfLm/xhQERAzo/qrei6FSEwIyd1XjM/+wot1pQYgNToADRr65eJDBEQEhnE8qSr\n3hLGzoBMUU3cZJP/idkzlmETQ4eGHRE9E7aiFcR2M3/13Xcq/reUURJBe1b87gZb\nAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAE4PCIGku9tM2SwvG4E7KWM7tT7kBROu\n5DxOJ1ntqIDk9evaByHwm8VQJGkS8Ov8CfTSh40yOP5hCd98FNHJVN7nq0xHWQgI\nsZBb7gizbmU6UchyJP5ST9VZ25EQ5ZeUCp43p7xMgIXh3P0mqlb3c7Kd4NxDZ7S+\nl+U6dW9l2DoTWSA2mzwhZW39JhF4hYgxK6CxqplS7DUlaFR704clSWBEJczsyppc\neG2zX1OGhXgaDSC2/xkLRkHOPP8K7csFjjU85BMmNy7I9v5bs2+cHCL8qwr+xKRS\nB1oJEqGWa4/iqyzjKLIjpSeyu+rsHqvMZh4UY6wW8cjj1YRUws9HrnY=\n-----END CERTIFICATE-----\n",
+        "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApCQmc/hUsrVlk6pwjLEs\nAqxjKdk94XYpUfVbagLQZYjAvolc9STWgdjKdTjCW/7cX1tlIFgHhUQl7JOo62i+\ny+Lsc+ZQnWTV65/sDZPBJ4+h7Bp7vbFRH89zlBzTyFG5Pj8Zk2NDrYGZz+F5IaB2\nkaCTAsiSkep6YC+0yRyiqNOiwwh63AIXzaNyQsyFJxSREjyCqA7HMIOeWMH7+bj+\nAajXy5v8YUBEQM6P6q3ouhUhMCMndV4zP/sKLdaUGIDU6AA0a+uXiQwREBIZxPKk\nq94Sxs6ATFFN3GST/4nZM5ZhE0OHhh0RPRO2ohXEdjN/9d13Kv63lFESQXtW/O4G\nWwIDAQAB\n-----END PUBLIC KEY-----\n"
+      }
+    },
+    {
+      "id": "identity/pem/certificate-with-a-csr-appended",
+      "spec": "PERSONA-PROTOCOL.md §9.1",
+      "description": "A two-object PEM file (certificate then certificate request): only the FIRST PEM object is parsed, so the derived facts are the certificate's. §9.1 certificate chains travel as multi-object PEM files, which is why this must be well defined. (Both objects here are public material: the suite ships no private-key PEMs.) The fixture was generated once with: openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out key.pem; openssl req -new -key key.pem -subj /CN=alice -out alice.csr.pem; openssl x509 -req -in alice.csr.pem -signkey key.pem -days 3650 -set_serial 4242 -sha256 -out cert.pem. The DER encoding is not bit-reproducible from those commands alone because the validity window is the generation instant; the committed PEM is the fixture, and every expected value here is recomputable from it without Java: SHA-256 of the DER (hashlib or shasum) and 'openssl x509 -noout -subject -serial -dates'.",
+      "objectType": "certificate",
+      "pem": "-----BEGIN CERTIFICATE-----\nMIIClTCCAX0CAhCSMA0GCSqGSIb3DQEBCwUAMBAxDjAMBgNVBAMMBWFsaWNlMB4X\nDTI2MTAxMDEzNDIxNFoXDTM2MTAwNzEzNDIxNFowEDEOMAwGA1UEAwwFYWxpY2Uw\nggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkJCZz+FSytWWTqnCMsSwC\nrGMp2T3hdilR9VtqAtBliMC+iVz1JNaB2Mp1OMJb/txfW2UgWAeFRCXsk6jraL7L\n4uxz5lCdZNXrn+wNk8Enj6HsGnu9sVEfz3OUHNPIUbk+PxmTY0OtgZnP4XkhoHaR\noJMCyJKR6npgL7TJHKKo06LDCHrcAhfNo3JCzIUnFJESPIKoDscwg55Ywfv5uP4B\nqNfLm/xhQERAzo/qrei6FSEwIyd1XjM/+wot1pQYgNToADRr65eJDBEQEhnE8qSr\n3hLGzoBMUU3cZJP/idkzlmETQ4eGHRE9E7aiFcR2M3/13Xcq/reUURJBe1b87gZb\nAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAE4PCIGku9tM2SwvG4E7KWM7tT7kBROu\n5DxOJ1ntqIDk9evaByHwm8VQJGkS8Ov8CfTSh40yOP5hCd98FNHJVN7nq0xHWQgI\nsZBb7gizbmU6UchyJP5ST9VZ25EQ5ZeUCp43p7xMgIXh3P0mqlb3c7Kd4NxDZ7S+\nl+U6dW9l2DoTWSA2mzwhZW39JhF4hYgxK6CxqplS7DUlaFR704clSWBEJczsyppc\neG2zX1OGhXgaDSC2/xkLRkHOPP8K7csFjjU85BMmNy7I9v5bs2+cHCL8qwr+xKRS\nB1oJEqGWa4/iqyzjKLIjpSeyu+rsHqvMZh4UY6wW8cjj1YRUws9HrnY=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE REQUEST-----\nMIICVTCCAT0CAQAwEDEOMAwGA1UEAwwFYWxpY2UwggEiMA0GCSqGSIb3DQEBAQUA\nA4IBDwAwggEKAoIBAQCkJCZz+FSytWWTqnCMsSwCrGMp2T3hdilR9VtqAtBliMC+\niVz1JNaB2Mp1OMJb/txfW2UgWAeFRCXsk6jraL7L4uxz5lCdZNXrn+wNk8Enj6Hs\nGnu9sVEfz3OUHNPIUbk+PxmTY0OtgZnP4XkhoHaRoJMCyJKR6npgL7TJHKKo06LD\nCHrcAhfNo3JCzIUnFJESPIKoDscwg55Ywfv5uP4BqNfLm/xhQERAzo/qrei6FSEw\nIyd1XjM/+wot1pQYgNToADRr65eJDBEQEhnE8qSr3hLGzoBMUU3cZJP/idkzlmET\nQ4eGHRE9E7aiFcR2M3/13Xcq/reUURJBe1b87gZbAgMBAAGgADANBgkqhkiG9w0B\nAQsFAAOCAQEAgquAyyXIXuFw6yLDsgqQQScFvI+QYJqDmigh8lHaDJ9vbhMoAFLe\nQyH+gDtEaI7a5RFcJDII5zvnvtU9q7IN3Oz9CrLGirG8Nnq+U1eYv5ZXgruGGvPA\nNPWp2jUmyUEds/9d4l/IROgD94doIxaHLYo4PH1yf/EroPVv37AEILkrnY1jqsfC\nwMyLmnhYwKdiuXSjsz8kfMRn4gYJmr1ysx5RJMDp6OlK9ZNFu/UpbMK69hYNOgQm\nUGbL7iWcBsD5fHzPNj9cgx+0HBmZlQmHheZRIOmp/7uYKkCcYiIcXksqq++sHOy0\nQYYCUxXjVEqeiwD7apmYd+baGgL/BvaGJA==\n-----END CERTIFICATE REQUEST-----\n",
+      "expected": {
+        "subjectCn": "alice",
+        "serialNumber": "4242",
+        "sha256Thumbprint": "a2120d227bc0acefe9c644c58e86715f87d8c6f40520d97097e74fc50de64ee7",
+        "validFrom": "2026-10-10T13:42:14Z",
+        "validTill": "2036-10-07T13:42:14Z",
+        "publicKeySha256Thumbprint": "99832dcd46b613a646dffe6d6f405235daaeccf4eedf26ef05157207796681bb",
+        "certificatePem": "-----BEGIN CERTIFICATE-----\nMIIClTCCAX0CAhCSMA0GCSqGSIb3DQEBCwUAMBAxDjAMBgNVBAMMBWFsaWNlMB4X\nDTI2MTAxMDEzNDIxNFoXDTM2MTAwNzEzNDIxNFowEDEOMAwGA1UEAwwFYWxpY2Uw\nggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkJCZz+FSytWWTqnCMsSwC\nrGMp2T3hdilR9VtqAtBliMC+iVz1JNaB2Mp1OMJb/txfW2UgWAeFRCXsk6jraL7L\n4uxz5lCdZNXrn+wNk8Enj6HsGnu9sVEfz3OUHNPIUbk+PxmTY0OtgZnP4XkhoHaR\noJMCyJKR6npgL7TJHKKo06LDCHrcAhfNo3JCzIUnFJESPIKoDscwg55Ywfv5uP4B\nqNfLm/xhQERAzo/qrei6FSEwIyd1XjM/+wot1pQYgNToADRr65eJDBEQEhnE8qSr\n3hLGzoBMUU3cZJP/idkzlmETQ4eGHRE9E7aiFcR2M3/13Xcq/reUURJBe1b87gZb\nAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAE4PCIGku9tM2SwvG4E7KWM7tT7kBROu\n5DxOJ1ntqIDk9evaByHwm8VQJGkS8Ov8CfTSh40yOP5hCd98FNHJVN7nq0xHWQgI\nsZBb7gizbmU6UchyJP5ST9VZ25EQ5ZeUCp43p7xMgIXh3P0mqlb3c7Kd4NxDZ7S+\nl+U6dW9l2DoTWSA2mzwhZW39JhF4hYgxK6CxqplS7DUlaFR704clSWBEJczsyppc\neG2zX1OGhXgaDSC2/xkLRkHOPP8K7csFjjU85BMmNy7I9v5bs2+cHCL8qwr+xKRS\nB1oJEqGWa4/iqyzjKLIjpSeyu+rsHqvMZh4UY6wW8cjj1YRUws9HrnY=\n-----END CERTIFICATE-----\n",
+        "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApCQmc/hUsrVlk6pwjLEs\nAqxjKdk94XYpUfVbagLQZYjAvolc9STWgdjKdTjCW/7cX1tlIFgHhUQl7JOo62i+\ny+Lsc+ZQnWTV65/sDZPBJ4+h7Bp7vbFRH89zlBzTyFG5Pj8Zk2NDrYGZz+F5IaB2\nkaCTAsiSkep6YC+0yRyiqNOiwwh63AIXzaNyQsyFJxSREjyCqA7HMIOeWMH7+bj+\nAajXy5v8YUBEQM6P6q3ouhUhMCMndV4zP/sKLdaUGIDU6AA0a+uXiQwREBIZxPKk\nq94Sxs6ATFFN3GST/4nZM5ZhE0OHhh0RPRO2ohXEdjN/9d13Kv63lFESQXtW/O4G\nWwIDAQAB\n-----END PUBLIC KEY-----\n"
+      }
+    },
+    {
+      "id": "identity/pem/public-key",
+      "spec": "PERSONA-PROTOCOL.md §9.1",
+      "description": "An X.509 SubjectPublicKeyInfo (PUBLIC KEY) PEM decodes; re-encoding is byte-identical and the SHA-256 of its DER form is the public-key thumbprint. The fixture was generated once with: openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out key.pem; openssl req -new -key key.pem -subj /CN=alice -out alice.csr.pem; openssl x509 -req -in alice.csr.pem -signkey key.pem -days 3650 -set_serial 4242 -sha256 -out cert.pem. The DER encoding is not bit-reproducible from those commands alone because the validity window is the generation instant; the committed PEM is the fixture, and every expected value here is recomputable from it without Java: SHA-256 of the DER (hashlib or shasum) and 'openssl x509 -noout -subject -serial -dates'.",
+      "objectType": "publicKey",
+      "pem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApCQmc/hUsrVlk6pwjLEs\nAqxjKdk94XYpUfVbagLQZYjAvolc9STWgdjKdTjCW/7cX1tlIFgHhUQl7JOo62i+\ny+Lsc+ZQnWTV65/sDZPBJ4+h7Bp7vbFRH89zlBzTyFG5Pj8Zk2NDrYGZz+F5IaB2\nkaCTAsiSkep6YC+0yRyiqNOiwwh63AIXzaNyQsyFJxSREjyCqA7HMIOeWMH7+bj+\nAajXy5v8YUBEQM6P6q3ouhUhMCMndV4zP/sKLdaUGIDU6AA0a+uXiQwREBIZxPKk\nq94Sxs6ATFFN3GST/4nZM5ZhE0OHhh0RPRO2ohXEdjN/9d13Kv63lFESQXtW/O4G\nWwIDAQAB\n-----END PUBLIC KEY-----\n",
+      "expected": {
+        "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApCQmc/hUsrVlk6pwjLEs\nAqxjKdk94XYpUfVbagLQZYjAvolc9STWgdjKdTjCW/7cX1tlIFgHhUQl7JOo62i+\ny+Lsc+ZQnWTV65/sDZPBJ4+h7Bp7vbFRH89zlBzTyFG5Pj8Zk2NDrYGZz+F5IaB2\nkaCTAsiSkep6YC+0yRyiqNOiwwh63AIXzaNyQsyFJxSREjyCqA7HMIOeWMH7+bj+\nAajXy5v8YUBEQM6P6q3ouhUhMCMndV4zP/sKLdaUGIDU6AA0a+uXiQwREBIZxPKk\nq94Sxs6ATFFN3GST/4nZM5ZhE0OHhh0RPRO2ohXEdjN/9d13Kv63lFESQXtW/O4G\nWwIDAQAB\n-----END PUBLIC KEY-----\n",
+        "publicKeySha256Thumbprint": "99832dcd46b613a646dffe6d6f405235daaeccf4eedf26ef05157207796681bb"
+      }
+    },
+    {
+      "id": "identity/pem/certificate-request",
+      "spec": "PERSONA-PROTOCOL.md §9.1",
+      "description": "A PKCS#10 CERTIFICATE REQUEST PEM decodes; its subject is CN=alice (the registrar binds that CN to the persona id, §7.1) and its SubjectPublicKeyInfo matches the certificate's public key. The fixture was generated once with: openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out key.pem; openssl req -new -key key.pem -subj /CN=alice -out alice.csr.pem; openssl x509 -req -in alice.csr.pem -signkey key.pem -days 3650 -set_serial 4242 -sha256 -out cert.pem. The DER encoding is not bit-reproducible from those commands alone because the validity window is the generation instant; the committed PEM is the fixture, and every expected value here is recomputable from it without Java: SHA-256 of the DER (hashlib or shasum) and 'openssl x509 -noout -subject -serial -dates'.",
+      "objectType": "csr",
+      "pem": "-----BEGIN CERTIFICATE REQUEST-----\nMIICVTCCAT0CAQAwEDEOMAwGA1UEAwwFYWxpY2UwggEiMA0GCSqGSIb3DQEBAQUA\nA4IBDwAwggEKAoIBAQCkJCZz+FSytWWTqnCMsSwCrGMp2T3hdilR9VtqAtBliMC+\niVz1JNaB2Mp1OMJb/txfW2UgWAeFRCXsk6jraL7L4uxz5lCdZNXrn+wNk8Enj6Hs\nGnu9sVEfz3OUHNPIUbk+PxmTY0OtgZnP4XkhoHaRoJMCyJKR6npgL7TJHKKo06LD\nCHrcAhfNo3JCzIUnFJESPIKoDscwg55Ywfv5uP4BqNfLm/xhQERAzo/qrei6FSEw\nIyd1XjM/+wot1pQYgNToADRr65eJDBEQEhnE8qSr3hLGzoBMUU3cZJP/idkzlmET\nQ4eGHRE9E7aiFcR2M3/13Xcq/reUURJBe1b87gZbAgMBAAGgADANBgkqhkiG9w0B\nAQsFAAOCAQEAgquAyyXIXuFw6yLDsgqQQScFvI+QYJqDmigh8lHaDJ9vbhMoAFLe\nQyH+gDtEaI7a5RFcJDII5zvnvtU9q7IN3Oz9CrLGirG8Nnq+U1eYv5ZXgruGGvPA\nNPWp2jUmyUEds/9d4l/IROgD94doIxaHLYo4PH1yf/EroPVv37AEILkrnY1jqsfC\nwMyLmnhYwKdiuXSjsz8kfMRn4gYJmr1ysx5RJMDp6OlK9ZNFu/UpbMK69hYNOgQm\nUGbL7iWcBsD5fHzPNj9cgx+0HBmZlQmHheZRIOmp/7uYKkCcYiIcXksqq++sHOy0\nQYYCUxXjVEqeiwD7apmYd+baGgL/BvaGJA==\n-----END CERTIFICATE REQUEST-----\n",
+      "expected": {
+        "csrPem": "-----BEGIN CERTIFICATE REQUEST-----\nMIICVTCCAT0CAQAwEDEOMAwGA1UEAwwFYWxpY2UwggEiMA0GCSqGSIb3DQEBAQUA\nA4IBDwAwggEKAoIBAQCkJCZz+FSytWWTqnCMsSwCrGMp2T3hdilR9VtqAtBliMC+\niVz1JNaB2Mp1OMJb/txfW2UgWAeFRCXsk6jraL7L4uxz5lCdZNXrn+wNk8Enj6Hs\nGnu9sVEfz3OUHNPIUbk+PxmTY0OtgZnP4XkhoHaRoJMCyJKR6npgL7TJHKKo06LD\nCHrcAhfNo3JCzIUnFJESPIKoDscwg55Ywfv5uP4BqNfLm/xhQERAzo/qrei6FSEw\nIyd1XjM/+wot1pQYgNToADRr65eJDBEQEhnE8qSr3hLGzoBMUU3cZJP/idkzlmET\nQ4eGHRE9E7aiFcR2M3/13Xcq/reUURJBe1b87gZbAgMBAAGgADANBgkqhkiG9w0B\nAQsFAAOCAQEAgquAyyXIXuFw6yLDsgqQQScFvI+QYJqDmigh8lHaDJ9vbhMoAFLe\nQyH+gDtEaI7a5RFcJDII5zvnvtU9q7IN3Oz9CrLGirG8Nnq+U1eYv5ZXgruGGvPA\nNPWp2jUmyUEds/9d4l/IROgD94doIxaHLYo4PH1yf/EroPVv37AEILkrnY1jqsfC\nwMyLmnhYwKdiuXSjsz8kfMRn4gYJmr1ysx5RJMDp6OlK9ZNFu/UpbMK69hYNOgQm\nUGbL7iWcBsD5fHzPNj9cgx+0HBmZlQmHheZRIOmp/7uYKkCcYiIcXksqq++sHOy0\nQYYCUxXjVEqeiwD7apmYd+baGgL/BvaGJA==\n-----END CERTIFICATE REQUEST-----\n",
+        "subjectCn": "alice",
+        "publicKeySha256Thumbprint": "99832dcd46b613a646dffe6d6f405235daaeccf4eedf26ef05157207796681bb"
+      }
+    },
+    {
+      "id": "identity/pem-reject/certificate-not-pem",
+      "spec": "PERSONA-PROTOCOL.md §9.1",
+      "description": "Arbitrary text is not a PEM object.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §9.1",
+      "objectType": "certificate",
+      "pem": "not a pem file at all\n"
+    },
+    {
+      "id": "identity/pem-reject/certificate-empty",
+      "spec": "PERSONA-PROTOCOL.md §9.1",
+      "description": "The empty string holds no PEM object.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §9.1",
+      "objectType": "certificate",
+      "pem": ""
+    },
+    {
+      "id": "identity/pem-reject/certificate-malformed-base64-body",
+      "spec": "PERSONA-PROTOCOL.md §9.1",
+      "description": "A PEM body that is not base64.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §9.1",
+      "objectType": "certificate",
+      "pem": "-----BEGIN CERTIFICATE-----\nnot@base64!!\n-----END CERTIFICATE-----\n"
+    },
+    {
+      "id": "identity/pem-reject/certificate-header-only",
+      "spec": "PERSONA-PROTOCOL.md §9.1",
+      "description": "An empty PEM body is not a certificate.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §9.1",
+      "objectType": "certificate",
+      "pem": "-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n"
+    },
+    {
+      "id": "identity/pem-reject/certificate-wrong-type",
+      "spec": "PERSONA-PROTOCOL.md §9.1",
+      "description": "A PUBLIC KEY PEM is not a CERTIFICATE PEM.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §9.1",
+      "objectType": "certificate",
+      "pem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApCQmc/hUsrVlk6pwjLEs\nAqxjKdk94XYpUfVbagLQZYjAvolc9STWgdjKdTjCW/7cX1tlIFgHhUQl7JOo62i+\ny+Lsc+ZQnWTV65/sDZPBJ4+h7Bp7vbFRH89zlBzTyFG5Pj8Zk2NDrYGZz+F5IaB2\nkaCTAsiSkep6YC+0yRyiqNOiwwh63AIXzaNyQsyFJxSREjyCqA7HMIOeWMH7+bj+\nAajXy5v8YUBEQM6P6q3ouhUhMCMndV4zP/sKLdaUGIDU6AA0a+uXiQwREBIZxPKk\nq94Sxs6ATFFN3GST/4nZM5ZhE0OHhh0RPRO2ohXEdjN/9d13Kv63lFESQXtW/O4G\nWwIDAQAB\n-----END PUBLIC KEY-----\n"
+    },
+    {
+      "id": "identity/pem-reject/public-key-wrong-type",
+      "spec": "PERSONA-PROTOCOL.md §9.1",
+      "description": "A CERTIFICATE PEM is not a PUBLIC KEY PEM.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §9.1",
+      "objectType": "publicKey",
+      "pem": "-----BEGIN CERTIFICATE-----\nMIIClTCCAX0CAhCSMA0GCSqGSIb3DQEBCwUAMBAxDjAMBgNVBAMMBWFsaWNlMB4X\nDTI2MTAxMDEzNDIxNFoXDTM2MTAwNzEzNDIxNFowEDEOMAwGA1UEAwwFYWxpY2Uw\nggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkJCZz+FSytWWTqnCMsSwC\nrGMp2T3hdilR9VtqAtBliMC+iVz1JNaB2Mp1OMJb/txfW2UgWAeFRCXsk6jraL7L\n4uxz5lCdZNXrn+wNk8Enj6HsGnu9sVEfz3OUHNPIUbk+PxmTY0OtgZnP4XkhoHaR\noJMCyJKR6npgL7TJHKKo06LDCHrcAhfNo3JCzIUnFJESPIKoDscwg55Ywfv5uP4B\nqNfLm/xhQERAzo/qrei6FSEwIyd1XjM/+wot1pQYgNToADRr65eJDBEQEhnE8qSr\n3hLGzoBMUU3cZJP/idkzlmETQ4eGHRE9E7aiFcR2M3/13Xcq/reUURJBe1b87gZb\nAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAE4PCIGku9tM2SwvG4E7KWM7tT7kBROu\n5DxOJ1ntqIDk9evaByHwm8VQJGkS8Ov8CfTSh40yOP5hCd98FNHJVN7nq0xHWQgI\nsZBb7gizbmU6UchyJP5ST9VZ25EQ5ZeUCp43p7xMgIXh3P0mqlb3c7Kd4NxDZ7S+\nl+U6dW9l2DoTWSA2mzwhZW39JhF4hYgxK6CxqplS7DUlaFR704clSWBEJczsyppc\neG2zX1OGhXgaDSC2/xkLRkHOPP8K7csFjjU85BMmNy7I9v5bs2+cHCL8qwr+xKRS\nB1oJEqGWa4/iqyzjKLIjpSeyu+rsHqvMZh4UY6wW8cjj1YRUws9HrnY=\n-----END CERTIFICATE-----\n"
+    },
+    {
+      "id": "identity/pem-reject/private-key-wrong-type",
+      "spec": "PERSONA-PROTOCOL.md §9.1",
+      "description": "A CERTIFICATE PEM is not a PRIVATE KEY PEM.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §9.1",
+      "objectType": "privateKey",
+      "pem": "-----BEGIN CERTIFICATE-----\nMIIClTCCAX0CAhCSMA0GCSqGSIb3DQEBCwUAMBAxDjAMBgNVBAMMBWFsaWNlMB4X\nDTI2MTAxMDEzNDIxNFoXDTM2MTAwNzEzNDIxNFowEDEOMAwGA1UEAwwFYWxpY2Uw\nggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkJCZz+FSytWWTqnCMsSwC\nrGMp2T3hdilR9VtqAtBliMC+iVz1JNaB2Mp1OMJb/txfW2UgWAeFRCXsk6jraL7L\n4uxz5lCdZNXrn+wNk8Enj6HsGnu9sVEfz3OUHNPIUbk+PxmTY0OtgZnP4XkhoHaR\noJMCyJKR6npgL7TJHKKo06LDCHrcAhfNo3JCzIUnFJESPIKoDscwg55Ywfv5uP4B\nqNfLm/xhQERAzo/qrei6FSEwIyd1XjM/+wot1pQYgNToADRr65eJDBEQEhnE8qSr\n3hLGzoBMUU3cZJP/idkzlmETQ4eGHRE9E7aiFcR2M3/13Xcq/reUURJBe1b87gZb\nAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAE4PCIGku9tM2SwvG4E7KWM7tT7kBROu\n5DxOJ1ntqIDk9evaByHwm8VQJGkS8Ov8CfTSh40yOP5hCd98FNHJVN7nq0xHWQgI\nsZBb7gizbmU6UchyJP5ST9VZ25EQ5ZeUCp43p7xMgIXh3P0mqlb3c7Kd4NxDZ7S+\nl+U6dW9l2DoTWSA2mzwhZW39JhF4hYgxK6CxqplS7DUlaFR704clSWBEJczsyppc\neG2zX1OGhXgaDSC2/xkLRkHOPP8K7csFjjU85BMmNy7I9v5bs2+cHCL8qwr+xKRS\nB1oJEqGWa4/iqyzjKLIjpSeyu+rsHqvMZh4UY6wW8cjj1YRUws9HrnY=\n-----END CERTIFICATE-----\n"
+    },
+    {
+      "id": "identity/pem-reject/private-key-public-key-pem",
+      "spec": "PERSONA-PROTOCOL.md §9.1",
+      "description": "A PUBLIC KEY PEM is not a PRIVATE KEY PEM.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §9.1",
+      "objectType": "privateKey",
+      "pem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApCQmc/hUsrVlk6pwjLEs\nAqxjKdk94XYpUfVbagLQZYjAvolc9STWgdjKdTjCW/7cX1tlIFgHhUQl7JOo62i+\ny+Lsc+ZQnWTV65/sDZPBJ4+h7Bp7vbFRH89zlBzTyFG5Pj8Zk2NDrYGZz+F5IaB2\nkaCTAsiSkep6YC+0yRyiqNOiwwh63AIXzaNyQsyFJxSREjyCqA7HMIOeWMH7+bj+\nAajXy5v8YUBEQM6P6q3ouhUhMCMndV4zP/sKLdaUGIDU6AA0a+uXiQwREBIZxPKk\nq94Sxs6ATFFN3GST/4nZM5ZhE0OHhh0RPRO2ohXEdjN/9d13Kv63lFESQXtW/O4G\nWwIDAQAB\n-----END PUBLIC KEY-----\n"
+    },
+    {
+      "id": "identity/pem-reject/csr-wrong-type",
+      "spec": "PERSONA-PROTOCOL.md §9.1",
+      "description": "A CERTIFICATE PEM is not a CERTIFICATE REQUEST PEM.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §9.1",
+      "objectType": "csr",
+      "pem": "-----BEGIN CERTIFICATE-----\nMIIClTCCAX0CAhCSMA0GCSqGSIb3DQEBCwUAMBAxDjAMBgNVBAMMBWFsaWNlMB4X\nDTI2MTAxMDEzNDIxNFoXDTM2MTAwNzEzNDIxNFowEDEOMAwGA1UEAwwFYWxpY2Uw\nggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkJCZz+FSytWWTqnCMsSwC\nrGMp2T3hdilR9VtqAtBliMC+iVz1JNaB2Mp1OMJb/txfW2UgWAeFRCXsk6jraL7L\n4uxz5lCdZNXrn+wNk8Enj6HsGnu9sVEfz3OUHNPIUbk+PxmTY0OtgZnP4XkhoHaR\noJMCyJKR6npgL7TJHKKo06LDCHrcAhfNo3JCzIUnFJESPIKoDscwg55Ywfv5uP4B\nqNfLm/xhQERAzo/qrei6FSEwIyd1XjM/+wot1pQYgNToADRr65eJDBEQEhnE8qSr\n3hLGzoBMUU3cZJP/idkzlmETQ4eGHRE9E7aiFcR2M3/13Xcq/reUURJBe1b87gZb\nAgMBAAEwDQYJKoZIhvcNAQELBQADggEBAE4PCIGku9tM2SwvG4E7KWM7tT7kBROu\n5DxOJ1ntqIDk9evaByHwm8VQJGkS8Ov8CfTSh40yOP5hCd98FNHJVN7nq0xHWQgI\nsZBb7gizbmU6UchyJP5ST9VZ25EQ5ZeUCp43p7xMgIXh3P0mqlb3c7Kd4NxDZ7S+\nl+U6dW9l2DoTWSA2mzwhZW39JhF4hYgxK6CxqplS7DUlaFR704clSWBEJczsyppc\neG2zX1OGhXgaDSC2/xkLRkHOPP8K7csFjjU85BMmNy7I9v5bs2+cHCL8qwr+xKRS\nB1oJEqGWa4/iqyzjKLIjpSeyu+rsHqvMZh4UY6wW8cjj1YRUws9HrnY=\n-----END CERTIFICATE-----\n"
+    },
+    {
+      "id": "identity/pem-reject/csr-public-key-pem",
+      "spec": "PERSONA-PROTOCOL.md §9.1",
+      "description": "A PUBLIC KEY PEM is not a CERTIFICATE REQUEST PEM.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §9.1",
+      "objectType": "csr",
+      "pem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApCQmc/hUsrVlk6pwjLEs\nAqxjKdk94XYpUfVbagLQZYjAvolc9STWgdjKdTjCW/7cX1tlIFgHhUQl7JOo62i+\ny+Lsc+ZQnWTV65/sDZPBJ4+h7Bp7vbFRH89zlBzTyFG5Pj8Zk2NDrYGZz+F5IaB2\nkaCTAsiSkep6YC+0yRyiqNOiwwh63AIXzaNyQsyFJxSREjyCqA7HMIOeWMH7+bj+\nAajXy5v8YUBEQM6P6q3ouhUhMCMndV4zP/sKLdaUGIDU6AA0a+uXiQwREBIZxPKk\nq94Sxs6ATFFN3GST/4nZM5ZhE0OHhh0RPRO2ohXEdjN/9d13Kv63lFESQXtW/O4G\nWwIDAQAB\n-----END PUBLIC KEY-----\n"
+    }
+  ]
+}

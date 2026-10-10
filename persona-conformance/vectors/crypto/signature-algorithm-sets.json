@@ -1,0 +1,94 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "crypto.signature-algorithm-set",
+  "description": "Exact-match membership of an envelope's signature algorithm set against the Persona Version's valid sets (protocol §11 rule 3, §7.2 key-family constraint). A runner answers whether its active Persona Version accepts the given set as-is.",
+  "spec": [
+    "PERSONA-PROTOCOL.md §11 rule 3",
+    "PERSONA-PROTOCOL.md §7.2"
+  ],
+  "vectors": [
+    {
+      "id": "crypto/signature-algorithm-set/0",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "The sanctioned v0 set.",
+      "signatureAlgorithms": [
+        "SHA256withRSA"
+      ],
+      "expected": true
+    },
+    {
+      "id": "crypto/signature-algorithm-set/1",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "A signature set is a set: a duplicate algorithm collapses, so this matches the sanctioned set exactly (§11 rule 3).",
+      "signatureAlgorithms": [
+        "SHA256withRSA",
+        "SHA256withRSA"
+      ],
+      "expected": true
+    },
+    {
+      "id": "crypto/signature-algorithm-set/2",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "The empty set matches nothing and is rejected (§11 rule 3; §12 downgrade defense).",
+      "signatureAlgorithms": [],
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-algorithm-set/3",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "An algorithm outside the sanctioned sets.",
+      "signatureAlgorithms": [
+        "SHA512withRSA"
+      ],
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-algorithm-set/4",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "A superset of the sanctioned set: §11 rule 3 rejects supersets explicitly.",
+      "signatureAlgorithms": [
+        "SHA256withRSA",
+        "SHA512withRSA"
+      ],
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-algorithm-set/5",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "Algorithm identifiers are case-sensitive wire strings.",
+      "signatureAlgorithms": [
+        "sha256withrsa"
+      ],
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-algorithm-set/6",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "§7.2 key-family constraint: a set mixing RSA and Ed25519 is not single-key-family and must be rejected even though each member is a plausible algorithm name.",
+      "signatureAlgorithms": [
+        "SHA256withRSA",
+        "Ed25519"
+      ],
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-algorithm-set/7",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "A family name is not a signature algorithm identifier.",
+      "signatureAlgorithms": [
+        "RSA"
+      ],
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-algorithm-set/8",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "A trailing space is a different wire string.",
+      "signatureAlgorithms": [
+        "SHA256withRSA "
+      ],
+      "expected": false
+    }
+  ]
+}

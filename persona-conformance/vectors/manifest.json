@@ -1,0 +1,171 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "manifest",
+  "description": "Index of every vector file (see vectors/README.md). Regenerate with 'python3 tools/reference_vectors.py manifest' after adding, removing or renaming a vector file; the reference check and the Java runner both fail when this index is stale.",
+  "fileCount": 23,
+  "vectorCount": 378,
+  "kinds": [
+    {
+      "kind": "crypto.policy-v0",
+      "vectorCount": 11
+    },
+    {
+      "kind": "crypto.signature-algorithm-set",
+      "vectorCount": 9
+    },
+    {
+      "kind": "identity.pem",
+      "vectorCount": 14
+    },
+    {
+      "kind": "identity.persona-id",
+      "vectorCount": 20
+    },
+    {
+      "kind": "identity.persona-id-delegation",
+      "vectorCount": 11
+    },
+    {
+      "kind": "identity.realm",
+      "vectorCount": 20
+    },
+    {
+      "kind": "payload.binary.decode",
+      "vectorCount": 59
+    },
+    {
+      "kind": "payload.binary.encode",
+      "vectorCount": 78
+    },
+    {
+      "kind": "payload.json.decode",
+      "vectorCount": 48
+    },
+    {
+      "kind": "payload.json.encode",
+      "vectorCount": 57
+    },
+    {
+      "kind": "schema.digest",
+      "vectorCount": 51
+    }
+  ],
+  "files": [
+    {
+      "path": "binary/compound-encode.json",
+      "kind": "payload.binary.encode",
+      "vectorCount": 19
+    },
+    {
+      "path": "binary/decode-reject.json",
+      "kind": "payload.binary.decode",
+      "vectorCount": 25
+    },
+    {
+      "path": "binary/decode.json",
+      "kind": "payload.binary.decode",
+      "vectorCount": 25
+    },
+    {
+      "path": "binary/encode-reject.json",
+      "kind": "payload.binary.encode",
+      "vectorCount": 15
+    },
+    {
+      "path": "binary/kitchen-sink.json",
+      "kind": "payload.binary.encode",
+      "vectorCount": 1
+    },
+    {
+      "path": "binary/primitive-encode.json",
+      "kind": "payload.binary.encode",
+      "vectorCount": 34
+    },
+    {
+      "path": "crypto/policy-v0.json",
+      "kind": "crypto.policy-v0",
+      "vectorCount": 11
+    },
+    {
+      "path": "crypto/signature-algorithm-sets.json",
+      "kind": "crypto.signature-algorithm-set",
+      "vectorCount": 9
+    },
+    {
+      "path": "envelope/binary-decode.json",
+      "kind": "payload.binary.decode",
+      "vectorCount": 9
+    },
+    {
+      "path": "envelope/binary-encode.json",
+      "kind": "payload.binary.encode",
+      "vectorCount": 9
+    },
+    {
+      "path": "envelope/json-encode.json",
+      "kind": "payload.json.encode",
+      "vectorCount": 9
+    },
+    {
+      "path": "identity/pem.json",
+      "kind": "identity.pem",
+      "vectorCount": 14
+    },
+    {
+      "path": "identity/persona-id-delegation.json",
+      "kind": "identity.persona-id-delegation",
+      "vectorCount": 11
+    },
+    {
+      "path": "identity/persona-id.json",
+      "kind": "identity.persona-id",
+      "vectorCount": 20
+    },
+    {
+      "path": "identity/realm.json",
+      "kind": "identity.realm",
+      "vectorCount": 20
+    },
+    {
+      "path": "json/compound-encode.json",
+      "kind": "payload.json.encode",
+      "vectorCount": 11
+    },
+    {
+      "path": "json/decode-reject.json",
+      "kind": "payload.json.decode",
+      "vectorCount": 28
+    },
+    {
+      "path": "json/decode.json",
+      "kind": "payload.json.decode",
+      "vectorCount": 20
+    },
+    {
+      "path": "json/encode-reject.json",
+      "kind": "payload.json.encode",
+      "vectorCount": 13
+    },
+    {
+      "path": "json/kitchen-sink.json",
+      "kind": "payload.json.encode",
+      "vectorCount": 1
+    },
+    {
+      "path": "json/primitive-encode.json",
+      "kind": "payload.json.encode",
+      "vectorCount": 23
+    },
+    {
+      "path": "schema-digest/schema-digest.json",
+      "kind": "schema.digest",
+      "vectorCount": 16
+    },
+    {
+      "path": "schema-digest/schema-reject.json",
+      "kind": "schema.digest",
+      "vectorCount": 35
+    }
+  ]
+}

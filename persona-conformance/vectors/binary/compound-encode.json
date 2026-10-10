@@ -1,0 +1,299 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "payload.binary.encode",
+  "description": "Byte-exact persona-binary encodings of the §3.2 compounds (records, enums, arrays, maps, nested envelopes).",
+  "spec": [
+    "docs/SCHEMA.md §3.2",
+    "docs/SCHEMA.md §5"
+  ],
+  "vectors": [
+    {
+      "id": "binary/compound-encode/enum-index-zero",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "An enum encodes as the zero-based index of its symbol: A is index 0.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"enum\",\"name\":\"M\",\"symbols\":[\"A\",\"B\",\"C\"]}}]}",
+      "value": {
+        "v": "A"
+      },
+      "expectedHex": "00"
+    },
+    {
+      "id": "binary/compound-encode/enum-index-two",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "C is index 2, so zigzag(2) = 4.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"enum\",\"name\":\"M\",\"symbols\":[\"A\",\"B\",\"C\"]}}]}",
+      "value": {
+        "v": "C"
+      },
+      "expectedHex": "04"
+    },
+    {
+      "id": "binary/compound-encode/array-empty",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "An empty array is just the zero terminator: writers must not emit a zero-length block.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}",
+      "value": {
+        "v": []
+      },
+      "expectedHex": "00"
+    },
+    {
+      "id": "binary/compound-encode/array-of-two-strings",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "A non-empty array is one block: count 2, then the items, then the zero terminator.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}",
+      "value": {
+        "v": [
+          "a",
+          "b"
+        ]
+      },
+      "expectedHex": "040261026200"
+    },
+    {
+      "id": "binary/compound-encode/array-of-three-strings",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "One block regardless of size; the count is a zigzag long.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}",
+      "value": {
+        "v": [
+          "a",
+          "bb",
+          "ccc"
+        ]
+      },
+      "expectedHex": "0602610462620663636300"
+    },
+    {
+      "id": "binary/compound-encode/array-of-ints",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "Array items are encoded per their own type, with no frame or padding.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":\"int\"}}]}",
+      "value": {
+        "v": [
+          1,
+          -1,
+          200
+        ]
+      },
+      "expectedHex": "060201900300"
+    },
+    {
+      "id": "binary/compound-encode/map-empty",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "An empty map is the zero terminator.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
+      "value": {
+        "v": {}
+      },
+      "expectedHex": "00"
+    },
+    {
+      "id": "binary/compound-encode/map-one-entry",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "Each entry is the key (a length-prefixed string) then the value.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
+      "value": {
+        "v": {
+          "a": "x"
+        }
+      },
+      "expectedHex": "020261027800"
+    },
+    {
+      "id": "binary/compound-encode/map-keys-in-utf8-byte-order",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "Writers MUST emit map entries in ascending UTF-8 byte order of their keys: a (0x61) < z (0x7a) < é (0xc3 0xa9), regardless of the input map's iteration order.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
+      "value": {
+        "v": {
+          "z": "1",
+          "é": "2",
+          "a": "3"
+        }
+      },
+      "expectedHex": "0602610233027a023104c3a9023200"
+    },
+    {
+      "id": "binary/compound-encode/map-keys-mixed-length",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "UTF-8 byte order is a prefix order: a < aa < ab.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
+      "value": {
+        "v": {
+          "aa": "1",
+          "a": "2",
+          "ab": "3"
+        }
+      },
+      "expectedHex": "06026102320461610231046162023300"
+    },
+    {
+      "id": "binary/compound-encode/nested-record",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "Record fields are concatenated in declaration order with no field names on the wire; a one-field long record is just the long.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"record\",\"name\":\"Inner\",\"fields\":[{\"name\":\"x\",\"type\":\"long\"}]}}]}",
+      "value": {
+        "v": {
+          "x": 7
+        }
+      },
+      "expectedHex": "0e"
+    },
+    {
+      "id": "binary/compound-encode/array-of-records",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "A block of nested records.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Inner\",\"fields\":[{\"name\":\"x\",\"type\":\"long\"}]}}}]}",
+      "value": {
+        "v": [
+          {
+            "x": 1
+          },
+          {
+            "x": -1
+          }
+        ]
+      },
+      "expectedHex": "04020100"
+    },
+    {
+      "id": "binary/compound-encode/map-of-arrays",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "Map values are collections themselves, each with its own terminator.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"array\",\"items\":\"string\"}}}]}",
+      "value": {
+        "v": {
+          "b": [
+            "x"
+          ],
+          "a": []
+        }
+      },
+      "expectedHex": "0402610002620202780000"
+    },
+    {
+      "id": "binary/compound-encode/array-of-maps",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "Arrays of maps: every nested collection ends with its own zero terminator.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"map\",\"values\":\"string\"}}}]}",
+      "value": {
+        "v": [
+          {
+            "k": "v"
+          },
+          {}
+        ]
+      },
+      "expectedHex": "0402026b0276000000"
+    },
+    {
+      "id": "binary/compound-encode/map-with-zero-byte-values",
+      "spec": "docs/SCHEMA.md §3.4 rule 1",
+      "description": "Maps are exempt from the zero-byte rule: every entry consumes at least the key's length byte, so a map with zero-byte values round-trips. Compare binary/encode-reject/array-of-zero-byte-elements.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}}}]}",
+      "value": {
+        "v": {
+          "a": {}
+        }
+      },
+      "expectedHex": "02026100"
+    },
+    {
+      "id": "binary/compound-encode/lone-zero-field-record",
+      "spec": "docs/SCHEMA.md §3.4 rule 1",
+      "description": "A lone zero-field record encodes to zero bytes; the §3.4 zero-progress rule is scoped to collections.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}}]}",
+      "value": {
+        "v": {}
+      },
+      "expectedHex": ""
+    },
+    {
+      "id": "binary/compound-encode/envelope-field",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "An envelope field is encoded as the record of persona.SignedEnvelope@v1 (§5).",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"envelope\"}]}",
+      "value": {
+        "v": {
+          "messageType": "example.Greeting@v1",
+          "payloadFormat": "json",
+          "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+          "payload": "AQID",
+          "signedBy": "alice",
+          "signatures": [
+            {
+              "algorithm": "SHA256withRSA",
+              "value": "CQg="
+            }
+          ]
+        }
+      },
+      "expectedHex": "266578616d706c652e4772656574696e67407631086a736f6e5036366364346363376638393066383063626461343366613564363965666563636164616430383333060102030a616c696365021a5348413235367769746852534104090800"
+    },
+    {
+      "id": "binary/compound-encode/multi-envelope-field",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "A multi-envelope field is encoded as the record of persona.MultiSignedEnvelope@v1 (§5).",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"multi-envelope\"}]}",
+      "value": {
+        "v": {
+          "messageType": "example.Charter@v1",
+          "payloadFormat": "persona-binary",
+          "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+          "payload": "AQI=",
+          "signatures": [
+            {
+              "signedBy": "alice",
+              "signatures": [
+                {
+                  "algorithm": "SHA256withRSA",
+                  "value": "Bw=="
+                },
+                {
+                  "algorithm": "SHA256withRSA",
+                  "value": "CAk="
+                }
+              ]
+            },
+            {
+              "signedBy": "bob",
+              "signatures": [
+                {
+                  "algorithm": "SHA256withRSA",
+                  "value": "Cgs="
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "expectedHex": "246578616d706c652e436861727465724076311c706572736f6e612d62696e6172795036366364346363376638393066383063626461343366613564363965666563636164616430383333040102040a616c696365041a5348413235367769746852534102071a534841323536776974685253410408090006626f62021a53484132353677697468525341040a0b0000"
+    },
+    {
+      "id": "binary/compound-encode/array-of-envelopes",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "An array of envelope fields, each encoded as a full SignedEnvelope record.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":\"envelope\"}}]}",
+      "value": {
+        "v": [
+          {
+            "messageType": "example.Greeting@v1",
+            "payloadFormat": "json",
+            "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+            "payload": "AQID",
+            "signedBy": "alice",
+            "signatures": [
+              {
+                "algorithm": "SHA256withRSA",
+                "value": "CQg="
+              }
+            ]
+          }
+        ]
+      },
+      "expectedHex": "02266578616d706c652e4772656574696e67407631086a736f6e5036366364346363376638393066383063626461343366613564363965666563636164616430383333060102030a616c696365021a534841323536776974685253410409080000"
+    }
+  ]
+}

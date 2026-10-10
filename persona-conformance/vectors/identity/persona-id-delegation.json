@@ -1,0 +1,99 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "identity.persona-id-delegation",
+  "description": "The delegation rule of protocol §3.2: the truth table for X.canSignOnBehalfOf(Y), including the wildcard target, the unpinned-target rule and structural equality.",
+  "spec": [
+    "PERSONA-PROTOCOL.md §3.2"
+  ],
+  "vectors": [
+    {
+      "id": "identity/persona-id-delegation/identical-pinned",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "§3.2 third bullet: X == Y exactly.",
+      "signer": "alice#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "signedFor": "alice#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expected": true
+    },
+    {
+      "id": "identity/persona-id-delegation/identical-unpinned",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "§3.2 third bullet: X == Y exactly.",
+      "signer": "alice",
+      "signedFor": "alice",
+      "expected": true
+    },
+    {
+      "id": "identity/persona-id-delegation/pinned-signer-unpinned-target",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "§3.2 second bullet: Y.id == X.id and Y is unpinned.",
+      "signer": "alice#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "signedFor": "alice",
+      "expected": true
+    },
+    {
+      "id": "identity/persona-id-delegation/unpinned-signer-pinned-target",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "The second bullet requires Y to be UNpinned, and X does not equal Y, so an unpinned id may not sign for a pinned one.",
+      "signer": "alice",
+      "signedFor": "alice#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expected": false
+    },
+    {
+      "id": "identity/persona-id-delegation/pinned-signer-other-thumbprint",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "Same id, different certificate: neither bullet applies.",
+      "signer": "alice#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "signedFor": "alice#bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "expected": false
+    },
+    {
+      "id": "identity/persona-id-delegation/target-is-wildcard-any",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "§3.2 first bullet: Y is the wildcard.",
+      "signer": "alice",
+      "signedFor": "any",
+      "expected": true
+    },
+    {
+      "id": "identity/persona-id-delegation/target-is-wildcard-any-any",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "§3.2 first bullet: any#any is the wildcard.",
+      "signer": "alice",
+      "signedFor": "any#any",
+      "expected": true
+    },
+    {
+      "id": "identity/persona-id-delegation/wildcard-signer-to-wildcard-target",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "X == Y exactly and Y is the wildcard.",
+      "signer": "any",
+      "signedFor": "any",
+      "expected": true
+    },
+    {
+      "id": "identity/persona-id-delegation/different-ids",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "Different ids.",
+      "signer": "alice",
+      "signedFor": "bob",
+      "expected": false
+    },
+    {
+      "id": "identity/persona-id-delegation/different-ids-pinned",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "Different ids.",
+      "signer": "alice#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "signedFor": "bob#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expected": false
+    },
+    {
+      "id": "identity/persona-id-delegation/missing-target",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "A null target can never be signed for.",
+      "signer": "alice",
+      "signedFor": null,
+      "expected": false
+    }
+  ]
+}

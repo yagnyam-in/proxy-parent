@@ -1,0 +1,180 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "payload.json.encode",
+  "description": "The wire form of an envelope (§5) is the canonical JSON of the envelope record, with payload and signature values rendered as base64 strings.",
+  "spec": [
+    "docs/SCHEMA.md §5",
+    "docs/SCHEMA.md §4.1"
+  ],
+  "vectors": [
+    {
+      "id": "envelope/json-encode/signed-envelope",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "A SignedEnvelope record with one signature. The wire shape is the record of persona.SignedEnvelope@v1: six fields in declaration order, 'payload' and every signature 'value' as length-prefixed byte strings.",
+      "schemaRef": "persona.SignedEnvelope@v1",
+      "value": {
+        "messageType": "example.Greeting@v1",
+        "payloadFormat": "json",
+        "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+        "payload": "AQID",
+        "signedBy": "alice",
+        "signatures": [
+          {
+            "algorithm": "SHA256withRSA",
+            "value": "CQg="
+          }
+        ]
+      },
+      "expectedJson": "{\"messageType\":\"example.Greeting@v1\",\"payload\":\"AQID\",\"payloadFormat\":\"json\",\"schemaId\":\"66cd4cc7f890f80cbda43fa5d69efeccadad0833\",\"signatures\":[{\"algorithm\":\"SHA256withRSA\",\"value\":\"CQg=\"}],\"signedBy\":\"alice\"}"
+    },
+    {
+      "id": "envelope/json-encode/signed-envelope-two-signatures",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "A pinned signedBy, an empty payload and two signatures: the signatures array is one block of two inline Signature records.",
+      "schemaRef": "persona.SignedEnvelope@v1",
+      "value": {
+        "messageType": "example.Greeting@v1",
+        "payloadFormat": "persona-binary",
+        "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+        "payload": "",
+        "signedBy": "alice#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "signatures": [
+          {
+            "algorithm": "SHA256withRSA",
+            "value": "AA=="
+          },
+          {
+            "algorithm": "SHA256withRSA",
+            "value": "////"
+          }
+        ]
+      },
+      "expectedJson": "{\"messageType\":\"example.Greeting@v1\",\"payload\":\"\",\"payloadFormat\":\"persona-binary\",\"schemaId\":\"66cd4cc7f890f80cbda43fa5d69efeccadad0833\",\"signatures\":[{\"algorithm\":\"SHA256withRSA\",\"value\":\"AA==\"},{\"algorithm\":\"SHA256withRSA\",\"value\":\"////\"}],\"signedBy\":\"alice#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+    },
+    {
+      "id": "envelope/json-encode/signed-envelope-empty-signatures-and-empty-schema-id",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "An absent schemaId is the empty string on the wire (§5), an empty signatures array is a lone zero terminator.",
+      "schemaRef": "persona.SignedEnvelope@v1",
+      "value": {
+        "messageType": "persona.Alert@v1",
+        "payloadFormat": "json",
+        "schemaId": "",
+        "payload": "",
+        "signedBy": "any",
+        "signatures": []
+      },
+      "expectedJson": "{\"messageType\":\"persona.Alert@v1\",\"payload\":\"\",\"payloadFormat\":\"json\",\"schemaId\":\"\",\"signatures\":[],\"signedBy\":\"any\"}"
+    },
+    {
+      "id": "envelope/json-encode/multi-signed-envelope",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "Two signers, the first with two signatures: the outer signatures array holds inline MultiSignature records, each with its own inner signatures array.",
+      "schemaRef": "persona.MultiSignedEnvelope@v1",
+      "value": {
+        "messageType": "example.Charter@v1",
+        "payloadFormat": "persona-binary",
+        "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+        "payload": "AQI=",
+        "signatures": [
+          {
+            "signedBy": "alice",
+            "signatures": [
+              {
+                "algorithm": "SHA256withRSA",
+                "value": "Bw=="
+              },
+              {
+                "algorithm": "SHA256withRSA",
+                "value": "CAk="
+              }
+            ]
+          },
+          {
+            "signedBy": "bob",
+            "signatures": [
+              {
+                "algorithm": "SHA256withRSA",
+                "value": "Cgs="
+              }
+            ]
+          }
+        ]
+      },
+      "expectedJson": "{\"messageType\":\"example.Charter@v1\",\"payload\":\"AQI=\",\"payloadFormat\":\"persona-binary\",\"schemaId\":\"66cd4cc7f890f80cbda43fa5d69efeccadad0833\",\"signatures\":[{\"signatures\":[{\"algorithm\":\"SHA256withRSA\",\"value\":\"Bw==\"},{\"algorithm\":\"SHA256withRSA\",\"value\":\"CAk=\"}],\"signedBy\":\"alice\"},{\"signatures\":[{\"algorithm\":\"SHA256withRSA\",\"value\":\"Cgs=\"}],\"signedBy\":\"bob\"}]}"
+    },
+    {
+      "id": "envelope/json-encode/multi-signed-envelope-empty-inner-signatures",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "An inner signatures array may be empty; the outer array still holds one entry.",
+      "schemaRef": "persona.MultiSignedEnvelope@v1",
+      "value": {
+        "messageType": "example.Charter@v1",
+        "payloadFormat": "json",
+        "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+        "payload": "AQID",
+        "signatures": [
+          {
+            "signedBy": "alice",
+            "signatures": []
+          }
+        ]
+      },
+      "expectedJson": "{\"messageType\":\"example.Charter@v1\",\"payload\":\"AQID\",\"payloadFormat\":\"json\",\"schemaId\":\"66cd4cc7f890f80cbda43fa5d69efeccadad0833\",\"signatures\":[{\"signatures\":[],\"signedBy\":\"alice\"}]}"
+    },
+    {
+      "id": "envelope/json-encode/signature-record",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "The standalone persona.Signature@v1 record, which exists for digest stability testing (§5).",
+      "schemaRef": "persona.Signature@v1",
+      "value": {
+        "algorithm": "SHA256withRSA",
+        "value": "AAECAwQFBgcICQ=="
+      },
+      "expectedJson": "{\"algorithm\":\"SHA256withRSA\",\"value\":\"AAECAwQFBgcICQ==\"}"
+    },
+    {
+      "id": "envelope/json-encode/signature-record-empty-value",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "A zero-length signature value is representable.",
+      "schemaRef": "persona.Signature@v1",
+      "value": {
+        "algorithm": "SHA256withRSA",
+        "value": ""
+      },
+      "expectedJson": "{\"algorithm\":\"SHA256withRSA\",\"value\":\"\"}"
+    },
+    {
+      "id": "envelope/json-encode/multi-signature-record",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "The standalone persona.MultiSignature@v1 record with two inline Signature items.",
+      "schemaRef": "persona.MultiSignature@v1",
+      "value": {
+        "signedBy": "alice",
+        "signatures": [
+          {
+            "algorithm": "SHA256withRSA",
+            "value": "Bw=="
+          },
+          {
+            "algorithm": "SHA256withRSA",
+            "value": "CAk="
+          }
+        ]
+      },
+      "expectedJson": "{\"signatures\":[{\"algorithm\":\"SHA256withRSA\",\"value\":\"Bw==\"},{\"algorithm\":\"SHA256withRSA\",\"value\":\"CAk=\"}],\"signedBy\":\"alice\"}"
+    },
+    {
+      "id": "envelope/json-encode/multi-signature-record-empty-signatures",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "An empty signatures array inside a MultiSignature.",
+      "schemaRef": "persona.MultiSignature@v1",
+      "value": {
+        "signedBy": "bob",
+        "signatures": []
+      },
+      "expectedJson": "{\"signatures\":[],\"signedBy\":\"bob\"}"
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "crypto.policy-v0",
+  "description": "The Persona Version v0 crypto policy table of protocol §8, field by field. A runner reports the value its v0 policy exposes for each field and compares it exactly.",
+  "spec": [
+    "PERSONA-PROTOCOL.md §8",
+    "PERSONA-PROTOCOL.md §11 rule 3"
+  ],
+  "vectors": [
+    {
+      "id": "crypto/policy-v0/version",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The opaque version identifier of the baseline Persona Version (§8).",
+      "policy": "v0",
+      "field": "version",
+      "expected": "v0"
+    },
+    {
+      "id": "crypto/policy-v0/validSignatureAlgorithmSets",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "One accepted set containing the single algorithm SHA256withRSA. §11 rule 3: an envelope's signatures must match one set exactly; supersets and subsets are rejected.",
+      "policy": "v0",
+      "field": "validSignatureAlgorithmSets",
+      "expected": [
+        [
+          "SHA256withRSA"
+        ]
+      ]
+    },
+    {
+      "id": "crypto/policy-v0/preferredSignatureAlgorithmSet",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The set new signatures SHOULD use (§8).",
+      "policy": "v0",
+      "field": "preferredSignatureAlgorithmSet",
+      "expected": [
+        "SHA256withRSA"
+      ]
+    },
+    {
+      "id": "crypto/policy-v0/validAsymmetricEncryptionAlgorithms",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The only accepted asymmetric encryption algorithm. The JCE-style transformation string is the wire identifier; the digest, MGF1 digest and label are pinned by the algorithm name itself (§8).",
+      "policy": "v0",
+      "field": "validAsymmetricEncryptionAlgorithms",
+      "expected": [
+        "RSA/NONE/OAEPwithSHA-256andMGF1Padding"
+      ]
+    },
+    {
+      "id": "crypto/policy-v0/preferredAsymmetricEncryptionAlgorithm",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The default asymmetric encryption algorithm.",
+      "policy": "v0",
+      "field": "preferredAsymmetricEncryptionAlgorithm",
+      "expected": "RSA/NONE/OAEPwithSHA-256andMGF1Padding"
+    },
+    {
+      "id": "crypto/policy-v0/validSymmetricEncryptionAlgorithms",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The only accepted symmetric encryption algorithm.",
+      "policy": "v0",
+      "field": "validSymmetricEncryptionAlgorithms",
+      "expected": [
+        "AES/CTR/NoPadding"
+      ]
+    },
+    {
+      "id": "crypto/policy-v0/preferredSymmetricEncryptionAlgorithm",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The default symmetric encryption algorithm.",
+      "policy": "v0",
+      "field": "preferredSymmetricEncryptionAlgorithm",
+      "expected": "AES/CTR/NoPadding"
+    },
+    {
+      "id": "crypto/policy-v0/certificateSignatureAlgorithm",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The algorithm the Registrar uses to sign certificates (§8).",
+      "policy": "v0",
+      "field": "certificateSignatureAlgorithm",
+      "expected": "SHA256withRSA"
+    },
+    {
+      "id": "crypto/policy-v0/keyGenerationAlgorithm",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The key family of v0: RSA.",
+      "policy": "v0",
+      "field": "keyGenerationAlgorithm",
+      "expected": "RSA"
+    },
+    {
+      "id": "crypto/policy-v0/keySize",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The v0 key size in bits.",
+      "policy": "v0",
+      "field": "keySize",
+      "expected": 2048
+    },
+    {
+      "id": "crypto/policy-v0/preferredHashAlgorithm",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The hash used for thumbprints and passphrase hashes (§8). Note the spelling: 'SHA-256' with a hyphen, not the JCA signature suffix form 'SHA256'.",
+      "policy": "v0",
+      "field": "preferredHashAlgorithm",
+      "expected": "SHA-256"
+    }
+  ]
+}

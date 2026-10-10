@@ -1,0 +1,191 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "payload.json.encode",
+  "description": "Values the canonical JSON encoder MUST reject (docs/SCHEMA.md \u00a74.3, \u00a73.4).",
+  "spec": [
+    "docs/SCHEMA.md \u00a74.3",
+    "docs/SCHEMA.md \u00a73.4"
+  ],
+  "vectors": [
+    {
+      "id": "json/encode-reject/double-nan",
+      "spec": "docs/SCHEMA.md \u00a74.3",
+      "description": "Non-finite doubles are rejected by every encoder.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a74.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": "NaN"
+      }
+    },
+    {
+      "id": "json/encode-reject/double-infinity",
+      "spec": "docs/SCHEMA.md \u00a74.3",
+      "description": "Non-finite doubles are rejected by every encoder.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a74.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": "Infinity"
+      }
+    },
+    {
+      "id": "json/encode-reject/double-negative-infinity",
+      "spec": "docs/SCHEMA.md \u00a74.3",
+      "description": "Non-finite doubles are rejected by every encoder.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a74.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": "-Infinity"
+      }
+    },
+    {
+      "id": "json/encode-reject/missing-field",
+      "spec": "docs/SCHEMA.md \u00a71.3 rule 5",
+      "description": "All fields are required.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a71.3 rule 5",
+      "schema": "{\"type\":\"record\",\"name\":\"Kitchen\",\"namespace\":\"test\",\"messageType\":\"test.Kitchen@v1\",\"fields\":[{\"name\":\"greetingId\",\"type\":\"string\"},{\"name\":\"from\",\"type\":\"string\"},{\"name\":\"to\",\"type\":\"string\"},{\"name\":\"body\",\"type\":\"string\"},{\"name\":\"issuedAt\",\"type\":\"timestamp-millis\"},{\"name\":\"count\",\"type\":\"int\"},{\"name\":\"score\",\"type\":\"double\"},{\"name\":\"verified\",\"type\":\"boolean\"},{\"name\":\"attachment\",\"type\":\"bytes\"},{\"name\":\"tags\",\"type\":{\"type\":\"array\",\"items\":\"string\"}},{\"name\":\"attributes\",\"type\":{\"type\":\"map\",\"values\":\"string\"}},{\"name\":\"mood\",\"type\":{\"type\":\"enum\",\"name\":\"Mood\",\"symbols\":[\"HAPPY\",\"NEUTRAL\",\"SAD\"]}},{\"name\":\"inner\",\"type\":{\"type\":\"record\",\"name\":\"Inner\",\"fields\":[{\"name\":\"x\",\"type\":\"long\"}]}},{\"name\":\"forwarded\",\"type\":\"envelope\"}]}",
+      "value": {
+        "greetingId": "g-1",
+        "from": "alice",
+        "to": "bob",
+        "body": "hello",
+        "issuedAt": "2026-10-10T12:00:00.000Z",
+        "count": 42,
+        "score": 1.5,
+        "verified": true,
+        "attachment": "AAEC/w==",
+        "tags": [
+          "a",
+          "b"
+        ],
+        "attributes": {
+          "z": "1",
+          "\u00e9": "2",
+          "a": "3"
+        },
+        "inner": {
+          "x": 7
+        },
+        "forwarded": {
+          "messageType": "example.Greeting@v1",
+          "payloadFormat": "json",
+          "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+          "payload": "AQID",
+          "signedBy": "alice",
+          "signatures": [
+            {
+              "algorithm": "SHA256withRSA",
+              "value": "CQg="
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "json/encode-reject/unknown-field",
+      "spec": "docs/SCHEMA.md \u00a74.3",
+      "description": "Unknown fields are rejected.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a74.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": 1,
+        "w": 2
+      }
+    },
+    {
+      "id": "json/encode-reject/null-field-value",
+      "spec": "docs/SCHEMA.md \u00a74.3",
+      "description": "JSON null denotes the null value.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a74.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": null
+      }
+    },
+    {
+      "id": "json/encode-reject/string-with-unpaired-surrogate",
+      "spec": "docs/SCHEMA.md \u00a73.4 rule 6",
+      "description": "A lone surrogate (spelled \\ud800 in the vector file) cannot be encoded as UTF-8.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a73.4 rule 6",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "value": {
+        "v": "\ud800"
+      }
+    },
+    {
+      "id": "json/encode-reject/map-key-with-unpaired-surrogate",
+      "spec": "docs/SCHEMA.md \u00a73.4 rule 6",
+      "description": "Map keys are strings and must be well-formed UTF-16.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a73.4 rule 6",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
+      "value": {
+        "v": {
+          "\udfff": "x"
+        }
+      }
+    },
+    {
+      "id": "json/encode-reject/int-field-given-a-string",
+      "spec": "docs/SCHEMA.md \u00a74.3",
+      "description": "Type mismatch.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a74.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": "5"
+      }
+    },
+    {
+      "id": "json/encode-reject/long-field-given-a-string",
+      "spec": "docs/SCHEMA.md \u00a74.3",
+      "description": "Type mismatch.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a74.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "value": {
+        "v": "7"
+      }
+    },
+    {
+      "id": "json/encode-reject/int-field-given-a-fraction",
+      "spec": "docs/SCHEMA.md \u00a74.3",
+      "description": "Type mismatch.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a74.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": 1.5
+      }
+    },
+    {
+      "id": "json/encode-reject/enum-symbol-not-declared",
+      "spec": "docs/SCHEMA.md \u00a74.1",
+      "description": "The symbol must be declared by the schema.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a74.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"enum\",\"name\":\"M\",\"symbols\":[\"A\",\"B\",\"C\"]}}]}",
+      "value": {
+        "v": "D"
+      }
+    },
+    {
+      "id": "json/encode-reject/timestamp-below-floor",
+      "spec": "docs/SCHEMA.md \u00a73.4 rule 7",
+      "description": "An instant below the floor cannot round-trip, so the JSON writer rejects it too (the bytes it would emit could not be re-encoded).",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md \u00a73.4 rule 7",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "@epoch-millis:-9223372036854775800"
+      }
+    }
+  ]
+}

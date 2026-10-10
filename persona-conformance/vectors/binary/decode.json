@@ -1,0 +1,281 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "payload.binary.decode",
+  "description": "persona-binary inputs decoded against a schema. The expected value uses the §4.1 JSON renderings (base64 for bytes, ISO-8601 or @epoch-millis for timestamps) so a runner can compare decoded values structurally.",
+  "spec": [
+    "docs/SCHEMA.md §3",
+    "docs/SCHEMA.md §3.4",
+    "docs/SCHEMA.md §4.1"
+  ],
+  "vectors": [
+    {
+      "id": "binary/decode/int-64",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Two-byte varint.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputHex": "8001",
+      "expectedValue": {
+        "v": 64
+      }
+    },
+    {
+      "id": "binary/decode/int-minus-64",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "One-byte varint.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputHex": "7f",
+      "expectedValue": {
+        "v": -64
+      }
+    },
+    {
+      "id": "binary/decode/int-max",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "The largest int, five varint bytes.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputHex": "feffffff0f",
+      "expectedValue": {
+        "v": 2147483647
+      }
+    },
+    {
+      "id": "binary/decode/int-non-minimal-varint",
+      "spec": "docs/SCHEMA.md §3.4 rule 3",
+      "description": "Readers accept non-minimal (padded) LEB128: zigzag(5) = 10 as two groups.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputHex": "8a00",
+      "expectedValue": {
+        "v": 5
+      }
+    },
+    {
+      "id": "binary/decode/long-non-minimal-varint",
+      "spec": "docs/SCHEMA.md §3.4 rule 3",
+      "description": "Zero padded to three groups still decodes to 0.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "inputHex": "808000",
+      "expectedValue": {
+        "v": 0
+      }
+    },
+    {
+      "id": "binary/decode/long-max",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "The largest long, ten varint bytes.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "inputHex": "feffffffffffffffff01",
+      "expectedValue": {
+        "v": 9223372036854775807
+      }
+    },
+    {
+      "id": "binary/decode/string-foo",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Length-prefixed UTF-8.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "inputHex": "06666f6f",
+      "expectedValue": {
+        "v": "foo"
+      }
+    },
+    {
+      "id": "binary/decode/string-empty",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Zero-length string.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "inputHex": "00",
+      "expectedValue": {
+        "v": ""
+      }
+    },
+    {
+      "id": "binary/decode/string-multibyte",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "The length prefix counts UTF-8 bytes, so one character costs two.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "inputHex": "04c3a9",
+      "expectedValue": {
+        "v": "é"
+      }
+    },
+    {
+      "id": "binary/decode/boolean-true",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "0x01 is true.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"boolean\"}]}",
+      "inputHex": "01",
+      "expectedValue": {
+        "v": true
+      }
+    },
+    {
+      "id": "binary/decode/boolean-false",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "0x00 is false.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"boolean\"}]}",
+      "inputHex": "00",
+      "expectedValue": {
+        "v": false
+      }
+    },
+    {
+      "id": "binary/decode/double-one-and-a-half",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Eight little-endian IEEE 754 bytes.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "inputHex": "000000000000f83f",
+      "expectedValue": {
+        "v": 1.5
+      }
+    },
+    {
+      "id": "binary/decode/double-negative-zero",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Negative zero has a distinct bit pattern and must survive the round trip.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "inputHex": "0000000000000080",
+      "expectedValue": {
+        "v": -0.0
+      }
+    },
+    {
+      "id": "binary/decode/bytes-three",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Length-prefixed raw octets.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputHex": "06010203",
+      "expectedValue": {
+        "v": "AQID"
+      }
+    },
+    {
+      "id": "binary/decode/bytes-empty",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Zero-length byte string.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputHex": "00",
+      "expectedValue": {
+        "v": ""
+      }
+    },
+    {
+      "id": "binary/decode/timestamp-150-millis",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "epoch millis as a zigzag long.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputHex": "ac02",
+      "expectedValue": {
+        "v": "1970-01-01T00:00:00.150Z"
+      }
+    },
+    {
+      "id": "binary/decode/timestamp-floor",
+      "spec": "docs/SCHEMA.md §3.4 rule 7",
+      "description": "The lowest decodable timestamp-millis value round-trips. The @epoch-millis token is used because the instant lies outside the years an ISO-8601 formatter can render.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputHex": "aff3ffffffffffffff01",
+      "expectedValue": {
+        "v": "@epoch-millis:-9223372036854775000"
+      }
+    },
+    {
+      "id": "binary/decode/timestamp-long-max",
+      "spec": "docs/SCHEMA.md §3.4 rule 7",
+      "description": "The top of the signed 64-bit millisecond range is decodable.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputHex": "feffffffffffffffff01",
+      "expectedValue": {
+        "v": "@epoch-millis:9223372036854775807"
+      }
+    },
+    {
+      "id": "binary/decode/enum-index",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "Enum index 2 selects the third symbol.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"enum\",\"name\":\"M\",\"symbols\":[\"A\",\"B\",\"C\"]}}]}",
+      "inputHex": "04",
+      "expectedValue": {
+        "v": "C"
+      }
+    },
+    {
+      "id": "binary/decode/array-multi-block",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "Writers emit a single block, but readers MUST loop over blocks: two blocks of one item each decode to a two-item array.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}",
+      "inputHex": "02026102026200",
+      "expectedValue": {
+        "v": [
+          "a",
+          "b"
+        ]
+      }
+    },
+    {
+      "id": "binary/decode/array-empty",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "A lone terminator is the empty array.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}",
+      "inputHex": "00",
+      "expectedValue": {
+        "v": []
+      }
+    },
+    {
+      "id": "binary/decode/array-of-records",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "One block of two one-field records: count 2, x = 1, x = 7, terminator.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Inner\",\"fields\":[{\"name\":\"x\",\"type\":\"long\"}]}}}]}",
+      "inputHex": "04020e00",
+      "expectedValue": {
+        "v": [
+          {
+            "x": 1
+          },
+          {
+            "x": 7
+          }
+        ]
+      }
+    },
+    {
+      "id": "binary/decode/map-multi-block",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "Readers loop over map blocks too.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
+      "inputHex": "0202610278020262027900",
+      "expectedValue": {
+        "v": {
+          "a": "x",
+          "b": "y"
+        }
+      }
+    },
+    {
+      "id": "binary/decode/map-unsorted-keys-accepted",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "Writers must sort map keys, but the specification does not require readers to reject an unsorted payload, so this decodes.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
+      "inputHex": "04027a02310261023300",
+      "expectedValue": {
+        "v": {
+          "z": "1",
+          "a": "3"
+        }
+      }
+    },
+    {
+      "id": "binary/decode/map-with-zero-byte-values",
+      "spec": "docs/SCHEMA.md §3.4 rule 1",
+      "description": "A map entry always consumes at least its key's length byte, so the zero-progress rule does not fire.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}}}]}",
+      "inputHex": "02026100",
+      "expectedValue": {
+        "v": {
+          "a": {}
+        }
+      }
+    }
+  ]
+}

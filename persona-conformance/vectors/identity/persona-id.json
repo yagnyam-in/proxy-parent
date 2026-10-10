@@ -1,0 +1,190 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "identity.persona-id",
+  "description": "The Persona ID truth table (protocol §3.2). A runner parses the input string and reports the id, the optional thumbprint, the canonical spelling and whether the id is the wildcard.",
+  "spec": [
+    "PERSONA-PROTOCOL.md §3.2",
+    "PERSONA-PROTOCOL.md §8"
+  ],
+  "vectors": [
+    {
+      "id": "identity/persona-id/plain",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "An unpinned persona id: <id> alone, matching any certificate for that id (§3.2).",
+      "input": "alice",
+      "expectedId": "alice",
+      "expectedThumbprint": null,
+      "expectedCanonical": "alice",
+      "expectedWildcard": false
+    },
+    {
+      "id": "identity/persona-id/url-safe-with-dots-and-tildes",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "The id is an opaque, Registrar-chosen URL-safe string (§3.2); the reference implementation does not restrict its alphabet, so a foreign implementation must accept any string without '#'.",
+      "input": "persona-a.b~c",
+      "expectedId": "persona-a.b~c",
+      "expectedThumbprint": null,
+      "expectedCanonical": "persona-a.b~c",
+      "expectedWildcard": false
+    },
+    {
+      "id": "identity/persona-id/pinned",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "The pinned form <id>#<thumbprint>: 64 lowercase hex characters, the SHA-256 digest of the certificate's DER encoding (§3.2, §8).",
+      "input": "alice#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expectedId": "alice",
+      "expectedThumbprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expectedCanonical": "alice#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expectedWildcard": false
+    },
+    {
+      "id": "identity/persona-id/wildcard-any",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "The wildcard token 'any' (§3.2) is a valid id and reports itself as a wildcard.",
+      "input": "any",
+      "expectedId": "any",
+      "expectedThumbprint": null,
+      "expectedCanonical": "any",
+      "expectedWildcard": true
+    },
+    {
+      "id": "identity/persona-id/wildcard-any-any",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "The wildcard spelling any#any. The thumbprint 'any' is exempt from the 64-hex rule for the wildcard only.",
+      "input": "any#any",
+      "expectedId": "any",
+      "expectedThumbprint": "any",
+      "expectedCanonical": "any#any",
+      "expectedWildcard": true
+    },
+    {
+      "id": "identity/persona-id/any-pinned-to-a-real-thumbprint",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "The id 'any' with a real thumbprint is a normal pinned id, not the wildcard.",
+      "input": "any#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expectedId": "any",
+      "expectedThumbprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expectedCanonical": "any#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expectedWildcard": false
+    },
+    {
+      "id": "identity/persona-id/digit-leading-id",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "§3.2 puts no leading-character rule on the id.",
+      "input": "0abc",
+      "expectedId": "0abc",
+      "expectedThumbprint": null,
+      "expectedCanonical": "0abc",
+      "expectedWildcard": false
+    },
+    {
+      "id": "identity/persona-id/non-ascii-id",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "Documented leniency: the reference implementation does not enforce URL-safety, so a non-ASCII id parses. §3.2 says the id is 'any URL-safe string' but defines no grammar for it.",
+      "input": "álice",
+      "expectedId": "álice",
+      "expectedThumbprint": null,
+      "expectedCanonical": "álice",
+      "expectedWildcard": false
+    },
+    {
+      "id": "identity/persona-id/id-with-space",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "Documented leniency: a space in the id parses, because §3.2 leaves the id opaque to peers and the reference implementation validates only the '#' structure and the thumbprint.",
+      "input": "a b",
+      "expectedId": "a b",
+      "expectedThumbprint": null,
+      "expectedCanonical": "a b",
+      "expectedWildcard": false
+    },
+    {
+      "id": "identity/persona-id-reject/leading-hash",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "An id must not start with '#': the separator only appears between id and thumbprint.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §3.2",
+      "input": "#alice"
+    },
+    {
+      "id": "identity/persona-id-reject/empty-string",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "An empty persona id is not an id.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §3.2",
+      "input": ""
+    },
+    {
+      "id": "identity/persona-id-reject/null",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "A missing persona id (JSON null) is rejected.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §3.2",
+      "input": null
+    },
+    {
+      "id": "identity/persona-id-reject/trailing-hash-empty-thumbprint",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "A present but empty thumbprint is not 64 hex characters.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §3.2",
+      "input": "alice#"
+    },
+    {
+      "id": "identity/persona-id-reject/two-separators",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "At most one '#' separator is allowed.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §3.2",
+      "input": "alice#aa#bb"
+    },
+    {
+      "id": "identity/persona-id-reject/thumbprint-too-short",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "A thumbprint is exactly 64 hex characters.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §3.2",
+      "input": "alice#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "id": "identity/persona-id-reject/thumbprint-too-long",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "A thumbprint is exactly 64 hex characters.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §3.2",
+      "input": "alice#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "id": "identity/persona-id-reject/thumbprint-uppercase-hex",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "The reference grammar requires lowercase hex; uppercase hex is rejected (see the note on §3.2's 'base64/hex' wording in vectors/README.md).",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §3.2",
+      "input": "alice#AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    },
+    {
+      "id": "identity/persona-id-reject/thumbprint-non-hex",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "Only [0-9a-f] characters are allowed in a thumbprint.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §3.2",
+      "input": "alice#gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg"
+    },
+    {
+      "id": "identity/persona-id-reject/thumbprint-base64",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "§3.2 says the thumbprint is the certificate's DER hash 'base64/hex encoded', which leaves the rendering unspecified; the reference implementation and every Persona Version v0 hash (SHA-256) pin the 64-character lowercase-hex rendering, so a padded base64 thumbprint is rejected.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §3.2",
+      "input": "alice#AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA="
+    },
+    {
+      "id": "identity/persona-id-reject/wildcard-thumbprint-on-another-id",
+      "spec": "PERSONA-PROTOCOL.md §3.2",
+      "description": "The thumbprint token 'any' is valid only for the id 'any'.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md §3.2",
+      "input": "bob#any"
+    }
+  ]
+}
