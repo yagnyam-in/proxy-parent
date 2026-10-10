@@ -1,15 +1,9 @@
 package in.yagnyam.persona.p2p;
 
 import in.yagnyam.persona.PersonaId;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * Server-side de-duplication of {@code RequestMessage.requestId} (protocol
@@ -18,15 +12,66 @@ import java.util.TreeSet;
  * rejected" semantics as the registrar's request-id uniqueness (protocol
  * §7.1).
  *
+ * <p><strong>Keying: the authenticated payload, not the signature
+ * set.</strong> A delivered request is recorded under its recipient, its
+ * {@code requestId} and the SHA-256 digest of the envelope's §6.4 signing
+ * preimage ({@code domain ‖ messageType ‖ payloadFormat ‖ schemaId ‖
+ * payload}) — exactly the bytes every signature of the envelope
+ * authenticates. Two deliveries are duplicates iff they carry the
+ * <em>same authenticated bytes</em> to the same recipient, independently
+ * of which subset of the original signatures they retain:
+ *
+ * <ul>
+ *   <li><strong>Wire respellings of one captured envelope dedup.</strong>
+ *   Signature order is unauthenticated (protocol §7.4: "Ordering of
+ *   signatures MUST NOT affect verification outcome") and pinned vs
+ *   unpinned {@code signedBy} spellings are unauthenticated too, but
+ *   neither touches the preimage: a reordered or respelled redelivery
+ *   digests identically and is a replay.</li>
+ *   <li><strong>Incremental §7.4 co-signing dedups.</strong> Each added
+ *   co-signature yields a new envelope that <em>supersedes</em> the
+ *   previous one (protocol §5.5) with the same requestId and identical
+ *   payload bytes — only the authorization grew. The preimage is
+ *   unchanged, so the stronger envelope is a replay: the safe direction
+ *   (no double execution of one request).</li>
+ *   <li><strong>Disjoint-quorum splits of one captured envelope dedup.
+ *   </strong> A transport attacker can split a captured envelope with,
+ *   say, 4 signatures and quorum 2 into two deliveries retaining disjoint
+ *   subsets — every retained signature still verifies and each subset
+ *   meets quorum, but both deliveries authenticate the <em>same preimage
+ *   bytes</em>, so the second is a replay. (This is the case a
+ *   signer-set-overlap keying could not catch; the preimage digest
+ *   subsumes signer-set logic entirely because the preimage is identical
+ *   across reorder, respell, superset <em>and</em> disjoint subsets of
+ *   one captured envelope.)</li>
+ *   <li><strong>A genuinely different payload is a distinct request</strong>
+ *   even when it reuses a {@code requestId}: different payload bytes
+ *   digest differently and are processed. Reusing a request id across
+ *   different payloads is a sender bug the protocol forbids (§5.2:
+ *   request ids are "globally unique within the recipient's namespace");
+ *   dedup must never wrongly reject such a delivery.</li>
+ * </ul>
+ *
+ * <p>Only <em>verified</em> envelopes may reach this store (verification
+ * runs first on the receive path): an unauthenticated digest is
+ * attacker-chosen and would otherwise poison the store to DoS a real
+ * requester.
+ *
  * <p><strong>Memory bound.</strong> A dedup store that grows forever is a
- * denial-of-service vector (any peer can mint unbounded request ids), so
- * this store is <em>bounded</em>: it keeps at most {@code capacity}
- * entries in a synchronized access-order LRU map and evicts the
- * least-recently-used entry past the bound.
+ * denial-of-service vector (any peer can mint unbounded request ids and
+ * unbounded payload variants), so the store is <em>bounded</em>: it keeps
+ * at most {@code capacity} records — each record one
+ * {@code (recipient, requestId, preimage digest)} triple — in a
+ * synchronized access-order LRU map, evicting the least-recently-used
+ * record past the bound. The bound applies to <em>records</em>, not just
+ * to distinct request ids: because the digest is part of the key, any
+ * number of distinct payloads submitted under one
+ * {@code (recipient, requestId)} pair still occupy at most
+ * {@code capacity} records in total and evict one another oldest-first.
  *
  * <p><strong>Eviction semantics.</strong> Eviction makes replay protection
- * best-effort over a sliding window rather than absolute: a request id
- * re-presented <em>after</em> its entry was evicted is accepted and
+ * best-effort over a sliding window rather than absolute: a request
+ * re-presented <em>after</em> its record was evicted is accepted and
  * processed again, never wrongly rejected as a duplicate. That is the safe
  * failure direction for exactly-once-looking protocols whose handlers are
  * idempotent (which is why §5.2 wants dedup in the first place); the
@@ -35,54 +80,18 @@ import java.util.TreeSet;
  * dedup set alongside the processed-request journal, which is out of scope
  * for this library (see {@code GAPS.md}).
  *
- * <p><strong>Keying.</strong> Duplicates are per <em>recipient</em> and per
- * <em>requester</em> (protocol §5.2, §11 rule 5: "requestId MUST be unique
- * per (recipient, requester)"). The store key is the recipient's bare
- * persona id and the request id; recorded against each key are the
- * <em>verified signer sets</em> (sorted sets of bare persona ids) already
- * seen for it, and a delivery is a duplicate iff its signer set shares at
- * least one member with a recorded set. Recipient scoping is required
- * because the same request (same requester, same request id) legitimately
- * delivered to two different personas must be processed by each of them,
- * while a replay of that request to the <em>same</em> persona must be
- * rejected. Bare ids are used so pinned and unpinned spellings of one
- * persona share a namespace.
- *
- * <p><strong>Why signer-set overlap rather than one sender id.</strong> The
- * dedup identity of a request must be derived only from authenticated data
- * and must be independent of the signature order on the wire: protocol §7.4
- * requires verification to accept any order ("Ordering of signatures MUST
- * NOT affect verification outcome"), and the §6.4 preimage authenticates
- * the payload bytes, not the order of the {@code signatures} array. Keying
- * a multi-signed request on its first signer would let a transport attacker
- * capture an accepted envelope, swap the signature entries — a legal wire
- * transformation that still verifies — and resend it under a different
- * dedup key, delivering the same authenticated request to handlers twice.
- * The signer set is order-independent by construction, and every member is
- * authenticated: verification (which runs first) rejects the whole envelope
- * unless every entry verifies against an authorized, trusted signer.
- * Overlap (rather than set equality) is the duplicate predicate because the
- * request is one payload with one quorum: incremental §7.4 co-signing
- * yields a new envelope that <em>supersedes</em> the previous one (protocol
- * §5.5) with the same requestId and identical payload bytes — only the
- * authorization grew. Treating that stronger envelope as a replay is the
- * safe direction (no double execution of the same request), while a
- * <em>disjoint</em> signer set under the same request id is genuinely a
- * different authorized request (protocol §5.2: "duplicate request ids
- * <em>from the same persona</em>") and is accepted.
- *
  * <p>Thread-safety: all methods are safe for concurrent use; the
- * check-and-record of one request is atomic, so under concurrent duplicates
- * of the same {@code (recipient, requestId, signer set)} exactly one caller
- * is accepted.
+ * check-and-record of one request is atomic, so under concurrent duplicate
+ * deliveries of the same authenticated request exactly one caller is
+ * accepted.
  */
 public final class RequestDeduplicator {
 
-  /** Default capacity: 10,000 request ids per peer namespace. */
+  /** Default capacity: 10,000 remembered authenticated requests. */
   public static final int DEFAULT_CAPACITY = 10_000;
 
   private final int capacity;
-  private final Map<String, List<Set<String>>> seen;
+  private final Map<String, Boolean> seen;
 
   /**
    * Creates a deduplicator with {@link #DEFAULT_CAPACITY}.
@@ -92,11 +101,11 @@ public final class RequestDeduplicator {
   }
 
   /**
-   * Creates a deduplicator holding at most {@code capacity} request ids.
+   * Creates a deduplicator holding at most {@code capacity} records.
    *
    * @param capacity maximum number of remembered
-   *                 {@code (recipient, requestId)} entries; must be
-   *                 at least 1
+   *                 {@code (recipient, requestId, preimage digest)}
+   *                 records; must be at least 1
    * @throws IllegalArgumentException if {@code capacity} is less than 1
    */
   public RequestDeduplicator(int capacity) {
@@ -108,101 +117,61 @@ public final class RequestDeduplicator {
       private static final long serialVersionUID = 1L;
 
       @Override
-      protected boolean removeEldestEntry(Map.Entry<String, List<Set<String>>> eldest) {
+      protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
         return size() > capacity;
       }
     };
   }
 
   /**
-   * Checks a request id against the store and records it when new
-   * (protocol §5.2).
+   * Checks a request against the store and records it when new (protocol
+   * §5.2). The duplicate predicate is equality of the full
+   * {@code (recipient, requestId, preimageDigest)} triple — see the class
+   * javadoc for why the authenticated payload digest (not the signer set,
+   * which is unauthenticated in order, spelling and subset) is the dedup
+   * identity.
    *
-   * @param recipient the persona the request was delivered to (the dedup
-   *                  scope: a replay to the same recipient is rejected,
-   *                  while the same request reaching a different recipient
-   *                  is a distinct delivery)
-   * @param sender    the persona the request claims to come from — already
-   *                  verified by the envelope layer before this check is
-   *                  meaningful (an unverified sender id is attacker-chosen
-   *                  and must never reach this store, or a forged request id
-   *                  would poison it and DoS the real requester)
-   * @param requestId the payload's {@code requestId()} (protocol §5.2)
-   * @return {@code true} if this is the first occurrence of the request and
-   *     it should be processed; {@code false} if it is a duplicate
-   *     and MUST be rejected (protocol §11 rule 5)
+   * @param recipient      the persona the request was delivered to (the
+   *                       dedup scope: a replay to the same recipient is
+   *                       rejected, while the same request reaching a
+   *                       different recipient is a distinct delivery)
+   * @param requestId      the payload's {@code requestId()} (protocol
+   *                       §5.2)
+   * @param preimageDigest SHA-256 digest (lowercase hex) of the envelope's
+   *                       §6.4 signing preimage — the exact bytes every
+   *                       signature of the delivered envelope
+   *                       authenticated; meaningful only after the
+   *                       envelope verified (an unverified digest is
+   *                       attacker-chosen and must never reach this
+   *                       store, or a forged request would poison it and
+   *                       DoS the real requester)
+   * @return {@code true} if this is the first delivery of these
+   *     authenticated bytes to this recipient and the request should be
+   *     processed; {@code false} if it is a duplicate and MUST be
+   *     rejected (protocol §11 rule 5)
    */
-  public boolean checkAndRecord(PersonaId recipient, PersonaId sender, String requestId) {
-    Objects.requireNonNull(sender, "sender");
-    return checkAndRecord(recipient, List.of(sender), requestId);
-  }
-
-  /**
-   * Checks a request id against the store and records it when new, for a
-   * request authenticated by a <em>set</em> of verified signers (protocol
-   * §5.2 over a §7.4 multi-signed envelope). The duplicate predicate is
-   * signer-set <em>overlap</em> under {@code (recipient, requestId)} — see
-   * the class javadoc for the keying contract and why overlap (not equality
-   * or wire order) is the rule.
-   *
-   * @param recipient the persona the request was delivered to (the dedup
-   *                  scope)
-   * @param senders   the envelope's verified signers — every signer of a
-   *                  delivered envelope is verified (verification runs
-   *                  first and rejects the whole envelope unless every
-   *                  entry verifies), so the set is authenticated and its
-   *                  order on the wire is irrelevant; must be non-empty
-   * @param requestId the payload's {@code requestId()} (protocol §5.2)
-   * @return {@code true} if no recorded signer set of this
-   *     {@code (recipient, requestId)} shares a signer with
-   *     {@code senders} (first occurrence — process the request);
-   *     {@code false} on any overlap (duplicate — MUST be rejected,
-   *     protocol §11 rule 5)
-   * @throws IllegalArgumentException if {@code senders} is empty
-   */
-  public boolean checkAndRecord(
-      PersonaId recipient, Collection<PersonaId> senders, String requestId) {
+  public boolean checkAndRecord(PersonaId recipient, String requestId, String preimageDigest) {
     Objects.requireNonNull(recipient, "recipient");
-    Objects.requireNonNull(senders, "senders");
     Objects.requireNonNull(requestId, "requestId");
-    // The dedup identity is a sorted set of BARE persona ids: order on the
-    // wire is unauthenticated (protocol §7.4) and must not matter, and a
-    // pinned 'alice#<thumbprint>' and unpinned 'alice' are one persona.
-    Set<String> signerIds = new TreeSet<>();
-    for (PersonaId sender : senders) {
-      signerIds.add(Objects.requireNonNull(sender, "senders element").id());
-    }
-    if (signerIds.isEmpty()) {
-      throw new IllegalArgumentException("senders must be non-empty: a delivered request"
-          + " carries at least one verified signer");
-    }
+    Objects.requireNonNull(preimageDigest, "preimageDigest");
     // NUL separates the free-form strings: persona ids are "any
     // URL-safe string" (protocol §3.2) and request ids are
     // application-chosen, so a printable separator could be spoofed.
-    String key = recipient.id() + '\u0000' + requestId;
+    String key = recipient.id() + '\u0000' + requestId + '\u0000' + preimageDigest;
     synchronized (seen) {
-      List<Set<String>> recorded = seen.get(key); // a get also touches for LRU
-      if (recorded != null) {
-        for (Set<String> signerSet : recorded) {
-          if (!Collections.disjoint(signerSet, signerIds)) {
-            return false;
-          }
-        }
-        // A genuinely different signer set under the same
-        // (recipient, requestId): a different authorized request.
-        recorded.add(signerIds);
-        return true;
+      if (seen.containsKey(key)) {
+        seen.get(key); // touch for LRU: a replayed request stays hot
+        return false;
       }
-      List<Set<String>> first = new ArrayList<>(1);
-      first.add(signerIds);
-      seen.put(key, first);
+      seen.put(key, Boolean.TRUE);
       return true;
     }
   }
 
   /**
-   * @return the number of remembered {@code (recipient, requestId)}
-   *     entries (at most the capacity)
+   * @return the number of remembered
+   *     {@code (recipient, requestId, preimage digest)} records (at most
+   *     the capacity)
    */
   public int size() {
     synchronized (seen) {
@@ -211,7 +180,7 @@ public final class RequestDeduplicator {
   }
 
   /**
-   * @return the maximum number of remembered entries
+   * @return the maximum number of remembered records
    */
   public int capacity() {
     return capacity;
