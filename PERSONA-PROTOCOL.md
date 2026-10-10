@@ -236,6 +236,11 @@ signer identities. The `signedBy` set MUST be deduplicated by the **resolved
 certificate thumbprint** before the quorum is counted: the spellings `alice`
 and `alice#<thumbprint>` that resolve to the same certificate are one signer,
 never two. A quorum MUST count each distinct verified certificate at most once.
+This envelope-layer deduplication governs even when a payload overrides
+`hasSufficientSignatures()` with a custom rule: the payload rule always
+evaluates the distinct-certificate set, so two certificates of one re-keyed
+persona (§3.1) count as two signers at the envelope layer and are further
+collated (e.g. by bare persona id) only by the payload rule itself.
 
 ### 6.3 Nested envelopes
 
@@ -270,10 +275,13 @@ preimage     = uvarint(len(domain))       || domain (UTF-8)
              || uvarint(len(messageType)) || messageType (UTF-8)
              || uvarint(len(payloadFormat)) || payloadFormat (UTF-8)
              || uvarint(len(schemaId))    || schemaId (UTF-8; empty if absent)
-             || payload (raw bytes)
+             || uvarint(len(payload))     || payload (raw bytes)
 ```
 
 Where `uvarint(n)` is the unsigned LEB128 encoding of the byte length `n`.
+All five fields are uniformly length-prefixed so the preimage is
+self-framing and unambiguous — in particular between payloads where one is a
+prefix of the other; the `domain` string still versions the format itself.
 All signature algorithms in an envelope's signature set are computed over this
 same preimage. The distinct `domain` constants prevent signature transplant
 between single-signed and multi-signed envelopes carrying identical payloads.
