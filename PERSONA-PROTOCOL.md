@@ -231,7 +231,11 @@ MultiSignature {
 }
 ```
 
-`hasSufficientSignatures()` is evaluated by combining the `signedBy` set with the payload's own quorum policy.
+`hasSufficientSignatures()` is evaluated against the set of distinct, verified
+signer identities. The `signedBy` set MUST be deduplicated by the **resolved
+certificate thumbprint** before the quorum is counted: the spellings `alice`
+and `alice#<thumbprint>` that resolve to the same certificate are one signer,
+never two. A quorum MUST count each distinct verified certificate at most once.
 
 ### 6.3 Nested envelopes
 
@@ -355,6 +359,11 @@ Given an incoming envelope `E`:
 6. Resolve Persona for E.signedBy via the Resolver.
    - Assert the Persona's certificate is within its validity window.
    - Assert its certificate chains to a trusted Registrar root.
+   - Assert the certificate is not revoked, per the Registrar's current
+     revocation status (CRL, OCSP, or a signed revocation notice as per
+     rule 11 below). Revocation status MUST be checked at verification
+     time; a cached negative answer MUST respect the TTL/invalidation
+     rules of §9.
 7. Recompute the signing preimage (§6.4) from E's
    {messageType, payloadFormat, schemaId, payload}.
    For each Signature in E.signatures:
