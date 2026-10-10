@@ -1089,6 +1089,23 @@ def _parse_instant(text):
     max_day = _DAYS_IN_MONTH[month - 1] + (1 if month == 2 and _is_leap_year(year) else 0)
     if not 1 <= day <= max_day:
         raise Reject("SCHEMA.md §4.1", "%r is not a valid date" % text)
+    # Time-of-day and offset validation mirrors java.time.Instant.parse
+    # (DateTimeFormatter.ISO_INSTANT), which the reference codec uses:
+    #   - hour 0..23, minute 0..59, second 0..59;
+    #   - T24:00:00 (with an absent or all-zero fraction) is the ISO-8601
+    #     end-of-day form and rolls into the next day;
+    #   - a leap second (:60) is accepted only at minute 59 and is read as :59,
+    #     regardless of whether a leap was actually scheduled on that date;
+    #   - numeric offsets follow java.time.ZoneOffset: at most ±18:00.
+    if hour > 24:
+        raise Reject("SCHEMA.md §4.1", "%r is not a valid time" % text)
+    if hour == 24:
+        if minute != 0 or second != 0 or int(fraction or "0") != 0:
+            raise Reject("SCHEMA.md §4.1", "%r is not a valid time" % text)
+    if not 0 <= minute <= 59:
+        raise Reject("SCHEMA.md §4.1", "%r is not a valid time" % text)
+    if second > 60 or (second == 60 and minute != 59):
+        raise Reject("SCHEMA.md §4.1", "%r is not a valid time" % text)
     try:
         if 1 <= year <= 9999:
             days = (datetime.date(year, month, day) - datetime.date(1970, 1, 1)).days
@@ -1097,12 +1114,20 @@ def _parse_instant(text):
             days = _days_from_civil(year, month, day)
     except ValueError:
         raise Reject("SCHEMA.md §4.1", "%r is not a valid date" % text)
+    if hour == 24:
+        days += 1
+        hour = 0
+    if second == 60:
+        second = 59
     millis = ((days * 86400) + hour * 3600 + minute * 60 + second) * 1000 + nanos // 1000000
     if zone in ("Z", "z"):
         offset = 0
     else:
         sign = 1 if zone[0] == "+" else -1
-        offset = sign * (int(zone[1:3]) * 60 + int(zone[4:6])) * 60000
+        offset_hour, offset_minute = int(zone[1:3]), int(zone[4:6])
+        if offset_minute > 59 or (offset_hour, offset_minute) > (18, 0):
+            raise Reject("SCHEMA.md §4.1", "%r has an out-of-range UTC offset" % text)
+        offset = sign * (offset_hour * 60 + offset_minute) * 60000
     millis -= offset
     if not MIN_EPOCH_MILLIS <= millis <= MAX_EPOCH_MILLIS:
         raise Reject("SCHEMA.md §3.4 rule 7", "instant outside the timestamp-millis range")
