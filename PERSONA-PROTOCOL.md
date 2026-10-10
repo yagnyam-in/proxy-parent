@@ -520,7 +520,7 @@ Recommended path:
 
 - **Registrar compromise** is catastrophic. Mitigate with: transparency logs, out-of-band root distribution, short-lived intermediate CAs, HSM-backed root keys, quorum-controlled issuance.
 - **Private key exfiltration** is the Persona owner's failure mode. Mitigate with: hardware key stores, encrypted-at-rest key material, revocation on suspicion.
-- **Downgrade attacks** on the algorithm set: peers MUST reject any signature set not exactly matching an accepted set. Never accept `{}` or a proper subset of the preferred set.
+- **Downgrade attacks** on the algorithm set: peers MUST reject any signature set that does not exactly match one of the sets declared in `validSignatureAlgorithmSets`. An empty set `{}` is never acceptable. A proper subset of the preferred set is acceptable only when that subset is itself explicitly listed in `validSignatureAlgorithmSets` (e.g. an RSA-only set retained during an RSA→RSA+Ed25519 migration).
 - **Replay attacks** on request messages: `requestId` de-duplication mitigates for exactly-once semantics; timestamp claims inside payloads mitigate for freshness.
 - **Signature malleability** in some algorithms (e.g. ECDSA `s` malleability): implementations SHOULD enforce low-`s` normalization.
 - **Nonce/IV reuse** in symmetric encryption: implementations MUST use fresh cryptographically random IVs per encryption; the envelope carries the IV explicitly.

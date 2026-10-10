@@ -146,7 +146,7 @@ least-significant group first, 7 bits per byte, high bit = continuation.
 | -------- | -------------------------------------------------------------------------------- |
 | record   | fields concatenated in declared order, each encoded per its type                  |
 | enum     | `int` = zero-based index into `symbols`                                           |
-| array    | zero or more blocks, then a terminator: each block is a positive `long` count followed by exactly count items; terminator is a `0` `long`. Writers SHOULD emit a single block for non-empty arrays. Readers MUST loop over blocks. |
+| array    | zero or more blocks, then a terminator: each block is a positive `long` count followed by exactly count items; terminator is a `0` `long`. Writers MUST emit a single block for non-empty arrays. Readers MUST loop over blocks. |
 | map      | same block structure as array; each item is key (string) then value. Writers MUST emit entries in ascending UTF-8 byte order of their keys. |
 | envelope | the nested envelope's fields encoded as a record per the built-in `persona.SignedEnvelope@v1` schema (§5) |
 | multi-envelope | same, per `persona.MultiSignedEnvelope@v1`                                   |
