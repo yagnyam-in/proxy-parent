@@ -489,6 +489,53 @@ class EnvelopeVerifierTest {
   }
 
   @Test
+  void rejectsAResolverThatAnswersWithADifferentPersona() throws Exception {
+    EnvelopeWorld world = new EnvelopeWorld();
+    PersonaFixture alice = world.mint();
+    PersonaFixture mallory = world.mint();
+
+    // The attack: Mallory signs a greeting whose 'from' is alice — so the
+    // §5.1 authorization of signedBy=alice genuinely passes — and declares
+    // signedBy=alice (unpinned). A peer-directory resolver answers the
+    // lookup with MALLORY's legitimately issued persona+certificate:
+    // Mallory's persona matches her own certificate (TrustValidator is
+    // satisfied) and Mallory's signature genuinely verifies against it.
+    // Only the verifier's resolved-identity binding (signedBy must BE the
+    // resolved persona and its certificate owner) rejects this.
+    TestMessages.TestGreeting greeting =
+        new TestMessages.TestGreeting("g-1", alice.unpinnedId(), PersonaId.of("p-bob"), "hello");
+    String messageType = TestMessages.TestGreeting.MESSAGE_TYPE;
+    String schemaId = world.schemaIdOf(messageType);
+    byte[] payload = new JsonPayloadCodec().encode(
+        world.schemaRegistry().requireByMessageType(messageType),
+        world.bindings().require(messageType).wireValue(greeting));
+    byte[] preimage = SigningPreimage.forSignedEnvelope(messageType, "json", schemaId, payload);
+    byte[] signature = CRYPTO.getSignature(
+        POLICY_ALGORITHM, mallory.key().privateKey(), preimage);
+    SignedEnvelope forged = new SignedEnvelope(messageType, "json", schemaId, payload,
+        alice.unpinnedId(), List.of(new Signature(POLICY_ALGORITHM, signature)));
+
+    PersonaResolver peerDirectory = id -> Optional.of(mallory.registered().persona());
+    VerificationResult result =
+        world.verifier(peerDirectory, world.trust(), Clock.systemUTC()).verify(forged);
+    assertThat(result.verified()).isFalse();
+    assertThat(result.reason()).hasValueSatisfying(reason -> {
+      assertThat(reason).contains("different identity");
+      assertThat(reason).contains(alice.unpinnedId().uniqueId());
+      assertThat(reason).contains(mallory.pinnedId().uniqueId());
+      assertThat(reason).contains("§7.3 step 6");
+    });
+
+    // The honest resolution path is unchanged: resolving alice truthfully,
+    // Mallory's signature simply does not verify against alice's
+    // certificate — the identity binding adds no rejection of its own.
+    VerificationResult honest = world.verifier().verify(forged);
+    assertThat(honest.verified()).isFalse();
+    assertThat(honest.reason()).hasValueSatisfying(reason ->
+        assertThat(reason).contains("does not verify"));
+  }
+
+  @Test
   void rejectsARevokedCertificateEvenWithAWarmCryptoCache() throws Exception {
     EnvelopeWorld world = new EnvelopeWorld();
     PersonaFixture alice = world.mint();

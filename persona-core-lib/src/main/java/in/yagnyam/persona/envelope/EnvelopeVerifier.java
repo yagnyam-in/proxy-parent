@@ -565,6 +565,7 @@ public final class EnvelopeVerifier {
     Persona persona = resolved.orElseThrow(() -> new Rejected(
         "the persona '" + signedBy + "' could not be resolved via the PersonaResolver (unknown id,"
             + " revoked certificate, or pin mismatch; protocol §7.3 step 6)"));
+    assertResolvedIdentity(signedBy, persona);
     assertThumbprintPin(signedBy, persona);
     TrustResult trust = trustValidator.validate(persona, clock.instant());
     if (!trust.trusted()) {
@@ -572,6 +573,43 @@ public final class EnvelopeVerifier {
           + " (protocol §7.3 step 6): " + trust.reason().orElse("?"));
     }
     return persona;
+  }
+
+  /**
+   * Identity binding at the trust boundary (§7.3 step 6): the persona the
+   * resolver returned must BE the declared signer — {@code signedBy.id()}
+   * must equal both the resolved persona's id and the resolved
+   * certificate's owner (subject CN). The {@link TrustValidator} only
+   * vouches that the returned persona matches its <em>own</em> certificate;
+   * nothing there ties the answer to the id that was asked for. Without
+   * this check a malicious or broken resolver (e.g. a peer directory) could
+   * answer a lookup for {@code alice} with Mallory's legitimately issued
+   * persona+certificate: trust, authorization and signature verification
+   * would all pass against Mallory's certificate while the envelope claims
+   * {@code alice} signed. (For a pinned {@code signedBy} the pin check
+   * below already implies this binding; it is asserted uniformly so the
+   * unpinned path is equally strict.)
+   */
+  private static void assertResolvedIdentity(PersonaId signedBy, Persona persona) {
+    if (signedBy.isWildcard()) {
+      return;
+    }
+    PersonaId resolvedId = persona.id();
+    if (resolvedId == null || !resolvedId.id().equals(signedBy.id())) {
+      throw new Rejected("the persona '" + signedBy + "' resolved to the different identity '"
+          + (resolvedId == null ? "<none>" : resolvedId.uniqueId())
+          + "' (protocol §7.3 step 6: the resolved persona must BE the declared signer — a"
+          + " resolver that answers a lookup with another persona's legitimately issued"
+          + " certificate must not pass)");
+    }
+    PersonaCertificate certificate = persona.certificate();
+    String owner = certificate == null ? null : certificate.owner();
+    if (owner == null || !owner.equals(signedBy.id())) {
+      throw new Rejected("the persona '" + signedBy + "' resolved to a certificate owned by '"
+          + (owner == null ? "<none>" : owner)
+          + "' (protocol §7.3 step 6: the resolved certificate's owner (subject CN) must be"
+          + " the declared signer)");
+    }
   }
 
   /**
