@@ -1,6 +1,9 @@
 target/
 !.mvn/wrapper/maven-wrapper.jar
 
+# Maven shade
+dependency-reduced-pom.xml
+
 ### STS ###
 .apt_generated
 .classpath

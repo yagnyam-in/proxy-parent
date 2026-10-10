@@ -64,11 +64,13 @@
         <appengine.sdk.version>1.9.78</appengine.sdk.version>
     </properties>
 
-    <modules>
-        <module>proxy-core-lib</module>
-        <module>proxy-messages</module>
-        <module>proxy-server-lib</module>
-    </modules>
+    <!--
+      Module selection lives in profiles so the Java 21 persona-* reactor and
+      the JDK 8 legacy proxy-* reactor are mutually exclusive:
+        - default build   -> persona-* modules (profile "default", activeByDefault)
+        - ./mvnw -Plegacy -> proxy-* modules only (activating a profile with -P
+          deactivates all activeByDefault profiles)
+    -->
 
     <dependencyManagement>
         <dependencies>
@@ -313,9 +315,42 @@
 
 
     <profiles>
+        <!-- Current generation (Persona) — Java 21, built by default -->
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>persona-core-lib</module>
+                <module>persona-conformance</module>
+                <module>persona-examples</module>
+            </modules>
+        </profile>
+
+        <!--
+          Legacy (Proxy) generation. Frozen source of the pre-rewrite framework.
+          Requires a JDK 8 toolchain; does not build under JDK 21.
+          Build explicitly with: ./mvnw -Plegacy verify
+        -->
+        <profile>
+            <id>legacy</id>
+            <modules>
+                <module>proxy-core-lib</module>
+                <module>proxy-messages</module>
+                <module>proxy-server-lib</module>
+            </modules>
+        </profile>
+
         <!-- Code signing for release: http://stackoverflow.com/a/14869692/101923 -->
         <profile>
             <id>release</id>
+            <modules>
+                <!-- re-declared because -P deactivates the activeByDefault "default" profile -->
+                <module>persona-core-lib</module>
+                <module>persona-conformance</module>
+                <module>persona-examples</module>
+            </modules>
             <build>
                 <plugins>
 
