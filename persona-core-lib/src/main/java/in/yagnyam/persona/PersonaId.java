@@ -184,6 +184,21 @@ public record PersonaId(String id, Optional<String> sha256Thumbprint) implements
       // The non-hex "any" thumbprint exists only for the wildcard constant.
       return WILDCARD_ID.equals(id);
     }
-    return THUMBPRINT_PATTERN.matcher(thumbprint).matches();
+    return isCanonicalThumbprint(thumbprint);
+  }
+
+  /**
+   * Whether {@code thumbprint} is a canonical certificate thumbprint (64
+   * lowercase hex characters), excluding the wildcard token.
+   *
+   * <p>Package-private so identity records (e.g. {@code Persona}) can tell a
+   * canonical thumbprint from an absent or malformed one without duplicating
+   * the grammar.
+   *
+   * @param thumbprint candidate thumbprint, may be {@code null}
+   * @return {@code true} for a 64-character lowercase hex string
+   */
+  static boolean isCanonicalThumbprint(String thumbprint) {
+    return thumbprint != null && THUMBPRINT_PATTERN.matcher(thumbprint).matches();
   }
 }

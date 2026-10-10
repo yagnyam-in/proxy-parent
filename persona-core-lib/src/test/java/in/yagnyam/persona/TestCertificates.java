@@ -12,6 +12,7 @@ import java.util.Date;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -67,5 +68,39 @@ public final class TestCertificates {
    */
   public static X509Certificate selfSignedWithCommonName(KeyPair keyPair, String commonName, Duration validity) {
     return selfSigned(keyPair, "CN=" + commonName, validity);
+  }
+
+  /**
+   * Builds a self-signed CA root certificate: subject {@code CN=<commonName>},
+   * {@code basicConstraints = CA:TRUE} and a critical {@code keyUsage}
+   * asserting only {@code keyCertSign | cRLSign} — the ordinary shape of a CA
+   * root, and the shape a JCA {@code Signature.initVerify(Certificate)}
+   * refuses because it does not assert {@code digitalSignature}.
+   *
+   * @param keyPair    signing key pair
+   * @param commonName subject CN
+   * @param validity  validity window
+   * @return self-signed X.509 v3 CA certificate
+   */
+  public static X509Certificate selfSignedCaRoot(KeyPair keyPair, String commonName, Duration validity) {
+    try {
+      X500Name subjectName = new X500Name("CN=" + commonName);
+      Date notBefore = Date.from(Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS));
+      Date notAfter = Date.from(notBefore.toInstant().plus(validity));
+      ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA")
+          .setProvider(BouncyCastle.provider())
+          .build(keyPair.getPrivate());
+      X509CertificateHolder holder = new X509v3CertificateBuilder(
+              subjectName, BigInteger.valueOf(System.nanoTime()), notBefore, notAfter,
+              subjectName, SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded()))
+          .addExtension(Extension.basicConstraints, true, new BasicConstraints(true))
+          .addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign))
+          .build(signer);
+      return new JcaX509CertificateConverter()
+          .setProvider(BouncyCastle.provider())
+          .getCertificate(holder);
+    } catch (GeneralSecurityException | IOException | OperatorCreationException e) {
+      throw new IllegalStateException("Unable to build test CA certificate", e);
+    }
   }
 }

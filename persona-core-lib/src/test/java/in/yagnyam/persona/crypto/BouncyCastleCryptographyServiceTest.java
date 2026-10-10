@@ -88,6 +88,35 @@ class BouncyCastleCryptographyServiceTest {
           cryptographyService.getSignature("NoSuchAlgorithm", keyPair.getPrivate(), payload))
           .isInstanceOf(GeneralSecurityException.class);
     }
+
+    /**
+     * G4 (P1): the certificate-based overload enforces X.509 {@code keyUsage}
+     * — a CA certificate asserting only {@code keyCertSign | cRLSign} is
+     * refused, because it does not assert {@code digitalSignature} — while the
+     * public-key overload decides on cryptography alone. That difference is
+     * what the registrar's root-key probe relies on (protocol §7.1): a real CA
+     * root must still be provably paired with its own key.
+     */
+    @Test
+    void verifiesWithBarePublicKeyWhenCertificateKeyUsageForbidsSignature()
+        throws GeneralSecurityException {
+      KeyPair caKeyPair = TestSupport.rsaKeyPair();
+      X509Certificate caCertificate = TestCertificates.selfSignedCaRoot(
+          caKeyPair, "ca-root", Duration.ofDays(1));
+      assertThat(caCertificate.getCriticalExtensionOIDs()).contains("2.5.29.15");
+      assertThat(caCertificate.getKeyUsage()[0]).isFalse();
+      byte[] signature =
+          cryptographyService.getSignature(SIGNATURE_ALGORITHM, caKeyPair.getPrivate(), payload);
+
+      assertThatThrownBy(() -> cryptographyService.verifySignature(
+          SIGNATURE_ALGORITHM, caCertificate, payload, signature))
+          .isInstanceOf(GeneralSecurityException.class);
+      assertThat(cryptographyService.verifySignature(
+          SIGNATURE_ALGORITHM, caCertificate.getPublicKey(), payload, signature)).isTrue();
+      // The keyUsage-neutral overload still rejects a foreign key.
+      assertThat(cryptographyService.verifySignature(
+          SIGNATURE_ALGORITHM, TestSupport.rsaKeyPair().getPublic(), payload, signature)).isFalse();
+    }
   }
 
   @Nested

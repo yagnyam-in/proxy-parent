@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Objects;
@@ -38,6 +39,14 @@ public interface CryptographyService {
    * Verifies {@code signature} over {@code input} with the public key of
    * {@code certificate}.
    *
+   * <p>Note: X.509 {@code keyUsage} applies here. A JCA
+   * {@code Signature.initVerify(Certificate)} refuses a certificate whose
+   * critical {@code keyUsage} does not assert {@code digitalSignature} — the
+   * shape of an ordinary CA root, which asserts {@code keyCertSign|cRLSign}
+   * only. Use {@link #verifySignature(String, PublicKey, byte[], byte[])}
+   * whenever the verification must be decided on cryptography alone (for
+   * example proving that a private key matches a CA root certificate).
+   *
    * @param algorithm   signature algorithm
    * @param certificate certificate carrying the verification key
    * @param input       the signed bytes
@@ -46,6 +55,21 @@ public interface CryptographyService {
    * @throws GeneralSecurityException if verification cannot be performed
    */
   boolean verifySignature(String algorithm, X509Certificate certificate, byte[] input, byte[] signature)
+      throws GeneralSecurityException;
+
+  /**
+   * Verifies {@code signature} over {@code input} with the bare public key
+   * {@code key}, bypassing certificate {@code keyUsage} semantics (see
+   * {@link #verifySignature(String, X509Certificate, byte[], byte[])}).
+   *
+   * @param algorithm signature algorithm
+   * @param key       verification (public) key
+   * @param input     the signed bytes
+   * @param signature signature to verify
+   * @return {@code true} if the signature verifies
+   * @throws GeneralSecurityException if verification cannot be performed
+   */
+  boolean verifySignature(String algorithm, PublicKey key, byte[] input, byte[] signature)
       throws GeneralSecurityException;
 
   /**

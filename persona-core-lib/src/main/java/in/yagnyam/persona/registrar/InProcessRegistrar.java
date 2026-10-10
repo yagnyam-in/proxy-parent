@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
@@ -63,9 +64,11 @@ import org.slf4j.LoggerFactory;
  *       requestId,</li>
  *   <li>{@link #registerPersona(String, String, Hash, String)} consumes that
  *       requestId, validates the CSR (signature, signature-algorithm policy
- *       per protocol §8, subject CN) and the revocation passphrase hash
+ *       per protocol §8, subject: exactly one CN attribute holding the
+ *       allocated persona id) and the revocation passphrase hash
  *       (algorithm per protocol §7.1/§8, hashed with a per-Persona salt),
- *       and issues the certificate.</li>
+ *       and issues the certificate, whose subject is built from the
+ *       validated id alone.</li>
  * </ol>
  * The same {@code requestId} can never be reused for either step.
  *
@@ -243,12 +246,12 @@ public final class InProcessRegistrar implements PersonaRegistrar {
         throw new IllegalArgumentException("CSR signature is invalid");
       }
       requireCsrSignatureAlgorithmInPolicy(csr);
-      String commonName = csrCommonName(csr);
+      String commonName = requiredCsrCommonName(csr);
       if (!commonName.equals(personaId)) {
         throw new IllegalArgumentException(
             "CSR subject CN " + commonName + " does not match personaId " + personaId);
       }
-      PersonaCertificate certificate = issueCertificate(csr);
+      PersonaCertificate certificate = issueCertificate(csr, personaId);
       certificatesByPersonaId
           .computeIfAbsent(personaId, key -> new CopyOnWriteArrayList<>())
           .add(certificate);
@@ -433,26 +436,76 @@ public final class InProcessRegistrar implements PersonaRegistrar {
     return immutable;
   }
 
-  private static String csrCommonName(PKCS10CertificationRequest csr) {
-    RDN[] rdns = csr.getSubject().getRDNs(BCStyle.CN);
+  /**
+   * Extracts the subject CN of a CSR, requiring the most constrained subject
+   * shape the registration protocol allows (protocol §7.1 step 2: the CSR
+   * subject is exactly {@code CN=<personaId>}).
+   *
+   * <p>Exactly one RDN carrying exactly one attribute, of type CN, is
+   * accepted. Anything richer — a multi-valued RDN such as
+   * {@code CN=p-x+OU=attacker}, additional RDNs such as {@code CN=p-x,O=evil},
+   * or a non-CN attribute — is rejected: the Registrar only ever copies the
+   * allocated id into the issued subject, so extra subject material could
+   * otherwise smuggle attacker-chosen DN attributes into a certificate that
+   * peers treat as registrar-issued.
+   *
+   * @param csr parsed CSR
+   * @return the CSR subject CN
+   * @throws IllegalArgumentException when the CSR subject is not exactly one
+   *     single-valued CN RDN
+   */
+  private static String requiredCsrCommonName(PKCS10CertificationRequest csr) {
+    RDN[] rdns = csr.getSubject().getRDNs();
     if (rdns == null || rdns.length == 0) {
-      throw new IllegalArgumentException("CSR subject has no CN");
+      throw new IllegalArgumentException(
+          "CSR subject must be exactly one CN attribute holding the personaId (protocol §7.1),"
+              + " but has no subject RDNs");
     }
-    AttributeTypeAndValue attributeTypeAndValue = rdns[0].getFirst();
-    if (attributeTypeAndValue == null) {
-      throw new IllegalArgumentException("CSR subject CN is empty");
+    if (rdns.length != 1) {
+      throw new IllegalArgumentException(
+          "CSR subject must be exactly one CN attribute holding the personaId (protocol §7.1),"
+              + " but has " + rdns.length + " RDNs: " + csr.getSubject());
+    }
+    RDN rdn = rdns[0];
+    if (rdn.size() != 1) {
+      throw new IllegalArgumentException(
+          "CSR subject must be exactly one CN attribute holding the personaId (protocol §7.1),"
+              + " but its RDN is multi-valued: " + csr.getSubject());
+    }
+    AttributeTypeAndValue attributeTypeAndValue = rdn.getFirst();
+    if (attributeTypeAndValue == null || !BCStyle.CN.equals(attributeTypeAndValue.getType())) {
+      throw new IllegalArgumentException(
+          "CSR subject must be exactly one CN attribute holding the personaId (protocol §7.1),"
+              + " but its only attribute is "
+              + (attributeTypeAndValue == null ? "<empty>" : attributeTypeAndValue.getType())
+              + ": " + csr.getSubject());
     }
     return attributeTypeAndValue.getValue().toString();
   }
 
-  private PersonaCertificate issueCertificate(PKCS10CertificationRequest csr)
+  /**
+   * Issues the persona certificate: subject {@code CN=personaId} built from
+   * the <em>validated</em> id (never from the CSR subject, which is
+   * caller-supplied DN material), public key and key-possession proof from
+   * the CSR (protocol §7.1 step 3).
+   *
+   * @param csr       verified CSR supplying the certified public key
+   * @param personaId id allocated for this request and confirmed as the CSR
+   *                  subject CN
+   * @return issued certificate
+   * @throws GeneralSecurityException when the certificate cannot be built
+   */
+  private PersonaCertificate issueCertificate(PKCS10CertificationRequest csr, String personaId)
       throws GeneralSecurityException {
     try {
       BigInteger serial = BigInteger.valueOf(serialCounter.incrementAndGet());
       Date notBefore = Date.from(Instant.now());
       Date notAfter = Date.from(notBefore.toInstant().plus(personaCertificateValidity));
+      X500Name subject = new X500NameBuilder(BCStyle.INSTANCE)
+          .addRDN(BCStyle.CN, personaId)
+          .build();
       X509CertificateHolder holder = new X509v3CertificateBuilder(
-              rootSubject, serial, notBefore, notAfter, csr.getSubject(), csr.getSubjectPublicKeyInfo())
+              rootSubject, serial, notBefore, notAfter, subject, csr.getSubjectPublicKeyInfo())
           .addExtension(Extension.basicConstraints, true, new BasicConstraints(false))
           .addExtension(Extension.keyUsage, true,
               new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment))
@@ -504,13 +557,25 @@ public final class InProcessRegistrar implements PersonaRegistrar {
     }
   }
 
-  /** Signs a probe with the candidate key and verifies it against the root certificate. */
+  /**
+   * Signs a probe with the candidate key and verifies it against the root
+   * certificate's <em>public key</em>.
+   *
+   * <p>Verifying against the certificate object instead would apply X.509
+   * {@code keyUsage} restrictions: {@code Signature.initVerify(Certificate)}
+   * rejects a certificate whose critical {@code keyUsage} lacks
+   * {@code digitalSignature} — which is exactly how an ordinary CA root is
+   * built ({@code keyCertSign | cRLSign} only, protocol §3.4 rule 5) — so
+   * probing with the bare public key is required for the key/certificate
+   * match to be decided on cryptography alone, not on key-usage semantics.
+   */
   private boolean matchesRootKey(X509Certificate root, PrivateKey key) {
     try {
       byte[] probe = new byte[32];
       secureRandom.nextBytes(probe);
       byte[] signature = cryptographyService.getSignature(version.certificateSignatureAlgorithm(), key, probe);
-      return cryptographyService.verifySignature(version.certificateSignatureAlgorithm(), root, probe, signature);
+      return cryptographyService.verifySignature(version.certificateSignatureAlgorithm(),
+          root.getPublicKey(), probe, signature);
     } catch (GeneralSecurityException e) {
       return false;
     }

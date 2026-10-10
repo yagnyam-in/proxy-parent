@@ -22,9 +22,20 @@ import javax.security.auth.x500.X500Principal;
  * {@link #certificate()} field is excluded from {@link #equals(Object)} and
  * {@link #hashCode()}; it is carried along for verification use.
  *
- * <p>The canonical constructor is permissive (a wire-tolerant data carrier):
- * use {@link #isValid()} to validate; {@code null} certificate components are
- * representable and simply make the record invalid.
+ * <p>The certificate handle is authoritative for every security-relevant
+ * field (protocol §3.1 facts 2-4): when {@link #certificate()} is non-null,
+ * the canonical constructor verifies that each field equals the value derived
+ * from that handle and throws {@link IllegalArgumentException} naming the
+ * field otherwise. Metadata that contradicts the handle — an extended
+ * {@code validTill}, a different {@code owner}, a foreign
+ * {@code sha256Thumbprint} — is therefore not representable, so validation
+ * (which trusts the metadata) can never disagree with chain verification
+ * (which uses the handle).
+ *
+ * <p>Absent ({@code null}) fields are still representable — the record stays a
+ * wire-tolerant data carrier — but they never contradict the handle and
+ * {@link #isValid()} rejects the record, so nothing downstream can consume
+ * them as trusted facts.
  */
 public record PersonaCertificate(
     X509Certificate certificate,
@@ -36,6 +47,40 @@ public record PersonaCertificate(
     String certificatePem,
     String publicKeyPem,
     String publicKeySha256Thumbprint) implements Validatable {
+
+  /**
+   * Binds every metadata field to the certificate handle (see the class
+   * javadoc): a non-null field that contradicts the handle is rejected here,
+   * before any consumer can trust it.
+   *
+   * @throws IllegalArgumentException when a non-null field differs from the
+   *     value derived from {@link #certificate()} (the field name is in the
+   *     message), or when the handle cannot be encoded at all
+   */
+  public PersonaCertificate {
+    if (certificate != null) {
+      // Parameters, not fields: a compact constructor's field assignments
+      // happen after this body, so reading the fields here would read null.
+      requireHandleField("serialNumber", serialNumber, certificate.getSerialNumber().toString());
+      requireHandleField("owner", owner, commonName(certificate.getSubjectX500Principal()));
+      requireHandleField("validFrom", validFrom, certificate.getNotBefore().toInstant());
+      requireHandleField("validTill", validTill, certificate.getNotAfter().toInstant());
+      try {
+        PemService pemService = PemService.instance();
+        requireHandleField("sha256Thumbprint", sha256Thumbprint,
+            Digests.sha256Hex(certificate.getEncoded()));
+        requireHandleField("certificatePem", certificatePem,
+            pemService.encodeCertificate(certificate));
+        requireHandleField("publicKeyPem", publicKeyPem,
+            pemService.encodePublicKey(certificate.getPublicKey()));
+        requireHandleField("publicKeySha256Thumbprint", publicKeySha256Thumbprint,
+            Digests.sha256Hex(certificate.getPublicKey().getEncoded()));
+      } catch (GeneralSecurityException | IOException e) {
+        throw new IllegalArgumentException(
+            "Unable to derive the fields of this record from its certificate handle", e);
+      }
+    }
+  }
 
   /**
    * Derives every field from {@code certificate}: owner = subject CN,
@@ -156,6 +201,33 @@ public record PersonaCertificate(
 
   private static boolean isPresent(String value) {
     return value != null && !value.isEmpty();
+  }
+
+  /**
+   * @param field    field name, named in the failure message
+   * @param actual   field value as supplied by the caller
+   * @param expected value derived from the certificate handle
+   * @throws IllegalArgumentException when {@code actual} is non-null and
+   *     differs from {@code expected}
+   */
+  private static void requireHandleField(String field, Object actual, Object expected) {
+    if (actual != null && !actual.equals(expected)) {
+      throw new IllegalArgumentException("PersonaCertificate " + field
+          + " does not match the certificate handle (protocol §3.1: the certificate is"
+          + " authoritative for every security-relevant field): field is "
+          + describe(actual) + ", certificate-derived value is " + describe(expected));
+    }
+  }
+
+  /**
+   * Renders a field for a failure message without ever echoing PEM bodies or
+   * long material (see {@link #toString()}).
+   */
+  private static String describe(Object value) {
+    if (value instanceof String text) {
+      return text.length() > 64 ? "<" + text.length() + "-character string>" : "'" + text + "'";
+    }
+    return String.valueOf(value);
   }
 
   private static String commonName(X500Principal subject) {

@@ -6,6 +6,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
@@ -123,8 +124,25 @@ public final class BouncyCastleCryptographyService implements CryptographyServic
     Objects.requireNonNull(certificate, "certificate");
     Objects.requireNonNull(input, "input");
     Objects.requireNonNull(signature, "signature");
+    // initVerify(Certificate) enforces the certificate's critical keyUsage
+    // (digitalSignature); that restriction is intentional here — see
+    // CryptographyService#verifySignature(String, PublicKey, byte[], byte[])
+    // for the keyUsage-neutral variant.
     Signature verifier = Signature.getInstance(algorithm, BouncyCastle.provider());
     verifier.initVerify(certificate);
+    verifier.update(input);
+    return verifier.verify(signature);
+  }
+
+  @Override
+  public boolean verifySignature(String algorithm, PublicKey key, byte[] input, byte[] signature)
+      throws GeneralSecurityException {
+    Objects.requireNonNull(algorithm, "algorithm");
+    Objects.requireNonNull(key, "key");
+    Objects.requireNonNull(input, "input");
+    Objects.requireNonNull(signature, "signature");
+    Signature verifier = Signature.getInstance(algorithm, BouncyCastle.provider());
+    verifier.initVerify(key);
     verifier.update(input);
     return verifier.verify(signature);
   }

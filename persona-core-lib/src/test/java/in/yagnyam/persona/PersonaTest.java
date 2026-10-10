@@ -11,7 +11,8 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests for {@link Persona} ({@code SPEC.md} §3.1.1): derivation from a
- * certificate, validity per spec, unique-id helper.
+ * certificate, validity per spec, the id/public-key binding to the
+ * certificate, unique-id helper and equality.
  */
 class PersonaTest {
 
@@ -49,12 +50,22 @@ class PersonaTest {
   }
 
   @Test
-  void invalidWhenFieldsMissing() {
-    assertThat(new Persona(null, "name", certificate, "key", "thumb").isValid()).isFalse();
-    assertThat(new Persona(persona.id(), "name", null, "key", "thumb").isValid()).isFalse();
-    assertThat(new Persona(persona.id(), "name", certificate, null, "thumb").isValid()).isFalse();
-    assertThat(new Persona(persona.id(), "name", certificate, "key", null).isValid()).isFalse();
-    assertThat(new Persona(persona.id(), "name", certificate, "", "thumb").isValid()).isFalse();
+  void invalidWhenComponentsMissing() {
+    // Absent components are representable (wire tolerance) but make the
+    // record invalid; absent components never contradict the certificate.
+    assertThat(new Persona(null, "name", certificate, certificate.publicKeyPem(),
+        certificate.publicKeySha256Thumbprint()).isValid()).isFalse();
+    assertThat(new Persona(persona.id(), "name", null, null, null).isValid()).isFalse();
+    assertThat(new Persona(persona.id(), "name", certificate, null,
+        certificate.publicKeySha256Thumbprint()).isValid()).isFalse();
+    assertThat(new Persona(persona.id(), "name", certificate, certificate.publicKeyPem(), null)
+        .isValid()).isFalse();
+    // A non-null field that contradicts the certificate is not representable
+    // at all (G2).
+    assertThatThrownBy(() -> new Persona(persona.id(), "name", certificate, "",
+        certificate.publicKeySha256Thumbprint()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("publicKeyEncoded");
   }
 
   @Test
@@ -63,15 +74,60 @@ class PersonaTest {
         certificate.owner(), certificate.sha256Thumbprint(), certificate.validFrom(),
         certificate.validTill(), certificate.certificatePem(), certificate.publicKeyPem(),
         certificate.publicKeySha256Thumbprint());
-    assertThat(new Persona(persona.id(), "name", invalidCertificate, "key", "thumb").isValid())
+    assertThat(new Persona(persona.id(), "name", invalidCertificate,
+        invalidCertificate.publicKeyPem(), invalidCertificate.publicKeySha256Thumbprint())
+        .isValid())
         .isFalse();
   }
 
   @Test
   void nameIsOptionalLabelNotValidityRequirement() {
     // SPEC.md §3.1.1: only id/certificate/public-key material are required.
-    assertThat(new Persona(persona.id(), null, certificate, "key", "thumb").isValid()).isTrue();
-    assertThat(new Persona(persona.id(), "", certificate, "key", "thumb").isValid()).isTrue();
+    assertThat(new Persona(persona.id(), null, certificate, certificate.publicKeyPem(),
+        certificate.publicKeySha256Thumbprint()).isValid()).isTrue();
+    assertThat(new Persona(persona.id(), "", certificate, certificate.publicKeyPem(),
+        certificate.publicKeySha256Thumbprint()).isValid()).isTrue();
+  }
+
+  /**
+   * G2 (P1): the certified identity is the certificate — a Persona carrying
+   * an id its certificate does not certify is rejected at construction, so
+   * the metadata validation path can never disagree with the certificate used
+   * for chain verification. Only {@link Persona#name()} is a free label.
+   */
+  @Test
+  void rejectsIdNotCertifiedByTheCertificate() {
+    // Someone else's id with a perfectly valid certificate.
+    assertThatThrownBy(() -> new Persona(PersonaId.of("p-alice"), "alice", certificate,
+        certificate.publicKeyPem(), certificate.publicKeySha256Thumbprint()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("does not match its certificate")
+        .hasMessageContaining("p-alice")
+        .hasMessageContaining(persona.id().uniqueId());
+
+    // Even an unpinned spelling of the *right* owner is not the certified id
+    // (which is the owner pinned to the certificate thumbprint).
+    assertThatThrownBy(() -> new Persona(PersonaId.of(certificate.owner()), "alice", certificate,
+        certificate.publicKeyPem(), certificate.publicKeySha256Thumbprint()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("does not match its certificate");
+  }
+
+  /**
+   * G2 (P1): the public key is certified by the certificate — public-key
+   * fields that the certificate does not carry are rejected at construction.
+   */
+  @Test
+  void rejectsPublicKeyNotCertifiedByTheCertificate() {
+    assertThatThrownBy(() -> new Persona(persona.id(), "name", certificate,
+        "-----BEGIN PUBLIC KEY-----\nnot-the-certified-key\n-----END PUBLIC KEY-----",
+        certificate.publicKeySha256Thumbprint()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("publicKeyEncoded");
+    assertThatThrownBy(() -> new Persona(persona.id(), "name", certificate,
+        certificate.publicKeyPem(), "ee".repeat(32)))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("publicKeySha256Thumbprint");
   }
 
   /**
@@ -81,8 +137,10 @@ class PersonaTest {
    */
   @Test
   void equalWhenSameIdAndCertificateRegardlessOfName() {
-    Persona asAlice = new Persona(persona.id(), "alice", certificate, "pub", "thumb");
-    Persona asBob = new Persona(persona.id(), "bob", certificate, "pub", "thumb");
+    Persona asAlice = new Persona(persona.id(), "alice", certificate, certificate.publicKeyPem(),
+        certificate.publicKeySha256Thumbprint());
+    Persona asBob = new Persona(persona.id(), "bob", certificate, certificate.publicKeyPem(),
+        certificate.publicKeySha256Thumbprint());
     assertThat(asAlice).isEqualTo(asBob);
     assertThat(asBob).isEqualTo(asAlice);
     assertThat(asAlice.hashCode()).isEqualTo(asBob.hashCode());
@@ -94,9 +152,15 @@ class PersonaTest {
         .isEqualTo(persona);
   }
 
-  /** Protocol §3.1: a different certificate thumbprint makes personas unequal. */
+  /**
+   * Protocol §3.1: a different certificate thumbprint makes personas unequal
+   * — the re-issued certificate is a different instance of the same logical
+   * identity (same owner, different thumbprint). The adversarial spelling of
+   * this rule (the old persona's id attached to the new certificate) is not
+   * representable; see {@link #rejectsIdNotCertifiedByTheCertificate()}.
+   */
   @Test
-  void unequalWhenCertificateDiffersEvenWithSameIdAndName() {
+  void unequalWhenCertificateDiffersEvenWithSameOwnerAndName() {
     KeyPair otherKeyPair = TestSupport.rsaKeyPair();
     X509Certificate otherX509 = TestCertificates.selfSignedWithCommonName(
         otherKeyPair, "p-persona-test", Duration.ofDays(1));
@@ -104,24 +168,15 @@ class PersonaTest {
     assertThat(otherCertificate.sha256Thumbprint())
         .isNotEqualTo(certificate.sha256Thumbprint());
 
-    Persona sameIdDifferentCertificate = new Persona(persona.id(), persona.name(),
-        otherCertificate, "pub", "thumb");
-    assertThat(sameIdDifferentCertificate).isNotEqualTo(persona);
-    assertThat(persona).isNotEqualTo(sameIdDifferentCertificate);
+    Persona reIssued = Persona.of(otherCertificate);
+    assertThat(reIssued.id().id()).as("same logical identity").isEqualTo(persona.id().id());
+    assertThat(reIssued.id()).isNotEqualTo(persona.id());
+    assertThat(reIssued).isNotEqualTo(persona);
+    assertThat(persona).isNotEqualTo(reIssued);
   }
 
-  /** Protocol §3.1: a different id makes personas unequal even with the same certificate. */
   @Test
-  void unequalWhenIdDiffersEvenWithSameCertificate() {
-    PersonaCertificate reIssued = PersonaCertificate.of(
-        TestCertificates.selfSignedWithCommonName(TestSupport.rsaKeyPair(), "p-persona-test",
-            Duration.ofDays(1)));
-    Persona otherId = new Persona(PersonaId.of("p-other"), persona.name(),
-        reIssued, "pub", "thumb");
-    Persona sameId = new Persona(PersonaId.of("p-other"), "different-name",
-        reIssued, "pub", "thumb");
-    assertThat(otherId).isEqualTo(sameId);
-    assertThat(otherId).isNotEqualTo(persona);
+  void unequalToNullOrOtherTypes() {
     assertThat(persona.equals(null)).isFalse();
     assertThat(persona).isNotEqualTo("not a persona");
   }

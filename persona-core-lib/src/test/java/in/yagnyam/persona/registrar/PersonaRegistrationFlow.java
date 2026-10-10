@@ -14,6 +14,7 @@ import java.security.KeyPair;
 import java.security.PublicKey;
 import java.util.Objects;
 import javax.security.auth.x500.X500Principal;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -77,6 +78,31 @@ public final class PersonaRegistrationFlow {
       return PemService.instance().encodeCertificateRequest(csr);
     } catch (OperatorCreationException | IOException e) {
       throw new IllegalStateException("Unable to build tampered CSR", e);
+    }
+  }
+
+  /**
+   * Builds a CSR PEM with an arbitrary subject DN (for adversarial subject
+   * tests: multi-valued RDNs, extra attributes, a missing CN), signed with
+   * the active version's certificate signature algorithm, so the CSR
+   * signature itself is valid and only the subject shape is at issue.
+   *
+   * @param subject CSR subject
+   * @param keyPair key pair whose public part is certified and whose private
+   *                part signs the CSR
+   * @return CSR PEM
+   */
+  public static String csrWithSubject(X500Name subject, KeyPair keyPair) {
+    try {
+      PersonaVersion version = PersonaVersion.latestVersion();
+      ContentSigner signer = new JcaContentSignerBuilder(version.certificateSignatureAlgorithm())
+          .setProvider(BouncyCastle.provider())
+          .build(keyPair.getPrivate());
+      PKCS10CertificationRequest csr = new JcaPKCS10CertificationRequestBuilder(
+          subject, keyPair.getPublic()).build(signer);
+      return PemService.instance().encodeCertificateRequest(csr);
+    } catch (OperatorCreationException | IOException e) {
+      throw new IllegalStateException("Unable to build CSR with subject " + subject, e);
     }
   }
 }

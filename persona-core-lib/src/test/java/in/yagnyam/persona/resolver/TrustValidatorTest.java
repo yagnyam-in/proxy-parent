@@ -89,47 +89,69 @@ class TrustValidatorTest {
   /**
    * Adversarial case (id↔certificate binding): a Persona that claims
    * p-alice's id but carries p-bob's perfectly valid certificate (same
-   * registrar, unrevoked, in-window) must be rejected with the binding
-   * reason — without the binding check the impostor would pass every other
-   * trust rule.
+   * registrar, unrevoked, in-window) is rejected — without the binding check
+   * the impostor would pass every other trust rule.
+   *
+   * <p>Layer that rejects (round-2): {@link Persona}'s canonical constructor
+   * now binds {@code id} to the certified {@code (owner, thumbprint)} of its
+   * own certificate, so the impostor cannot even be built — the swap is
+   * unconstructible and this test pins that boundary. The equivalent owner /
+   * pinned-thumbprint checks inside {@link TrustValidator} remain as defense
+   * in depth for any other producer of a {@code Persona} value, but they are
+   * unreachable through the record's public constructor: every
+   * {@code isValid()} persona is id-bound to its certificate by construction
+   * (asserted here by {@link #everyValidPersonaIsIdBoundToItsCertificate()}).
    */
   @Test
-  void rejectsPersonaCarryingSomeoneElsesCertificate() {
+  void rejectsPersonaCarryingSomeoneElsesCertificateAtConstruction() {
     InProcessRegistrar registrar = new InProcessRegistrar();
     RegisteredPersona alice = registerPersona(registrar);
     RegisteredPersona bob = registerPersona(registrar);
-    TrustValidator validator = new TrustValidator(registrar.trustedRoots(), registrar::isRevoked);
 
-    Persona impostor = new Persona(PersonaId.of(alice.persona().id().id()), "alice",
+    assertThatThrownBy(() -> new Persona(PersonaId.of(alice.persona().id().id()), "alice",
         bob.certificate(), bob.certificate().publicKeyPem(),
-        bob.certificate().publicKeySha256Thumbprint());
-    assertThat(impostor.isValid()).isTrue();
-
-    TrustResult result = validator.validate(impostor, Instant.now());
-    assertThat(result.trusted()).isFalse();
-    assertThat(result.reason()).hasValueSatisfying(reason -> assertThat(reason)
-        .contains("does not match certificate owner")
-        .contains(alice.persona().id().id())
-        .contains(bob.certificate().owner()));
+        bob.certificate().publicKeySha256Thumbprint()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("does not match its certificate");
   }
 
-  /** Id↔certificate binding: a pinned thumbprint must equal the certificate's. */
+  /**
+   * The same boundary spelled with a wrong pin: a Persona whose id pins a
+   * thumbprint its certificate does not have is unconstructible.
+   */
   @Test
-  void rejectsPersonaWithMismatchedPinnedThumbprint() {
+  void rejectsPersonaWithMismatchedPinnedThumbprintAtConstruction() {
     InProcessRegistrar registrar = new InProcessRegistrar();
     RegisteredPersona alice = registerPersona(registrar);
-    TrustValidator validator = new TrustValidator(registrar.trustedRoots(), registrar::isRevoked);
 
-    Persona wronglyPinned = new Persona(
+    assertThatThrownBy(() -> new Persona(
         PersonaId.of(alice.persona().id().id(), "ee".repeat(32)), "alice",
         alice.certificate(), alice.certificate().publicKeyPem(),
-        alice.certificate().publicKeySha256Thumbprint());
-    assertThat(wronglyPinned.isValid()).isTrue();
+        alice.certificate().publicKeySha256Thumbprint()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("does not match its certificate");
+  }
 
-    TrustResult result = validator.validate(wronglyPinned, Instant.now());
-    assertThat(result.trusted()).isFalse();
-    assertThat(result.reason())
-        .hasValueSatisfying(reason -> assertThat(reason).contains("pinned thumbprint"));
+  /**
+   * Proof that the validator's id/pin checks cannot be reached with an
+   * inconsistent record: every constructible {@code isValid()} persona is
+   * already id-bound (owner + canonical thumbprint) and public-key-bound to
+   * its certificate, so the validator's own binding checks are defense in
+   * depth rather than the first line of defense.
+   */
+  @Test
+  void everyValidPersonaIsIdBoundToItsCertificate() {
+    InProcessRegistrar registrar = new InProcessRegistrar();
+    RegisteredPersona registered = registerPersona(registrar);
+    Persona persona = registered.persona();
+
+    assertThat(persona.isValid()).isTrue();
+    assertThat(persona.id()).isEqualTo(PersonaId.of(persona.certificate()));
+    assertThat(persona.id().sha256Thumbprint())
+        .contains(persona.certificate().sha256Thumbprint());
+    assertThat(persona.publicKeyEncoded()).isEqualTo(persona.certificate().publicKeyPem());
+    assertThat(persona.publicKeySha256Thumbprint())
+        .isEqualTo(persona.certificate().publicKeySha256Thumbprint());
   }
 
   /**

@@ -16,6 +16,7 @@ import in.yagnyam.persona.crypto.PemService;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,6 +29,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
+import org.bouncycastle.asn1.x500.RDN;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -198,6 +204,102 @@ class InProcessRegistrarTest {
           validHash("pass-phrase"), csrForOtherId))
           .isInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining("does not match personaId");
+    }
+
+    /**
+     * G3 (P1, certificate-subject smuggling): a subject whose single RDN is
+     * multi-valued is rejected (protocol §7.1).
+     *
+     * <p>Both spellings are adversarial. {@code CN=<personaId>+E=attacker@…}
+     * is the one that defeated the previous
+     * {@code getRDNs(BCStyle.CN)[0].getFirst()} comparison: the extra
+     * attribute sorts after CN inside the RDN encoding, so {@code getFirst()}
+     * returned the <em>correct</em> CN while the certificate subject — copied
+     * wholesale from the CSR — carried {@code E=attacker@…} as well.
+     * {@code CN=<personaId>+OU=attacker} sorts CN last, so the old comparison
+     * happened to fail there; it is kept as a second spelling of the same
+     * shape.
+     */
+    @Test
+    void rejectsCsrWithMultiValuedSubjectRdn() {
+      String requestId = "req-multi-valued-rdn";
+      String personaId = registrar.issuePersonaId(requestId);
+      X500Name smuggledEmail = new X500Name(new RDN[] {
+          new RDN(new AttributeTypeAndValue[] {
+              new AttributeTypeAndValue(BCStyle.CN, new DERUTF8String(personaId)),
+              new AttributeTypeAndValue(BCStyle.E,
+                  new DERUTF8String("attacker@example.com"))})});
+      X500Name smuggledOu = new X500Name(new RDN[] {
+          new RDN(new AttributeTypeAndValue[] {
+              new AttributeTypeAndValue(BCStyle.CN, new DERUTF8String(personaId)),
+              new AttributeTypeAndValue(BCStyle.OU, new DERUTF8String("attacker"))})});
+
+      for (X500Name adversarialSubject : List.of(smuggledEmail, smuggledOu)) {
+        String csr = PersonaRegistrationFlow.csrWithSubject(adversarialSubject,
+            TestSupport.rsaKeyPair());
+        assertThatThrownBy(() -> registrar.registerPersona(requestId, personaId,
+            validHash("pass-phrase"), csr))
+            .as("multi-valued RDN %s must be rejected", adversarialSubject)
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("multi-valued")
+            .hasMessageContaining("§7.1");
+      }
+    }
+
+    /** G3 (P1): a subject with extra RDNs beyond the persona id is rejected. */
+    @Test
+    void rejectsCsrWithExtraSubjectAttributes() {
+      String requestId = "req-extra-subject-attributes";
+      String personaId = registrar.issuePersonaId(requestId);
+      String csr = PersonaRegistrationFlow.csrWithSubject(
+          new X500Name("CN=" + personaId + ",OU=attacker"), TestSupport.rsaKeyPair());
+
+      assertThatThrownBy(() -> registrar.registerPersona(requestId, personaId,
+          validHash("pass-phrase"), csr))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("2 RDNs")
+          .hasMessageContaining("§7.1");
+    }
+
+    /** G3 (P1): a subject without a CN — or without any RDN at all — is rejected. */
+    @Test
+    void rejectsCsrWithoutCommonName() {
+      String requestId = "req-no-cn";
+      String personaId = registrar.issuePersonaId(requestId);
+      List<X500Name> subjectsWithoutCn = List.of(
+          new X500Name("OU=attacker"),
+          new X500Name("O=attacker,C=DE"),
+          new X500Name(new RDN[0]));
+
+      for (X500Name subject : subjectsWithoutCn) {
+        String csr = PersonaRegistrationFlow.csrWithSubject(subject, TestSupport.rsaKeyPair());
+        assertThatThrownBy(() -> registrar.registerPersona(requestId, personaId,
+            validHash("pass-phrase"), csr))
+            .as("subject %s without CN must be rejected", subject)
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("CN")
+            .hasMessageContaining("§7.1");
+      }
+    }
+
+    /**
+     * G3 (P1): the issued subject is built from the validated persona id, not
+     * from the CSR subject — the certificate carries exactly
+     * {@code CN=<personaId>} and no attacker-controlled DN material.
+     */
+    @Test
+    void issuedCertificateSubjectIsExactlyTheValidatedPersonaId() throws Exception {
+      RegisteredPersona registered = registerFreshPersona(registrar, "pass-phrase");
+      X509Certificate issued = registered.certificate().certificate();
+      String personaId = registered.certificate().owner();
+
+      assertThat(issued.getSubjectX500Principal().getName()).isEqualTo("CN=" + personaId);
+      X500Name subject = X500Name.getInstance(issued.getSubjectX500Principal().getEncoded());
+      assertThat(subject.getRDNs()).hasSize(1);
+      assertThat(subject.getRDNs()[0].size()).isEqualTo(1);
+      assertThat(subject.getRDNs()[0].getFirst().getType()).isEqualTo(BCStyle.CN);
+      assertThat(subject.getRDNs()[0].getFirst().getValue().toString()).isEqualTo(personaId);
+      assertThat(registered.persona().id().id()).isEqualTo(personaId);
     }
 
     @Test
@@ -450,6 +552,50 @@ class InProcessRegistrarTest {
       String rootCertificatePem = PemService.instance().encodeCertificate(
           TestCertificates.selfSignedWithCommonName(rootKeyPair, "custom-root", Duration.ofDays(1)));
       String wrongKeyPem = PemService.instance().encodePrivateKey(TestSupport.rsaKeyPair().getPrivate());
+      assertThatThrownBy(() -> new InProcessRegistrar(wrongKeyPem, rootCertificatePem))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("does not match");
+    }
+
+    /**
+     * G4 (P1): a deterministic root whose critical {@code keyUsage} asserts
+     * only {@code keyCertSign | cRLSign} — the ordinary shape of a CA root —
+     * must be accepted. Verifying the key probe with
+     * {@code Signature.initVerify(certificate)} throws
+     * {@code InvalidKeyException} for such a certificate (the JDK refuses a
+     * certificate that does not assert {@code digitalSignature}), so the
+     * probe verifies with the root's public key instead.
+     */
+    @Test
+    void acceptsProvidedSelfSignedRootWithCaOnlyKeyUsage() throws Exception {
+      KeyPair rootKeyPair = TestSupport.rsaKeyPair();
+      String rootKeyPem = PemService.instance().encodePrivateKey(rootKeyPair.getPrivate());
+      X509Certificate rootCertificate = TestCertificates.selfSignedCaRoot(
+          rootKeyPair, "custom-root", Duration.ofDays(1));
+      String rootCertificatePem = PemService.instance().encodeCertificate(rootCertificate);
+      // Precondition: the root is a real CA certificate and really excludes
+      // digitalSignature (otherwise this test would prove nothing).
+      assertThat(rootCertificate.getCriticalExtensionOIDs()).contains("2.5.29.15");
+      assertThat(rootCertificate.getKeyUsage()).isNotNull();
+      assertThat(rootCertificate.getKeyUsage()[0]).isFalse();
+
+      InProcessRegistrar deterministic = new InProcessRegistrar(rootKeyPem, rootCertificatePem);
+
+      assertThat(deterministic.trustedRoots().get(0).owner()).isEqualTo("custom-root");
+      RegisteredPersona registered = registerFreshPersona(deterministic, "pass-phrase");
+      assertThatCode(() -> registered.certificate().certificate()
+          .verify(rootCertificate.getPublicKey())).doesNotThrowAnyException();
+    }
+
+    /** G4 (P1): the CA-only root still rejects a mismatched key. */
+    @Test
+    void rejectsMismatchedKeyForCaOnlyRoot() throws Exception {
+      KeyPair rootKeyPair = TestSupport.rsaKeyPair();
+      String rootCertificatePem = PemService.instance().encodeCertificate(
+          TestCertificates.selfSignedCaRoot(rootKeyPair, "custom-root", Duration.ofDays(1)));
+      String wrongKeyPem = PemService.instance().encodePrivateKey(
+          TestSupport.rsaKeyPair().getPrivate());
+
       assertThatThrownBy(() -> new InProcessRegistrar(wrongKeyPem, rootCertificatePem))
           .isInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining("does not match");
