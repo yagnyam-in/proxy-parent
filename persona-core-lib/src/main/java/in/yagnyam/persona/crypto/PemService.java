@@ -42,6 +42,10 @@ import org.bouncycastle.util.io.pem.PemReader;
  *       (also {@code NEW CERTIFICATE REQUEST})</li>
  * </ul>
  *
+ * <p>Decode methods parse only the FIRST PEM object in the input and ignore
+ * any trailing content: a certificate chain file therefore yields the leaf
+ * certificate only.
+ *
  * <p>The service is stateless and thread-safe; use {@link #instance()}.
  */
 public final class PemService {
@@ -200,6 +204,19 @@ public final class PemService {
     return out.toString(StandardCharsets.UTF_8);
   }
 
+  /**
+   * Reads the first PEM object from {@code pem}, requiring one of
+   * {@code expectedTypes}.
+   *
+   * <p>Only the FIRST PEM object in the input is parsed; any trailing
+   * content (further PEM objects or arbitrary text) is silently ignored —
+   * a chain file yields the leaf certificate only.
+   *
+   * @param pem            PEM input
+   * @param expectedTypes acceptable PEM type headers
+   * @return the first PEM object
+   * @throws IOException if the input holds no PEM object of an expected type
+   */
   private static PemObject readPem(String pem, String... expectedTypes) throws IOException {
     try (PemReader reader = new PemReader(new InputStreamReader(
         new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8))) {

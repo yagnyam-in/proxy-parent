@@ -71,6 +71,33 @@ public record Persona(
         + ", publicKeySha256Thumbprint=" + publicKeySha256Thumbprint + "]";
   }
 
+  /**
+   * Protocol §3.1 equality: two personas are equal iff they share both
+   * {@code id} and certificate thumbprint. {@link PersonaCertificate}
+   * equality already excludes the decoded certificate handle (the
+   * thumbprint is the certificate identity), so comparing
+   * {@code (id, certificate)} is exactly that rule. The display
+   * {@link #name} is a human-readable label and is deliberately excluded
+   * (so is the public-key material, which a certificate already pins);
+   * two personas with the same id and certificate are the same persona
+   * regardless of what each side happens to call it.
+   */
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (!(obj instanceof Persona other)) {
+      return false;
+    }
+    return Objects.equals(id, other.id) && Objects.equals(certificate, other.certificate);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, certificate);
+  }
+
   private static boolean isPresent(String value) {
     return value != null && !value.isEmpty();
   }

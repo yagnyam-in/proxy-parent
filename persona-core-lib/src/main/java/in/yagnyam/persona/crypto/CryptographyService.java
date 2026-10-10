@@ -157,25 +157,33 @@ public interface CryptographyService {
 
   /**
    * Adjusts the UTF-8 bytes of {@code key} into a valid AES key by
-   * zero-padding or truncating to exactly 16, 24 or 32 bytes.
+   * zero-padding to the smallest valid AES length that is at least the raw
+   * length (16, 24 or 32 bytes).
    *
-   * <p>Sizing rule: the smallest valid AES length that is at least the raw
-   * length; raw lengths above 32 are truncated to 32 (documented deviation —
-   * the alternative of rejecting would break callers that derive passphrases
-   * of arbitrary length).
+   * <p>Key material longer than 32 bytes is rejected with
+   * {@link IllegalArgumentException} (legacy semantics, protocol §8):
+   * silently truncating it would weaken key separation — two different
+   * passphrases sharing a 32-byte prefix would silently become the same
+   * AES key.
    *
    * <p>Regression note: the legacy implementation padded lengths in the
    * range (24, 32) to 36 bytes, an invalid AES key size that exploded at
    * cipher-init time. This implementation pads such lengths to 32.
+   *
+   * @param key passphrase-style key material, at most 32 UTF-8 bytes
+   * @return AES key of 16, 24 or 32 bytes
+   * @throws IllegalArgumentException when the key material exceeds 32 bytes
    */
   static SecretKey asAesKey(String key) {
     Objects.requireNonNull(key, "key");
     byte[] raw = key.getBytes(StandardCharsets.UTF_8);
     int length = raw.length;
-    int adjustedLength;
     if (length > 32) {
-      adjustedLength = 32;
-    } else if (length <= 16) {
+      throw new IllegalArgumentException("Invalid length " + length
+          + " for AES key: key material longer than 32 bytes is rejected, not truncated");
+    }
+    int adjustedLength;
+    if (length <= 16) {
       adjustedLength = 16;
     } else if (length <= 24) {
       adjustedLength = 24;

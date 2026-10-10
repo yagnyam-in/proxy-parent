@@ -9,6 +9,7 @@ import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
+import java.security.spec.MGF1ParameterSpec;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
@@ -17,6 +18,8 @@ import javax.crypto.Cipher;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.OAEPParameterSpec;
+import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
@@ -53,6 +56,16 @@ public final class BouncyCastleCryptographyService implements CryptographyServic
   /** IV length for AES: always the block size, independent of key size. */
   private static final int AES_BLOCK_SIZE_BYTES = 16;
 
+  /**
+   * Exact RSA-OAEP parameters (protocol §8): SHA-256 digest, MGF1 with
+   * SHA-256, empty label. JCE transformation strings do not pin the MGF1
+   * digest — providers disagree on the default (commonly SHA-1) — so both
+   * asymmetric encryption and decryption initialize with these explicit
+   * parameters instead of relying on provider defaults.
+   */
+  private static final OAEPParameterSpec RSA_OAEP_PARAMETERS = new OAEPParameterSpec(
+      "SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT);
+
   private final SecureRandom secureRandom = new SecureRandom();
 
   private BouncyCastleCryptographyService() {
@@ -66,6 +79,30 @@ public final class BouncyCastleCryptographyService implements CryptographyServic
    */
   public static BouncyCastleCryptographyService instance() {
     return INSTANCE;
+  }
+
+  /**
+   * Cipher algorithms supported by this implementation (asymmetric and
+   * symmetric together). Package-private: tests assert this set equals
+   * {@code PersonaVersion.latestVersion()}'s valid encryption algorithms, so
+   * the derive-or-verify whitelist and the version policy can never silently
+   * diverge.
+   *
+   * @return supported cipher algorithms
+   */
+  static Set<String> supportedCipherAlgorithms() {
+    return SUPPORTED_CIPHER_ALGORITHMS;
+  }
+
+  /**
+   * Key generation algorithms supported by this implementation.
+   * Package-private: tests assert this set equals
+   * {@code PersonaVersion.latestVersion()}'s key generation algorithm.
+   *
+   * @return supported key generation algorithms
+   */
+  static Set<String> supportedKeyGenerationAlgorithms() {
+    return SUPPORTED_KEY_GENERATION_ALGORITHMS;
   }
 
   @Override
@@ -173,7 +210,10 @@ public final class BouncyCastleCryptographyService implements CryptographyServic
     Objects.requireNonNull(input, "input");
     Cipher cipher = cipher(algorithm);
     try {
-      cipher.init(Cipher.ENCRYPT_MODE, certificate);
+      // No Cipher.init overload takes (Certificate, AlgorithmParameterSpec),
+      // so the certificate's public key is passed directly alongside the
+      // explicit OAEP parameters.
+      cipher.init(Cipher.ENCRYPT_MODE, certificate.getPublicKey(), RSA_OAEP_PARAMETERS);
       byte[] cipherText = cipher.doFinal(input);
       return new CipherText(Optional.empty(), algorithm, base64(cipherText), Optional.empty(), Optional.empty());
     } catch (RuntimeException e) {
@@ -187,7 +227,7 @@ public final class BouncyCastleCryptographyService implements CryptographyServic
     requireValid(cipherText);
     Cipher cipher = cipher(cipherText.encryptionAlgorithm());
     try {
-      cipher.init(Cipher.DECRYPT_MODE, key);
+      cipher.init(Cipher.DECRYPT_MODE, key, RSA_OAEP_PARAMETERS);
       return cipher.doFinal(Base64.getDecoder().decode(cipherText.cipherText()));
     } catch (RuntimeException e) {
       throw asSecurityException("Asymmetric decryption failed", e);

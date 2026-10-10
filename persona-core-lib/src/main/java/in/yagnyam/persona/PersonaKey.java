@@ -163,13 +163,18 @@ public final class PersonaKey implements Validatable {
   }
 
   /**
-   * @return {@code true} when the id is valid and exactly one usable form of
+   * @return {@code true} when the id is valid, the public key material
+   *     (PEM and thumbprint) is present, and exactly one usable form of
    *     private key material is present (plaintext PEM, or valid
-   *     {@link CipherText})
+   *     {@link CipherText}) — consistent with {@link PersonaCertificate}
+   *     and {@code Persona} validity
    */
   @Override
   public boolean isValid() {
     if (id == null || !id.isValid()) {
+      return false;
+    }
+    if (!isPresent(publicKeyPem) || !isPresent(publicKeySha256Thumbprint)) {
       return false;
     }
     if (privateKeyPem != null) {
@@ -188,5 +193,9 @@ public final class PersonaKey implements Validatable {
         + ", privateKeyPem=" + (privateKeyPem == null ? "absent" : "present")
         + ", privateKeyEncrypted=" + (privateKeyEncrypted == null ? "absent" : "present")
         + ", publicKeySha256Thumbprint=" + publicKeySha256Thumbprint + "]";
+  }
+
+  private static boolean isPresent(String value) {
+    return value != null && !value.isEmpty();
   }
 }

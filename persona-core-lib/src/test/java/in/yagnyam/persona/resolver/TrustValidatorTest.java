@@ -86,6 +86,71 @@ class TrustValidatorTest {
         .hasValueSatisfying(reason -> assertThat(reason).contains("does not chain"));
   }
 
+  /**
+   * Adversarial case (id↔certificate binding): a Persona that claims
+   * p-alice's id but carries p-bob's perfectly valid certificate (same
+   * registrar, unrevoked, in-window) must be rejected with the binding
+   * reason — without the binding check the impostor would pass every other
+   * trust rule.
+   */
+  @Test
+  void rejectsPersonaCarryingSomeoneElsesCertificate() {
+    InProcessRegistrar registrar = new InProcessRegistrar();
+    RegisteredPersona alice = registerPersona(registrar);
+    RegisteredPersona bob = registerPersona(registrar);
+    TrustValidator validator = new TrustValidator(registrar.trustedRoots(), registrar::isRevoked);
+
+    Persona impostor = new Persona(PersonaId.of(alice.persona().id().id()), "alice",
+        bob.certificate(), bob.certificate().publicKeyPem(),
+        bob.certificate().publicKeySha256Thumbprint());
+    assertThat(impostor.isValid()).isTrue();
+
+    TrustResult result = validator.validate(impostor, Instant.now());
+    assertThat(result.trusted()).isFalse();
+    assertThat(result.reason()).hasValueSatisfying(reason -> assertThat(reason)
+        .contains("does not match certificate owner")
+        .contains(alice.persona().id().id())
+        .contains(bob.certificate().owner()));
+  }
+
+  /** Id↔certificate binding: a pinned thumbprint must equal the certificate's. */
+  @Test
+  void rejectsPersonaWithMismatchedPinnedThumbprint() {
+    InProcessRegistrar registrar = new InProcessRegistrar();
+    RegisteredPersona alice = registerPersona(registrar);
+    TrustValidator validator = new TrustValidator(registrar.trustedRoots(), registrar::isRevoked);
+
+    Persona wronglyPinned = new Persona(
+        PersonaId.of(alice.persona().id().id(), "ee".repeat(32)), "alice",
+        alice.certificate(), alice.certificate().publicKeyPem(),
+        alice.certificate().publicKeySha256Thumbprint());
+    assertThat(wronglyPinned.isValid()).isTrue();
+
+    TrustResult result = validator.validate(wronglyPinned, Instant.now());
+    assertThat(result.trusted()).isFalse();
+    assertThat(result.reason())
+        .hasValueSatisfying(reason -> assertThat(reason).contains("pinned thumbprint"));
+  }
+
+  /**
+   * Adversarial case (CA as persona): the registrar's own root is
+   * self-signed, in-window, unrevoked and chains to itself — every rule
+   * except the CA check passes, so only the CA rejection can stop it.
+   */
+  @Test
+  void rejectsRegistrarRootUsedAsPersona() {
+    InProcessRegistrar registrar = new InProcessRegistrar();
+    TrustValidator validator = new TrustValidator(registrar.trustedRoots(), registrar::isRevoked);
+
+    Persona rootAsPersona = Persona.of(registrar.trustedRoots().get(0));
+    assertThat(rootAsPersona.isValid()).isTrue();
+
+    TrustResult result = validator.validate(rootAsPersona, Instant.now());
+    assertThat(result.trusted()).isFalse();
+    assertThat(result.reason()).hasValueSatisfying(reason ->
+        assertThat(reason).contains("CA certificates are not personas"));
+  }
+
   @Test
   void rejectsPersonaWithoutRootsAtAll() {
     InProcessRegistrar registrar = new InProcessRegistrar();

@@ -104,6 +104,17 @@ class PersonaKeyTest {
     assertThat(empty.isValid()).isFalse();
   }
 
+  /** Public key material is mandatory, consistent with PersonaCertificate/Persona. */
+  @Test
+  void invalidWithMissingPublicKeyMaterial() {
+    PersonaKey withoutPublicKeyPem = new PersonaKey(id, key.privateKeyPem(), null, null,
+        "", key.publicKeySha256Thumbprint());
+    PersonaKey withoutPublicThumbprint = new PersonaKey(id, key.privateKeyPem(), null, null,
+        key.publicKeyPem(), "");
+    assertThat(withoutPublicKeyPem.isValid()).isFalse();
+    assertThat(withoutPublicThumbprint.isValid()).isFalse();
+  }
+
   @Test
   void neverExposesPrivateMaterialInToString() {
     String rendered = key.toString();

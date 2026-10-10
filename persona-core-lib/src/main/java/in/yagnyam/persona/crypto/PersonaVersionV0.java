@@ -9,7 +9,11 @@ import java.util.Set;
  * <p>Algorithm table:
  * <ul>
  *   <li>Signature: {@code SHA256withRSA}</li>
- *   <li>Asymmetric encryption: {@code RSA/NONE/OAEPwithSHA-256andMGF1Padding}</li>
+ *   <li>Asymmetric encryption: {@code RSA/NONE/OAEPwithSHA-256andMGF1Padding}
+ *       — RSA-OAEP with SHA-256 digest, MGF1 with SHA-256, and an empty
+ *       label ({@code PSource.PSpecified.DEFAULT}); implementations MUST pin
+ *       these exact OAEP parameters explicitly (JCE transformation strings
+ *       do not pin the MGF1 digest)</li>
  *   <li>Symmetric encryption: {@code AES/CTR/NoPadding}</li>
  *   <li>Key generation: RSA / 2048</li>
  *   <li>Hash: {@code SHA-256}</li>

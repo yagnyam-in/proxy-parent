@@ -18,8 +18,16 @@ import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +45,30 @@ class InProcessRegistrarTest {
 
   private RegisteredPersona registerFreshPersona(InProcessRegistrar registrar, String passPhrase) {
     return PersonaRegistrationFlow.register(registrar, UUID.randomUUID().toString(), passPhrase);
+  }
+
+  private Hash validHash(String passPhrase) {
+    try {
+      return CRYPTO.getHash("SHA-256", passPhrase.getBytes(StandardCharsets.UTF_8));
+    } catch (GeneralSecurityException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  private Hash hashOf(String algorithm, String passPhrase) {
+    try {
+      return CRYPTO.getHash(algorithm, passPhrase.getBytes(StandardCharsets.UTF_8));
+    } catch (GeneralSecurityException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  private String validCsrFor(String personaId) {
+    try {
+      return CsrService.instance().buildCsr(personaId, TestSupport.rsaKeyPair(), "SHA256withRSA");
+    } catch (GeneralSecurityException e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   @Nested
@@ -63,6 +95,22 @@ class InProcessRegistrarTest {
     void rejectsNullRequestId() {
       assertThatThrownBy(() -> registrar.issuePersonaId(null))
           .isInstanceOf(NullPointerException.class);
+    }
+
+    /**
+     * Collision guard (protocol §7.1: ids are never reused): an id already
+     * claimed — even by an issued-but-never-registered request — can never
+     * be handed out again, so a collision can never overwrite another
+     * request's revocation state.
+     */
+    @Test
+    void neverIssuesAnAlreadyClaimedId() {
+      assertThat(registrar.claimPersonaId("p-collision-guard")).isTrue();
+      assertThat(registrar.claimPersonaId("p-collision-guard")).isFalse(); // issued, unregistered
+      RegisteredPersona registered = registerFreshPersona(registrar, "pass-phrase");
+      assertThat(registrar.claimPersonaId(registered.persona().id().id())).isFalse(); // registered
+      // Fresh ids keep flowing after collisions were rejected.
+      assertThat(registrar.issuePersonaId("req-after-collision")).matches("p-[0-9a-f]{24}");
     }
   }
 
@@ -184,19 +232,110 @@ class InProcessRegistrarTest {
           .hasMessageContaining("Invalid revocation passphrase hash");
     }
 
-    private Hash validHash(String passPhrase) {
-      try {
-        return CRYPTO.getHash("SHA-256", passPhrase.getBytes(StandardCharsets.UTF_8));
-      } catch (GeneralSecurityException e) {
-        throw new IllegalStateException(e);
-      }
+    /**
+     * Protocol §7.1/§8: the revocation passphrase hash MUST use the active
+     * persona version's preferred hash algorithm — an MD5 hash is rejected
+     * even though it is structurally valid.
+     */
+    @Test
+    void rejectsRevocationPassPhraseHashWithWrongAlgorithm() {
+      String personaId = registrar.issuePersonaId("req-md5-hash");
+      String csr = validCsrFor(personaId);
+      Hash md5Hash = hashOf("MD5", "pass-phrase");
+      assertThat(md5Hash.isValid()).isTrue();
+      assertThatThrownBy(() -> registrar.registerPersona("req-md5-hash", personaId, md5Hash, csr))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("MD5")
+          .hasMessageContaining("SHA-256")
+          .hasMessageContaining("§7.1");
     }
 
-    private String validCsrFor(String personaId) {
+    /**
+     * Protocol §7.1/§8: the CSR must be signed with an algorithm from the
+     * active version's preferred signature algorithm set. SHA1withRSA
+     * (OID 1.2.840.113549.1.1.5) and SHA512withRSA are both cryptographically
+     * valid but outside v0's set.
+     */
+    @Test
+    void rejectsCsrSignedWithAlgorithmOutsidePreferredSet() throws GeneralSecurityException {
+      String personaId = registrar.issuePersonaId("req-weak-csr-signature");
+      String sha1Csr = CsrService.instance().buildCsr(personaId, TestSupport.rsaKeyPair(),
+          "SHA1withRSA");
+      assertThatThrownBy(() -> registrar.registerPersona("req-weak-csr-signature", personaId,
+          validHash("pass-phrase"), sha1Csr))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("preferred signature algorithm set")
+          .hasMessageContaining("§8")
+          .hasMessageContaining("1.2.840.113549.1.1.5");
+
+      // A rejected CSR does not consume the request: retrying with the
+      // same requestId and a policy-compliant CSR succeeds.
+      String sha256Csr = validCsrFor(personaId);
+      assertThatCode(() -> registrar.registerPersona("req-weak-csr-signature", personaId,
+          validHash("pass-phrase"), sha256Csr)).doesNotThrowAnyException();
+
+      String personaId512 = registrar.issuePersonaId("req-sha512-csr-signature");
+      String sha512Csr = CsrService.instance().buildCsr(personaId512, TestSupport.rsaKeyPair(),
+          "SHA512withRSA");
+      assertThatThrownBy(() -> registrar.registerPersona("req-sha512-csr-signature", personaId512,
+          validHash("pass-phrase"), sha512Csr))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("preferred signature algorithm set");
+    }
+  }
+
+  /**
+   * Deterministic concurrency invariant (protocol §7.1: the Registrar MUST
+   * reject a second request with the same requestId): when N threads race
+   * {@code registerPersona} on the same requestId, exactly one registration
+   * succeeds, every other thread gets the duplicate error, and the
+   * registrar ends with exactly one certificate for the persona.
+   */
+  @Nested
+  class ConcurrentRegistration {
+
+    @Test
+    void sameRequestIdConcurrentRegistrationsYieldExactlyOneCertificate() throws Exception {
+      String requestId = "req-concurrent";
+      String personaId = registrar.issuePersonaId(requestId);
+      int threads = 8;
+      ExecutorService executor = Executors.newFixedThreadPool(threads);
       try {
-        return CsrService.instance().buildCsr(personaId, TestSupport.rsaKeyPair(), "SHA256withRSA");
-      } catch (GeneralSecurityException e) {
-        throw new IllegalStateException(e);
+        CountDownLatch startGate = new CountDownLatch(1);
+        List<Future<RegisteredPersona>> futures = new ArrayList<>();
+        for (int i = 0; i < threads; i++) {
+          final String passPhrase = "pass-phrase-" + i;
+          futures.add(executor.submit(() -> {
+            startGate.await();
+            return registrar.registerPersona(requestId, personaId,
+                validHash(passPhrase), validCsrFor(personaId));
+          }));
+        }
+        startGate.countDown();
+
+        int successes = 0;
+        int duplicates = 0;
+        for (Future<RegisteredPersona> future : futures) {
+          try {
+            RegisteredPersona registered = future.get(60, TimeUnit.SECONDS);
+            successes++;
+            assertThat(registered.certificate().owner()).isEqualTo(personaId);
+          } catch (ExecutionException e) {
+            assertThat(e.getCause())
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Duplicate requestId");
+            duplicates++;
+          }
+        }
+        assertThat(successes).as("exactly one registration succeeds").isEqualTo(1);
+        assertThat(duplicates).as("all other threads see the duplicate error")
+            .isEqualTo(threads - 1);
+        assertThat(registrar.certificateCount(personaId))
+            .as("registrar ends with one certificate")
+            .isEqualTo(1);
+        assertThat(registrar.certificateOf(PersonaId.of(personaId))).isPresent();
+      } finally {
+        executor.shutdownNow();
       }
     }
   }

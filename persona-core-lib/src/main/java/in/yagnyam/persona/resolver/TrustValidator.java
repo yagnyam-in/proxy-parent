@@ -12,6 +12,13 @@ import java.util.Objects;
  * Validates that a persona's certificate is currently trustworthy
  * (protocol §4 trust model, §11 rules 8 and 11):
  * <ol>
+ *   <li>the certificate is not a CA certificate — CA (registrar) keys must
+ *       never pass as persona keys;</li>
+ *   <li>the persona id is bound to the certificate: {@code id.id()} equals
+ *       the certificate owner (subject CN) and, when the id carries a
+ *       pinned thumbprint, that thumbprint equals the certificate
+ *       thumbprint (protocol §3.1, §3.2) — a Persona claiming someone
+ *       else's certificate is rejected;</li>
  *   <li>the certificate is within its validity window at the given
  *       instant;</li>
  *   <li>the certificate chains to a trusted Registrar root — in this
@@ -80,6 +87,20 @@ public final class TrustValidator {
     }
     if (!persona.isValid()) {
       return TrustResult.fail("persona is not valid");
+    }
+    if (certificate.certificate().getBasicConstraints() != -1) {
+      return TrustResult.fail("CA certificates are not personas: "
+          + certificate.owner() + " carries a CA certificate (protocol §3.1)");
+    }
+    if (!persona.id().id().equals(certificate.owner())) {
+      return TrustResult.fail("persona id '" + persona.id().id()
+          + "' does not match certificate owner '" + certificate.owner() + "'");
+    }
+    if (persona.id().sha256Thumbprint().isPresent()
+        && !persona.id().sha256Thumbprint().get().equals(certificate.sha256Thumbprint())) {
+      return TrustResult.fail("pinned thumbprint does not match certificate: persona id pins "
+          + persona.id().sha256Thumbprint().get() + ", certificate thumbprint is "
+          + certificate.sha256Thumbprint());
     }
     if (atInstant.isBefore(certificate.validFrom())) {
       return TrustResult.fail("certificate is not valid yet at " + atInstant

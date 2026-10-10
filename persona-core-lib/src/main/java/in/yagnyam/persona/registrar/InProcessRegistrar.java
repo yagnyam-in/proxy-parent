@@ -23,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.HexFormat;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -61,7 +62,10 @@ import org.slf4j.LoggerFactory;
  *   <li>{@link #issuePersonaId(String)} reserves a fresh id for a
  *       requestId,</li>
  *   <li>{@link #registerPersona(String, String, Hash, String)} consumes that
- *       requestId, validates the CSR and issues the certificate.</li>
+ *       requestId, validates the CSR (signature, signature-algorithm policy
+ *       per protocol §8, subject CN) and the revocation passphrase hash
+ *       (algorithm per protocol §7.1/§8, hashed with a per-Persona salt),
+ *       and issues the certificate.</li>
  * </ol>
  * The same {@code requestId} can never be reused for either step.
  *
@@ -108,6 +112,20 @@ public final class InProcessRegistrar implements PersonaRegistrar {
   private final ConcurrentHashMap<String, PersonaCertificate> certificatesBySerialNumber = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<String, Hash> revocationPassPhraseHashes = new ConcurrentHashMap<>();
   private final Set<String> revokedPersonaIds = ConcurrentHashMap.newKeySet();
+
+  /**
+   * Every persona id ever issued by this registrar, registered or not — a
+   * collision with an issued-but-unregistered id must be rejected just like
+   * a collision with a registered one, so a later registration can never
+   * overwrite an earlier request's revocation state (protocol §7.1: ids
+   * are never reused).
+   */
+  private final Set<String> issuedPersonaIds = ConcurrentHashMap.newKeySet();
+
+  /** Acceptable CSR signature algorithm OIDs, derived from the active
+   *      version's preferred signature algorithm set (protocol §8); computed once. */
+  private volatile Set<String> csrSignatureAlgorithmIds;
+
   private final AtomicLong serialCounter = new AtomicLong(1);
   private final Object issuanceLock = new Object();
   private final SecureRandom secureRandom = new SecureRandom();
@@ -201,6 +219,13 @@ public final class InProcessRegistrar implements PersonaRegistrar {
     if (!revocationPassPhraseHash.isValid()) {
       throw new IllegalArgumentException("Invalid revocation passphrase hash");
     }
+    if (!version.preferredHashAlgorithm().equals(revocationPassPhraseHash.algorithm())) {
+      throw new IllegalArgumentException("Revocation passphrase hash algorithm '"
+          + revocationPassPhraseHash.algorithm() + "' is not the active persona version's"
+          + " preferred hash algorithm '" + version.preferredHashAlgorithm()
+          + "' (protocol §7.1, §8: the passphrase MUST be hashed with the"
+          + " version's preferred hash algorithm)");
+    }
     IssuedRequest request = requestsByRequestId.get(requestId);
     if (request == null) {
       throw new IllegalArgumentException("Unknown requestId: " + requestId);
@@ -217,6 +242,7 @@ public final class InProcessRegistrar implements PersonaRegistrar {
       if (!isCsrSignatureValid(csr)) {
         throw new IllegalArgumentException("CSR signature is invalid");
       }
+      requireCsrSignatureAlgorithmInPolicy(csr);
       String commonName = csrCommonName(csr);
       if (!commonName.equals(personaId)) {
         throw new IllegalArgumentException(
@@ -290,10 +316,41 @@ public final class InProcessRegistrar implements PersonaRegistrar {
       byte[] bytes = new byte[PERSONA_ID_RANDOM_BYTES];
       secureRandom.nextBytes(bytes);
       String candidate = "p-" + HexFormat.of().formatHex(bytes);
-      if (!certificatesByPersonaId.containsKey(candidate)) {
+      if (claimPersonaId(candidate)) {
         return candidate;
       }
     }
+  }
+
+  /**
+   * Atomically claims {@code personaId} as fresh: returns {@code true} only
+   * if the id is neither already registered nor already issued to an
+   * earlier (possibly still unregistered) request. Registering the claim in
+   * the same atomic step guarantees a random-id collision can never hand
+   * the same id (and therefore the same revocation state) to two requests
+   * (protocol §7.1: ids are never reused).
+   *
+   * <p>Package-private so the collision guard can be tested deterministically
+   * without predicting {@link SecureRandom} output.
+   *
+   * @param personaId candidate id
+   * @return {@code true} iff the id was fresh and is now claimed
+   */
+  boolean claimPersonaId(String personaId) {
+    Objects.requireNonNull(personaId, "personaId");
+    return !certificatesByPersonaId.containsKey(personaId) && issuedPersonaIds.add(personaId);
+  }
+
+  /**
+   * Number of certificates issued for {@code personaId} (0 when unknown).
+   * Package-private inspection hook for tests.
+   *
+   * @param personaId persona id
+   * @return count of issued certificates
+   */
+  int certificateCount(String personaId) {
+    List<PersonaCertificate> certificates = certificatesByPersonaId.get(personaId);
+    return certificates == null ? 0 : certificates.size();
   }
 
   private PKCS10CertificationRequest parseCsr(String csrPem) {
@@ -315,6 +372,65 @@ public final class InProcessRegistrar implements PersonaRegistrar {
       // Fail closed on any verification machinery failure.
       return false;
     }
+  }
+
+  /**
+   * Rejects a CSR whose signature algorithm is not in the active Persona
+   * Version's preferred signature algorithm set (protocol §7.1, §8): a
+   * cryptographically valid CSR signed with an unsanctioned algorithm
+   * (e.g. SHA-1) must not result in a certificate that peers might then
+   * treat as sanctioned.
+   *
+   * <p>Mapping choice: the acceptable OIDs are derived from the policy's
+   * JCA algorithm names by building a probe {@link ContentSigner} for each
+   * name and reading its {@code AlgorithmIdentifier} OID — no OID↔JCA-name
+   * string table is maintained, so the accepted set always follows
+   * {@link PersonaVersion#preferredSignatureAlgorithmSet()} exactly.
+   *
+   * @param csr parsed CSR
+   * @throws IllegalArgumentException when the CSR's signature algorithm is
+   *     outside the active version's preferred set
+   */
+  private void requireCsrSignatureAlgorithmInPolicy(PKCS10CertificationRequest csr)
+      throws GeneralSecurityException {
+    String csrAlgorithmId = csr.getSignatureAlgorithm().getAlgorithm().getId();
+    Set<String> allowedAlgorithmIds = allowedCsrSignatureAlgorithmIds();
+    if (!allowedAlgorithmIds.contains(csrAlgorithmId)) {
+      throw new IllegalArgumentException("CSR signature algorithm is not in the active"
+          + " persona version's preferred signature algorithm set (protocol §7.1, §8):"
+          + " CSR is signed with OID " + csrAlgorithmId + ", accepted algorithms "
+          + version.preferredSignatureAlgorithmSet() + " (OIDs " + allowedAlgorithmIds + ")");
+    }
+  }
+
+  /**
+   * Acceptable CSR signature algorithm OIDs, derived once from the active
+   * version's preferred signature algorithm set (see
+   * {@link #requireCsrSignatureAlgorithmInPolicy}).
+   */
+  private Set<String> allowedCsrSignatureAlgorithmIds() throws GeneralSecurityException {
+    Set<String> cached = csrSignatureAlgorithmIds;
+    if (cached != null) {
+      return cached;
+    }
+    Set<String> derived = new HashSet<>();
+    try {
+      for (String algorithm : version.preferredSignatureAlgorithmSet()) {
+        ContentSigner probe = new JcaContentSignerBuilder(algorithm)
+            .setProvider(BouncyCastle.provider())
+            .build(rootPrivateKey);
+        derived.add(probe.getAlgorithmIdentifier().getAlgorithm().getId());
+      }
+    } catch (OperatorCreationException e) {
+      throw new GeneralSecurityException("Unable to derive CSR signature algorithm policy", e);
+    }
+    if (derived.isEmpty()) {
+      throw new GeneralSecurityException(
+          "Active persona version declares no preferred signature algorithms");
+    }
+    Set<String> immutable = Set.copyOf(derived);
+    csrSignatureAlgorithmIds = immutable;
+    return immutable;
   }
 
   private static String csrCommonName(PKCS10CertificationRequest csr) {

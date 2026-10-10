@@ -74,6 +74,58 @@ class PersonaTest {
     assertThat(new Persona(persona.id(), "", certificate, "key", "thumb").isValid()).isTrue();
   }
 
+  /**
+   * Protocol §3.1: two personas are equal iff they share both id and
+   * certificate thumbprint — the display name is a label and must not
+   * participate in equality.
+   */
+  @Test
+  void equalWhenSameIdAndCertificateRegardlessOfName() {
+    Persona asAlice = new Persona(persona.id(), "alice", certificate, "pub", "thumb");
+    Persona asBob = new Persona(persona.id(), "bob", certificate, "pub", "thumb");
+    assertThat(asAlice).isEqualTo(asBob);
+    assertThat(asBob).isEqualTo(asAlice);
+    assertThat(asAlice.hashCode()).isEqualTo(asBob.hashCode());
+
+    // Same rule for the derived form: Persona.of(cert) equals an explicitly
+    // constructed persona with the same id + certificate.
+    assertThat(new Persona(persona.id(), "any-display-name", certificate,
+        certificate.publicKeyPem(), certificate.publicKeySha256Thumbprint()))
+        .isEqualTo(persona);
+  }
+
+  /** Protocol §3.1: a different certificate thumbprint makes personas unequal. */
+  @Test
+  void unequalWhenCertificateDiffersEvenWithSameIdAndName() {
+    KeyPair otherKeyPair = TestSupport.rsaKeyPair();
+    X509Certificate otherX509 = TestCertificates.selfSignedWithCommonName(
+        otherKeyPair, "p-persona-test", Duration.ofDays(1));
+    PersonaCertificate otherCertificate = PersonaCertificate.of(otherX509);
+    assertThat(otherCertificate.sha256Thumbprint())
+        .isNotEqualTo(certificate.sha256Thumbprint());
+
+    Persona sameIdDifferentCertificate = new Persona(persona.id(), persona.name(),
+        otherCertificate, "pub", "thumb");
+    assertThat(sameIdDifferentCertificate).isNotEqualTo(persona);
+    assertThat(persona).isNotEqualTo(sameIdDifferentCertificate);
+  }
+
+  /** Protocol §3.1: a different id makes personas unequal even with the same certificate. */
+  @Test
+  void unequalWhenIdDiffersEvenWithSameCertificate() {
+    PersonaCertificate reIssued = PersonaCertificate.of(
+        TestCertificates.selfSignedWithCommonName(TestSupport.rsaKeyPair(), "p-persona-test",
+            Duration.ofDays(1)));
+    Persona otherId = new Persona(PersonaId.of("p-other"), persona.name(),
+        reIssued, "pub", "thumb");
+    Persona sameId = new Persona(PersonaId.of("p-other"), "different-name",
+        reIssued, "pub", "thumb");
+    assertThat(otherId).isEqualTo(sameId);
+    assertThat(otherId).isNotEqualTo(persona);
+    assertThat(persona.equals(null)).isFalse();
+    assertThat(persona).isNotEqualTo("not a persona");
+  }
+
   @Test
   void toStringAvoidsPemBodies() {
     assertThat(persona.toString()).contains(persona.getUniqueId());

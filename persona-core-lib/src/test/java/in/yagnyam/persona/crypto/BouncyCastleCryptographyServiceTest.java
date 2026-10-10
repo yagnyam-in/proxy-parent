@@ -11,7 +11,9 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import javax.crypto.SecretKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -145,6 +147,15 @@ class BouncyCastleCryptographyServiceTest {
           "other message".getBytes(StandardCharsets.UTF_8), hmac)).isFalse();
     }
 
+    /** Mirrors the Hash fail-closed test: malformed records never verify. */
+    @Test
+    void failsClosedOnMalformedHmac() throws GeneralSecurityException {
+      assertThat(cryptographyService.verifyHmac("secret-key", payload,
+          new Hmac(HMAC_ALGORITHM, "not base64 !!!", "AAAA"))).isFalse();
+      assertThat(cryptographyService.verifyHmac("secret-key", payload,
+          new Hmac(HMAC_ALGORITHM, "", ""))).isFalse();
+    }
+
     @Test
     void freshSaltPerHmac() throws GeneralSecurityException {
       Hmac first = cryptographyService.getHmac(HMAC_ALGORITHM, "secret-key", payload);
@@ -218,8 +229,21 @@ class BouncyCastleCryptographyServiceTest {
       assertThat(asAesKeyEncodedLength("a".repeat(24))).isEqualTo(24);
       assertThat(asAesKeyEncodedLength("a".repeat(25))).isEqualTo(32); // legacy bug padded to 36
       assertThat(asAesKeyEncodedLength("a".repeat(32))).isEqualTo(32);
-      assertThat(asAesKeyEncodedLength("a".repeat(33))).isEqualTo(32); // truncated
-      assertThat(asAesKeyEncodedLength("a".repeat(64))).isEqualTo(32); // truncated
+    }
+
+    /**
+     * Legacy semantics restored: key material longer than 32 bytes is
+     * rejected, never silently truncated — truncation would silently map
+     * two passphrases sharing a 32-byte prefix to the same AES key.
+     */
+    @Test
+    void rejectsKeysLongerThan32Bytes() {
+      assertThatThrownBy(() -> CryptographyService.asAesKey("a".repeat(33)))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("33");
+      assertThatThrownBy(() -> CryptographyService.asAesKey("a".repeat(64)))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("64");
     }
 
     @Test
@@ -249,6 +273,67 @@ class BouncyCastleCryptographyServiceTest {
 
     private int asAesKeyEncodedLength(String key) {
       return CryptographyService.asAesKey(key).getEncoded().length;
+    }
+  }
+
+  /**
+   * Invariant (AGENTS.md: crypto policy lives in PersonaVersion): the
+   * derive-or-verify whitelists of {@link BouncyCastleCryptographyService}
+   * must exactly equal the active Persona Version's algorithm tables. If a
+   * future version extends the policy without extending the service (or
+   * vice versa), these tests fail the build.
+   */
+  @Nested
+  class VersionPolicyConsistency {
+
+    private final PersonaVersion version = PersonaVersion.latestVersion();
+
+    @Test
+    void cipherWhitelistEqualsVersionEncryptionAlgorithms() {
+      Set<String> expected = new HashSet<>();
+      expected.addAll(version.validAsymmetricEncryptionAlgorithms());
+      expected.addAll(version.validSymmetricEncryptionAlgorithms());
+      assertThat(BouncyCastleCryptographyService.supportedCipherAlgorithms())
+          .isEqualTo(expected);
+    }
+
+    @Test
+    void keyGenerationWhitelistEqualsVersionKeyGenerationAlgorithm() {
+      assertThat(BouncyCastleCryptographyService.supportedKeyGenerationAlgorithms())
+          .containsExactlyInAnyOrder(version.keyGenerationAlgorithm());
+    }
+
+    /** Derive-or-verify: every algorithm in the version policy must actually work. */
+    @Test
+    void everyVersionAlgorithmActuallyRoundTrips() throws GeneralSecurityException {
+      for (String algorithm : version.validAsymmetricEncryptionAlgorithms()) {
+        CipherText cipherText = cryptographyService.encrypt(certificate, algorithm, payload);
+        assertThat(cryptographyService.decrypt(keyPair.getPrivate(), cipherText))
+            .isEqualTo(payload);
+      }
+      for (String algorithm : version.validSymmetricEncryptionAlgorithms()) {
+        SecretKey key = CryptographyService.asAesKey("policy-consistency-key");
+        CipherText cipherText = cryptographyService.encrypt(key, algorithm, payload);
+        assertThat(cryptographyService.decrypt(key, cipherText)).isEqualTo(payload);
+      }
+      KeyPair generated = cryptographyService.generateKeyPair(
+          version.keyGenerationAlgorithm(), version.keySize());
+      assertThat(generated.getPrivate()).isNotNull();
+      assertThat(generated.getPublic()).isNotNull();
+    }
+
+    /** And an algorithm outside the policy is still rejected. */
+    @Test
+    void rejectsAlgorithmOutsideVersionPolicy() {
+      String outsidePolicy = "RSA/ECB/PKCS1Padding";
+      assertThat(version.validAsymmetricEncryptionAlgorithms()).doesNotContain(outsidePolicy);
+      assertThat(version.validSymmetricEncryptionAlgorithms()).doesNotContain(outsidePolicy);
+      assertThatThrownBy(() -> cryptographyService.encrypt(certificate, outsidePolicy, payload))
+          .isInstanceOf(IllegalArgumentException.class);
+      String outsideKeyGeneration = "DSA";
+      assertThat(version.keyGenerationAlgorithm()).isNotEqualTo(outsideKeyGeneration);
+      assertThatThrownBy(() -> cryptographyService.generateKeyPair(outsideKeyGeneration, 1024))
+          .isInstanceOf(IllegalArgumentException.class);
     }
   }
 
