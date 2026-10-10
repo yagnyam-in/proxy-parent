@@ -1,0 +1,58 @@
+package in.yagnyam.persona;
+
+import in.yagnyam.persona.crypto.BouncyCastleCryptographyService;
+import in.yagnyam.persona.crypto.CryptographyService;
+import in.yagnyam.persona.crypto.PersonaVersion;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+
+/**
+ * Shared test utilities: independent digest computation (cross-checking the
+ * production {@code Digests} code path) and RSA key pairs.
+ */
+public final class TestSupport {
+
+  private static final CryptographyService CRYPTO = BouncyCastleCryptographyService.instance();
+
+  private TestSupport() {}
+
+  /**
+   * Generates an RSA 2048 key pair per the active persona version policy.
+   *
+   * @return fresh key pair
+   */
+  public static KeyPair rsaKeyPair() {
+    try {
+      PersonaVersion version = PersonaVersion.latestVersion();
+      return CRYPTO.generateKeyPair(version.keyGenerationAlgorithm(), version.keySize());
+    } catch (GeneralSecurityException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  /**
+   * SHA-256 hex digest computed independently of the production
+   * {@code Digests}/{@code HexFormat} code path, so tests cross-check the
+   * class under test rather than repeating its implementation (equivalent to
+   * {@code shasum -a 256} over the DER bytes).
+   *
+   * @param input bytes to digest
+   * @return 64-character lowercase hex digest
+   */
+  public static String sha256Hex(byte[] input) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      byte[] hashed = digest.digest(input);
+      StringBuilder hex = new StringBuilder(hashed.length * 2);
+      for (byte b : hashed) {
+        hex.append(Character.forDigit((b >> 4) & 0xF, 16));
+        hex.append(Character.forDigit(b & 0xF, 16));
+      }
+      return hex.toString();
+    } catch (NoSuchAlgorithmException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+}
