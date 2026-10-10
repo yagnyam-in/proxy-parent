@@ -351,6 +351,26 @@ class JsonPayloadCodecTest {
   }
 
   @Test
+  void timestampsOutsideTheDecodableRangeAreRejectedAtEncode() {
+    // the JSON writer must never emit a timestamp its own reader would reject (§6.2 closure):
+    // Long.MIN_VALUE epoch millis overflow the epochSecond × 1000 computation (§3.4 rule 7)
+    assertThatThrownBy(
+            () ->
+                CODEC.encode(
+                    SchemaFixtures.singleField("\"timestamp-millis\""),
+                    Map.of("v", Instant.ofEpochMilli(Long.MIN_VALUE))))
+        .isInstanceOf(PayloadEncodingException.class)
+        .hasMessageContaining("outside the range of timestamp-millis");
+
+    // the floor value itself renders and re-decodes fine
+    Instant floor = Instant.ofEpochMilli(-9223372036854775000L);
+    Map<String, Object> decoded = CODEC.decode(
+        SchemaFixtures.singleField("\"timestamp-millis\""),
+        CODEC.encode(SchemaFixtures.singleField("\"timestamp-millis\""), Map.of("v", floor)));
+    assertThat(decoded.get("v")).isEqualTo(floor);
+  }
+
+  @Test
   void collectionCapIsEnforcedOnEncodeAndDecode() {
     int cap = 1 << 20; // SCHEMA.md §3.4 rule 1
     PersonaSchema schema = SchemaFixtures.singleField("{\"type\":\"array\",\"items\":\"int\"}");

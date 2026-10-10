@@ -208,6 +208,21 @@ class BinaryPayloadCodecLimitsTest {
   }
 
   @Test
+  void mapWithZeroByteValuesRoundTrips() {
+    PersonaSchema schema =
+        singleField(
+            "{\"type\":\"map\",\"values\":"
+                + "{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}}");
+
+    // every map entry consumes at least the key's length byte, so zero-byte values are no
+    // DoS vector and no closure hazard: encode/decode agree (found by PR review)
+    Map<String, Object> decoded = codec.decode(schema, bytes(0x02, 0x02, 0x61, 0x00));
+    assertThat(decoded.get("v")).isEqualTo(Map.of("a", Map.of()));
+    assertThat(codec.encode(schema, Map.of("v", Map.of("a", Map.of()))))
+        .containsExactly(0x02, 0x02, 0x61, 0x00);
+  }
+
+  @Test
   void mapKeysAreValidatedBeforeSorting() {
     PersonaSchema schema = singleField("{\"type\":\"map\",\"values\":\"int\"}");
 

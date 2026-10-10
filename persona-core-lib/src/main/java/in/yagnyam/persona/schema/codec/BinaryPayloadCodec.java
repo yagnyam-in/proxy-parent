@@ -227,7 +227,6 @@ public final class BinaryPayloadCodec implements PayloadCodec {
       ByteArrayOutputStream out, MapType mapType, Object value, String path, int depth) {
     Map<String, Object> entries = PayloadValues.requireMap(value, path);
     requireWithinCap(entries.size(), "map", path);
-    requireNonZeroByteItems(mapType.values(), "map", path, !entries.isEmpty());
     // Validate every key BEFORE building the sorted map: getBytes(UTF_8) maps unpaired
     // surrogates to '?', which could otherwise collide with a genuine '?' key and silently
     // drop an entry (§3.4 rule 6).
@@ -268,9 +267,11 @@ public final class BinaryPayloadCodec implements PayloadCodec {
   }
 
   /**
-   * Rejects a non-empty collection whose element type encodes to zero bytes (§3.4 rule 1, writer
-   * side): the reader rejects zero-byte elements as a DoS safeguard, so the writer must not emit
-   * bytes its own reader would reject (§6.2 closure).
+   * Rejects a non-empty ARRAY whose element type encodes to zero bytes (§3.4 rule 1, writer
+   * side): the reader rejects zero-byte array elements as a DoS safeguard, so the writer must not
+   * emit bytes its own reader would reject (§6.2 closure). Maps are exempt: every map entry
+   * consumes at least the key's length byte, so map values of a zero-byte type round-trip and are
+   * no allocation-amplification vector.
    */
   private static void requireNonZeroByteItems(
       TypeNode itemType, String what, String path, boolean nonEmpty) {

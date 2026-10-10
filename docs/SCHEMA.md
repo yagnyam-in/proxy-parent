@@ -176,9 +176,12 @@ round-trippable.
    consuming at least one input byte: a non-empty array of zero-field records
    is the only such shape, and without the rule a handful of bytes could
    otherwise allocate millions of empty records. Symmetrically, a WRITER must
-   reject a non-empty array or map whose element type encodes to zero bytes
-   (a record chain with no wire fields), because the bytes it would emit are
-   exactly the bytes its own reader must reject (§6.2 closure).
+   reject a non-empty ARRAY whose element type encodes to zero bytes (a
+   record chain with no wire fields), because the bytes it would emit are
+   exactly the bytes its own reader must reject (§6.2 closure). Maps are
+   exempt from the writer-side rule: every map entry consumes at least its
+   key's length byte, so a map with zero-byte values is neither an
+   amplification vector nor a closure hazard.
 2. **Nesting depth.** Values nested more than 1000 array/map levels deep are
    rejected on encode (so a cyclic value graph is a hard encoding error, not
    a stack overflow) and on decode.

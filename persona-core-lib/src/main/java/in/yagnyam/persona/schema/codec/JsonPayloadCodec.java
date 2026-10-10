@@ -163,7 +163,7 @@ public final class JsonPayloadCodec implements PayloadCodec {
       case PrimitiveType.BYTES -> CanonicalJson.writeString(
           out, BASE64_ENCODER.encodeToString(PayloadValues.requireBytes(value, path)));
       case PrimitiveType.TIMESTAMP_MILLIS -> CanonicalJson.writeString(
-          out, isoInstant(PayloadValues.requireInstant(value, path)));
+          out, isoInstantWithinRange(PayloadValues.requireInstant(value, path), path));
       default -> throw new IllegalStateException("unknown primitive type " + primitive.name());
     }
   }
@@ -297,6 +297,39 @@ public final class JsonPayloadCodec implements PayloadCodec {
         + "."
         + String.format(Locale.ROOT, "%03d", instant.getNano() / 1_000_000)
         + "Z";
+  }
+
+  /**
+   * Renders an instant after enforcing the §3.4 rule 7 epoch-millis range, so the JSON writer
+   * never emits a timestamp its own reader would reject (§6.2 closure): values whose
+   * {@code epochSecond × 1000} computation overflows, or that fall below {@link
+   * #MIN_EPOCH_MILLIS}, are rejected at encode.
+   */
+  private static String isoInstantWithinRange(Instant instant, String path) {
+    long millis;
+    try {
+      millis =
+          Math.addExact(
+              Math.multiplyExact(instant.getEpochSecond(), 1000L),
+              instant.getNano() / 1_000_000L);
+    } catch (ArithmeticException e) {
+      throw new PayloadEncodingException(
+          PayloadValues.at(path)
+              + ": instant "
+              + instant
+              + " is outside the range of timestamp-millis (SCHEMA.md §3.4)",
+          e);
+    }
+    if (millis < MIN_EPOCH_MILLIS) {
+      throw new PayloadEncodingException(
+          PayloadValues.at(path)
+              + ": instant "
+              + instant
+              + " is below the minimum epoch-millis value of "
+              + MIN_EPOCH_MILLIS
+              + " (SCHEMA.md §3.4)");
+    }
+    return isoInstant(instant);
   }
 
   /** Decodes a JSON document from payload bytes (§4, §3.3-style strictness). */
