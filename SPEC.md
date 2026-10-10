@@ -565,7 +565,7 @@ Payload embeds are themselves `SignedMessage` / `MultiSignedMessage` values as n
 6. `PersonaId` equality is structural: same `id` AND same `sha256Thumbprint` (or both wildcards). Cross‑instance signing is governed by `canSignOnBehalfOf`.
 7. `PersonaVersion` is authoritative for allowed algorithms — hard‑coded strings elsewhere should be replaced by lookups against `PersonaVersion`.
 8. `Amount` arithmetic is currency‑guarded and throws on mismatched currencies.
-9. Payments are non‑forgeable at the payer boundary: `PaymentEncashment.isValid()` requires either the payee proxy match or a valid `secret` for hash‑based `Payee`s.
+9. Payments are non‑forgeable at the payer boundary: `PaymentEncashment.isValid()` requires either the payee proxy match or a structurally valid `secret` for hash‑based `Payee`s. `isValid()` is a structural precondition only: for hash‑based payees (Email, Phone, AnyoneWithSecret) the recipient MUST additionally verify the supplied `secret` against the signed `Payee.secretHash` (using the salted‑hash verification of the framework's `CryptographyService`) before treating the encashment as authorized.
 10. `OfflinePayment.isValid()` requires the summed `maxAmount` of its `OfflineMoney` tokens to cover the requested `Amount`.
 
 ---
