@@ -47,6 +47,37 @@
         <jacoco.version>0.8.12</jacoco.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <!--
+              Override the parent's legacy Jackson pins (2.10.x with exclusions):
+              module-level dependencyManagement wins over the inherited one, so
+              all Jackson artifacts resolve consistently at 2.17.2 and
+              jackson-annotations is no longer excluded from jackson-databind.
+            -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <!-- Crypto -->
         <dependency>

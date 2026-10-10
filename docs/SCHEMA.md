@@ -61,8 +61,10 @@ A schema is a JSON document. The root node MUST be a `record`.
 2. `namespace`, if present, MUST be dot-separated identifiers matching
    `^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$`.
 3. `messageType`, if present, MUST match
-   `^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*@[a-z0-9][a-z0-9._-]*$`
-   (e.g. `example.Greeting@v1`, `persona.SignedEnvelope@v1`).
+   `^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*@[A-Za-z0-9][A-Za-z0-9._-]*$`
+   (e.g. `example.Greeting@v1`, `persona.SignedEnvelope@v1`). The
+   RECOMMENDED convention is a lowercase dot-separated namespace, an
+   UpperCamel type name, and a lowercase version: `payments.PaymentAuthorization@v2`.
 4. A record's field names MUST be unique. An enum's symbols MUST be unique and
    non-empty.
 5. All fields are required; there are no unions or optional fields in this
@@ -99,7 +101,7 @@ Each node canonicalizes to a JSON value:
 
 - primitive / envelope / multi-envelope: the bare JSON string
   (e.g. `"string"`, `"envelope"`).
-- record: `{"fields":[<field>,...],"messageType":"..."?,"name":"...","namespace":"..."?}`
+- record: `{"fields":[<field>,...],"messageType":"..."?,"name":"...","namespace":"..."?,"type":"record"}`
   where `<field>` = `{"name":"...","type":<node>}` and the `fields` array keeps
   the declared order (field order is semantic). Keys within each object are
   sorted per §2.1 rule 2. `messageType`/`namespace` keys are present only when
@@ -217,11 +219,33 @@ testing.
            {"name":"signatures","type":{"type":"array","items":{"type":"record","name":"Signature","fields":[{"name":"algorithm","type":"string"},{"name":"value","type":"bytes"}]}}}]}
 
 {"type":"record","name":"MultiSignedEnvelope","namespace":"persona","messageType":"persona.MultiSignedEnvelope@v1",
- "fields":[{"name":"messageType","type":"string"},
-           {"name":"payloadFormat","type":"string"},
-           {"name":"schemaId","type":"string"},
-           {"name":"payload","type":"bytes"},
-           {"name":"signatures","type":{"type":"array","items":{"type":"record","name":"MultiSignature","fields":[{"name":"signedBy","type":"string"},{"name":"signatures","type":{"type":"array","items":{"type":"record","name":"Signature","fields":[{"name":"algorithm","type":"string"},{"name":"value","type":"bytes"}]}}}]}}]}}
+ "fields":[
+   {"name":"messageType","type":"string"},
+   {"name":"payloadFormat","type":"string"},
+   {"name":"schemaId","type":"string"},
+   {"name":"payload","type":"bytes"},
+   {"name":"signatures","type":{
+      "type":"array",
+      "items":{
+         "type":"record",
+         "name":"MultiSignature",
+         "fields":[
+            {"name":"signedBy","type":"string"},
+            {"name":"signatures","type":{
+               "type":"array",
+               "items":{
+                  "type":"record",
+                  "name":"Signature",
+                  "fields":[
+                     {"name":"algorithm","type":"string"},
+                     {"name":"value","type":"bytes"}
+                  ]
+               }
+            }}
+         ]
+      }
+   }}
+ ]}
 ```
 
 Wire form of an envelope = canonical JSON (§4) of the envelope record, with
