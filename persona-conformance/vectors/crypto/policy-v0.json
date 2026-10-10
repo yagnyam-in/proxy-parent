@@ -41,7 +41,7 @@
     {
       "id": "crypto/policy-v0/validAsymmetricEncryptionAlgorithms",
       "spec": "PERSONA-PROTOCOL.md §8",
-      "description": "The only accepted asymmetric encryption algorithm. The JCE-style transformation string is the wire identifier; the digest, MGF1 digest and label are pinned by the algorithm name itself (§8).",
+      "description": "The only accepted asymmetric encryption algorithm. The JCE-style transformation string is the wire identifier; implementations must explicitly use SHA-256 for the OAEP digest, MGF1 with SHA-256, and an empty label. The transformation name alone does not pin these parameters.",
       "policy": "v0",
       "field": "validAsymmetricEncryptionAlgorithms",
       "expected": [
