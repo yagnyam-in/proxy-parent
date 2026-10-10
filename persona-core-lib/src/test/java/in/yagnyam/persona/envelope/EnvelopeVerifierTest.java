@@ -457,6 +457,85 @@ class EnvelopeVerifierTest {
   }
 
   @Test
+  void rejectsAPinnedSignerWidenedByAPinStrippingResolver() {
+    EnvelopeWorld world = new EnvelopeWorld();
+    PersonaFixture alice = world.mint();
+    SignedEnvelope envelope = world.signer().sign(greeting(alice, "hello"), alice.key(), "json");
+
+    // The envelope claims alice pinned to a certificate thumbprint that was
+    // never issued. A naive resolver that strips the pin resolves alice's
+    // REAL certificate anyway, and the signature genuinely verifies against
+    // it — only the verifier's own pin-consistency assertion (the trust
+    // boundary, not resolver etiquette) can reject this.
+    PersonaId forgedPin = PersonaId.of(alice.unpinnedId().id(), "00".repeat(32));
+    SignedEnvelope relabeled = relabel(envelope, null, null, null, null, forgedPin);
+    PersonaResolver pinStripping = id ->
+        new InMemoryPersonaResolver(world.registrar()).resolvePersona(PersonaId.of(id.id()));
+
+    VerificationResult result =
+        world.verifier(pinStripping, world.trust(), Clock.systemUTC()).verify(relabeled);
+    assertThat(result.verified()).isFalse();
+    assertThat(result.reason()).hasValueSatisfying(reason -> {
+      assertThat(reason).contains("thumbprint pin");
+      assertThat(reason).contains(alice.registered().certificate().sha256Thumbprint());
+      assertThat(reason).contains("§7.3 step 6");
+    });
+
+    // The bundled resolver is unchanged: it refuses the pin at resolution.
+    VerificationResult bundled = world.verifier().verify(relabeled);
+    assertThat(bundled.verified()).isFalse();
+    assertThat(bundled.reason())
+        .hasValueSatisfying(reason -> assertThat(reason).contains("could not be resolved"));
+  }
+
+  @Test
+  void rejectsAResolverThatAnswersWithADifferentPersona() throws Exception {
+    EnvelopeWorld world = new EnvelopeWorld();
+    PersonaFixture alice = world.mint();
+    PersonaFixture mallory = world.mint();
+
+    // The attack: Mallory signs a greeting whose 'from' is alice — so the
+    // §5.1 authorization of signedBy=alice genuinely passes — and declares
+    // signedBy=alice (unpinned). A peer-directory resolver answers the
+    // lookup with MALLORY's legitimately issued persona+certificate:
+    // Mallory's persona matches her own certificate (TrustValidator is
+    // satisfied) and Mallory's signature genuinely verifies against it.
+    // Only the verifier's resolved-identity binding (signedBy must BE the
+    // resolved persona and its certificate owner) rejects this.
+    TestMessages.TestGreeting greeting =
+        new TestMessages.TestGreeting("g-1", alice.unpinnedId(), PersonaId.of("p-bob"), "hello");
+    String messageType = TestMessages.TestGreeting.MESSAGE_TYPE;
+    String schemaId = world.schemaIdOf(messageType);
+    byte[] payload = new JsonPayloadCodec().encode(
+        world.schemaRegistry().requireByMessageType(messageType),
+        world.bindings().require(messageType).wireValue(greeting));
+    byte[] preimage = SigningPreimage.forSignedEnvelope(messageType, "json", schemaId, payload);
+    byte[] signature = CRYPTO.getSignature(
+        POLICY_ALGORITHM, mallory.key().privateKey(), preimage);
+    SignedEnvelope forged = new SignedEnvelope(messageType, "json", schemaId, payload,
+        alice.unpinnedId(), List.of(new Signature(POLICY_ALGORITHM, signature)));
+
+    PersonaResolver peerDirectory = id -> Optional.of(mallory.registered().persona());
+    VerificationResult result =
+        world.verifier(peerDirectory, world.trust(), Clock.systemUTC()).verify(forged);
+    assertThat(result.verified()).isFalse();
+    assertThat(result.reason()).hasValueSatisfying(reason -> {
+      assertThat(reason).contains("different identity");
+      assertThat(reason).contains(alice.unpinnedId().uniqueId());
+      assertThat(reason).contains(mallory.pinnedId().uniqueId());
+      assertThat(reason).contains("§7.3 step 6");
+    });
+
+    // The honest resolution path is unchanged: resolving alice truthfully,
+    // Mallory's signature simply does not verify against alice's
+    // certificate — the identity binding adds no rejection of its own.
+    VerificationResult honest = world.verifier().verify(forged);
+    assertThat(honest.verified()).isFalse();
+    assertThat(honest.reason()).hasValueSatisfying(reason ->
+        assertThat(reason).contains("does not verify"));
+  }
+
+  @Test
   void rejectsARevokedCertificateEvenWithAWarmCryptoCache() throws Exception {
     EnvelopeWorld world = new EnvelopeWorld();
     PersonaFixture alice = world.mint();
@@ -734,6 +813,74 @@ class EnvelopeVerifierTest {
   }
 
   @Test
+  void rejectsACryptographicallyValidEntryFromAnUnauthorizedCoSigner() {
+    EnvelopeWorld world = new EnvelopeWorld();
+    PersonaFixture alice = world.mint();
+    PersonaFixture bob = world.mint();
+    PersonaFixture mallory = world.mint();
+
+    // Founders {alice, bob}, quorum 1 — and a payload rule that counts the
+    // RAW verified signer set, so it cannot mask the verifier's per-entry
+    // authorization check (the default rule would silently drop mallory's
+    // entry at quorum counting and this test would pass for the wrong reason)
+    TestMessages.TestRawCountingCharter charter = new TestMessages.TestRawCountingCharter(
+        "rc-1", Set.of(alice.unpinnedId(), bob.unpinnedId()), 1, "terms");
+    MultiSignedEnvelope genuine = world.signer().signMulti(
+        TestMessages.TestRawCountingCharter.MESSAGE_TYPE, charter, alice.key(), "json");
+
+    // mallory's entry is everything but authorized: a real persona, a real
+    // certificate chaining to the trusted root, and a cryptographically
+    // valid signature over the correct §6.4 preimage — hand-built because
+    // the signer (correctly) refuses to emit it
+    byte[] preimage = SigningPreimage.forMultiSignedEnvelope(
+        genuine.messageType(), genuine.payloadFormat(), genuine.schemaId(), genuine.payload());
+    byte[] mallorySignature;
+    try {
+      mallorySignature =
+          CRYPTO.getSignature(POLICY_ALGORITHM, mallory.key().privateKey(), preimage);
+    } catch (GeneralSecurityException e) {
+      throw new IllegalStateException(e);
+    }
+    MultiSignedEnvelope hostile = new MultiSignedEnvelope(
+        genuine.messageType(), genuine.payloadFormat(), genuine.schemaId(), genuine.payload(),
+        List.of(new MultiSignature(mallory.pinnedId(),
+            List.of(new Signature(POLICY_ALGORITHM, mallorySignature)))));
+
+    VerificationResult result = world.verifier().verify(hostile);
+    assertThat(result.verified()).isFalse();
+    assertThat(result.reason()).hasValueSatisfying(reason -> {
+      assertThat(reason).contains("not authorized to co-sign");
+      assertThat(reason).contains(mallory.pinnedId().uniqueId());
+    });
+  }
+
+  @Test
+  void twoSpellingsOfOneCertificateDoNotReachARawCountingQuorum() {
+    EnvelopeWorld world = new EnvelopeWorld();
+    PersonaFixture alice = world.mint();
+    PersonaFixture bob = world.mint();
+
+    // Quorum 2 counted over the RAW set handed to the payload rule: only
+    // the envelope layer's certificate-thumbprint dedup (§6.2) stands
+    // between "alice signed twice under two spellings" and a false quorum
+    TestMessages.TestRawCountingCharter charter = new TestMessages.TestRawCountingCharter(
+        "rc-2", Set.of(alice.unpinnedId(), bob.unpinnedId()), 2, "terms");
+    MultiSignedEnvelope envelope = world.signer().signMulti(
+        TestMessages.TestRawCountingCharter.MESSAGE_TYPE, charter,
+        alice.keyAs(alice.unpinnedId()), "json");
+    envelope = world.signer().addSignature(envelope, alice.key());
+
+    VerificationResult result = world.verifier().verify(envelope);
+    assertThat(result.verified()).isFalse();
+    assertThat(result.reason()).hasValueSatisfying(reason ->
+        assertThat(reason).contains("quorum not reached"));
+
+    // Control: bob's distinct certificate does reach the raw-counting quorum
+    envelope = world.signer().addSignature(envelope, bob.key());
+    assertThat(world.verifier().verify(envelope).verified()).isTrue();
+  }
+
+  @Test
   void signatureOrderNeverAffectsTheOutcome() {
     EnvelopeWorld world = new EnvelopeWorld();
     PersonaFixture alice = world.mint();
@@ -792,6 +939,41 @@ class EnvelopeVerifierTest {
       assertThat(reason).contains("does not verify");
       assertThat(reason).contains(bob.pinnedId().uniqueId());
     });
+  }
+
+  // -----------------------------------------------------------------------------------
+  // Crypto sub-result cache: bounded, and eviction never changes a verdict
+  // -----------------------------------------------------------------------------------
+
+  @Test
+  void cacheEvictionNeverChangesAVerdict() {
+    EnvelopeWorld world = new EnvelopeWorld();
+    PersonaFixture alice = world.mint();
+    SignedEnvelope one = world.signer().sign(greeting(alice, "one"), alice.key(), "json");
+    SignedEnvelope two = world.signer().sign(greeting(alice, "two"), alice.key(), "json");
+    SignedEnvelope three = world.signer().sign(greeting(alice, "three"), alice.key(), "json");
+
+    // A 2-entry cache: verifying the third envelope evicts the eldest entry
+    EnvelopeVerifier tiny = new EnvelopeVerifier(
+        PersonaVersion.latestVersion(), CRYPTO, world.schemaRegistry(), world.bindings(),
+        new InMemoryPersonaResolver(world.registrar()), world.trust(), Clock.systemUTC(), 2);
+
+    assertThat(tiny.verify(one).verified()).isTrue();
+    assertThat(tiny.verify(two).verified()).isTrue();
+    assertThat(tiny.verify(three).verified()).isTrue();
+    // 'one' was evicted; its sub-result is simply recomputed — same verdict
+    assertThat(tiny.verify(one).verified()).isTrue();
+    assertThat(tiny.verify(one).verified()).isTrue();
+  }
+
+  @Test
+  void rejectsANonPositiveCacheCapacity() {
+    EnvelopeWorld world = new EnvelopeWorld();
+    org.assertj.core.api.Assertions.assertThatThrownBy(() -> new EnvelopeVerifier(
+        PersonaVersion.latestVersion(), CRYPTO, world.schemaRegistry(), world.bindings(),
+        new InMemoryPersonaResolver(world.registrar()), world.trust(), Clock.systemUTC(), 0))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("cacheCapacity");
   }
 
   // -----------------------------------------------------------------------------------

@@ -156,6 +156,51 @@ final class TestMessages {
   }
 
   // -------------------------------------------------------------------------------------
+  // example.RawCountingCharter@v1: a charter whose quorum rule counts the raw set
+  // -------------------------------------------------------------------------------------
+
+  /**
+   * A charter whose completeness check counts the <em>raw</em> verified
+   * signer set it is handed — no authorization filtering, no bare-persona-id
+   * collation. The default {@link MultiSignableMessage#hasSufficientSignatures(Set)}
+   * performs both, which would mask the envelope layer's own per-entry
+   * authorization check (§7.3 step 5) and its certificate-thumbprint
+   * deduplication (§6.2); this payload exists so the tests can observe
+   * those envelope-layer guarantees in isolation.
+   */
+  record TestRawCountingCharter(
+      String charterId, Set<PersonaId> founders, int minimumSignatures, String terms)
+      implements MultiSignableMessage {
+
+    static final String MESSAGE_TYPE = "example.RawCountingCharter@v1";
+
+    @Override
+    public Set<PersonaId> validSigners() {
+      return founders;
+    }
+
+    @Override
+    public int minimumRequiredSignatures() {
+      return minimumSignatures;
+    }
+
+    @Override
+    public boolean hasSufficientSignatures(Set<PersonaId> signers) {
+      return signers.size() >= minimumSignatures;
+    }
+
+    @Override
+    public boolean isValid() {
+      return charterId != null && !charterId.isEmpty()
+          && founders != null && !founders.isEmpty()
+          && founders.stream().allMatch(id -> id != null && id.isValid())
+          && minimumSignatures >= 1
+          && minimumSignatures <= founders.size()
+          && terms != null && !terms.isEmpty();
+    }
+  }
+
+  // -------------------------------------------------------------------------------------
   // example.EscrowInstruction@v1: both contracts (for §6.4 domain-transplant tests)
   // -------------------------------------------------------------------------------------
 
@@ -218,7 +263,7 @@ final class TestMessages {
   static MessageBindings bindings() {
     return MessageBindings.of(
         greetingBinding(), greeting2Binding(), paymentAuthorizationBinding(),
-        charterBinding(), escrowInstructionBinding());
+        charterBinding(), rawCountingCharterBinding(), escrowInstructionBinding());
   }
 
   private static MessageBinding greetingBinding() {
@@ -337,6 +382,43 @@ final class TestMessages {
       @Override
       public Map<String, Object> wireValue(Validatable message) {
         TestCharter charter = as(message, TestCharter.class);
+        Map<String, Object> value = new LinkedHashMap<>();
+        value.put("charterId", charter.charterId());
+        List<Object> founders = new ArrayList<>();
+        for (PersonaId founder : charter.founders()) {
+          founders.add(founder.uniqueId());
+        }
+        value.put("founders", founders);
+        value.put("minimumSignatures", charter.minimumSignatures());
+        value.put("terms", charter.terms());
+        return value;
+      }
+    };
+  }
+
+  private static MessageBinding rawCountingCharterBinding() {
+    return new MessageBinding() {
+      @Override
+      public String messageType() {
+        return TestRawCountingCharter.MESSAGE_TYPE;
+      }
+
+      @Override
+      public Validatable bind(Map<String, Object> payloadValue) {
+        Set<PersonaId> founders = new LinkedHashSet<>();
+        for (Object founder : list(payloadValue, "founders")) {
+          founders.add(PersonaId.of(asString(founder, "founders")));
+        }
+        return new TestRawCountingCharter(
+            text(payloadValue, "charterId"),
+            founders,
+            integer(payloadValue, "minimumSignatures"),
+            text(payloadValue, "terms"));
+      }
+
+      @Override
+      public Map<String, Object> wireValue(Validatable message) {
+        TestRawCountingCharter charter = as(message, TestRawCountingCharter.class);
         Map<String, Object> value = new LinkedHashMap<>();
         value.put("charterId", charter.charterId());
         List<Object> founders = new ArrayList<>();

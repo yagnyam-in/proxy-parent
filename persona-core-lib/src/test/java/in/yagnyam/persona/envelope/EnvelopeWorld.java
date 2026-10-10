@@ -70,6 +70,19 @@ final class EnvelopeWorld {
                  {"name":"minimumSignatures","type":"int"},
                  {"name":"terms","type":"string"}]}""";
 
+  /**
+   * The {@code example.RawCountingCharter@v1} schema: a charter whose
+   * payload rule counts the raw verified signer set — see
+   * {@code TestMessages.TestRawCountingCharter}.
+   */
+  static final String RAW_COUNTING_CHARTER_SCHEMA = """
+      {"type":"record","name":"RawCountingCharter","namespace":"example",
+       "messageType":"example.RawCountingCharter@v1",
+       "fields":[{"name":"charterId","type":"string"},
+                 {"name":"founders","type":{"type":"array","items":"string"}},
+                 {"name":"minimumSignatures","type":"int"},
+                 {"name":"terms","type":"string"}]}""";
+
   /** The {@code example.EscrowInstruction@v1} schema. */
   static final String ESCROW_INSTRUCTION_SCHEMA = """
       {"type":"record","name":"EscrowInstruction","namespace":"example",
@@ -114,6 +127,7 @@ final class EnvelopeWorld {
     registry.register(GREETING_ISO_SCHEMA);
     registry.register(PAYMENT_AUTHORIZATION_SCHEMA);
     registry.register(CHARTER_SCHEMA);
+    registry.register(RAW_COUNTING_CHARTER_SCHEMA);
     registry.register(ESCROW_INSTRUCTION_SCHEMA);
   }
 

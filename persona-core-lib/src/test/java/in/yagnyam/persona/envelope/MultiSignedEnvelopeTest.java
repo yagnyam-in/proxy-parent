@@ -160,4 +160,24 @@ class MultiSignedEnvelopeTest {
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("unknown field");
   }
+
+  @Test
+  void malformedEntrySignaturesNameMultiSignatureNotSignedEnvelope() {
+    // The error message must name the record actually being materialized
+    Map<String, Object> badList = new LinkedHashMap<>();
+    badList.put("signedBy", "p-alice");
+    badList.put("signatures", "not-a-list");
+    assertThatThrownBy(() -> MultiSignature.fromValue(badList))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("MultiSignature")
+        .hasMessageNotContaining("SignedEnvelope");
+
+    Map<String, Object> badItem = new LinkedHashMap<>();
+    badItem.put("signedBy", "p-alice");
+    badItem.put("signatures", List.of("not-a-record"));
+    assertThatThrownBy(() -> MultiSignature.fromValue(badItem))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("MultiSignature")
+        .hasMessageNotContaining("SignedEnvelope");
+  }
 }

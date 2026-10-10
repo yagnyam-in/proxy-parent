@@ -74,7 +74,8 @@ public record MultiSignature(PersonaId signedBy, List<Signature> signatures) imp
         java.util.Set.of("signedBy", "signatures"));
     String signedBy = EnvelopeValues.requireText("MultiSignature",
         value.get("signedBy"), "signedBy");
-    List<Signature> signatures = Signature.listFromValue(value.get("signatures"), "signatures");
+    List<Signature> signatures = Signature.listFromValue(
+        "MultiSignature", value.get("signatures"), "signatures");
     return new MultiSignature(PersonaId.of(signedBy), signatures);
   }
 }
