@@ -8,6 +8,7 @@ import in.yagnyam.persona.crypto.PersonaVersion;
 import in.yagnyam.persona.message.MultiSignableMessage;
 import in.yagnyam.persona.message.SignableMessage;
 import in.yagnyam.persona.schema.PersonaSchema;
+import in.yagnyam.persona.schema.SchemaId;
 import in.yagnyam.persona.schema.SchemaRegistry;
 import in.yagnyam.persona.schema.codec.PayloadCodec;
 import java.security.GeneralSecurityException;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -260,7 +262,7 @@ public final class EnvelopeSigner {
    * sign-time assertions of {@link #addSignature(MultiSignedEnvelope, PersonaKey)}.
    */
   private MultiSignableMessage multiPayloadOf(MultiSignedEnvelope envelope) {
-    PersonaSchema schema = schemaRegistry.requireByMessageType(envelope.messageType());
+    PersonaSchema schema = coSignSchemaOf(envelope);
     Map<String, Object> payloadValue;
     try {
       payloadValue =
@@ -291,6 +293,43 @@ public final class EnvelopeSigner {
               + "' is not valid (protocol §11 rule 4)");
     }
     return multiSignable;
+  }
+
+  /**
+   * Resolves the payload schema of an envelope being co-signed, mirroring
+   * the verifier's rule (§7.3 step 2, {@code docs/SCHEMA.md} §6 rule 4):
+   * via the {@code schemaId} digest when present — cross-checked against
+   * the {@code messageType} registration when both resolve, with no silent
+   * precedence — and via the {@code messageType} when the digest is
+   * absent. An incoming envelope may identify its schema by digest alone
+   * (schemas may omit {@code messageType}), so a message-type-only lookup
+   * would make such envelopes verifiable but not co-signable.
+   */
+  private PersonaSchema coSignSchemaOf(MultiSignedEnvelope envelope) {
+    String messageType = envelope.messageType();
+    String schemaId = envelope.schemaId();
+    if (schemaId.isEmpty()) {
+      return schemaRegistry.requireByMessageType(messageType);
+    }
+    // The envelope's canonical constructor already enforces the schemaId grammar.
+    SchemaId id = SchemaId.of(schemaId);
+    PersonaSchema schema;
+    try {
+      schema = schemaRegistry.requireById(id);
+    } catch (IllegalArgumentException e) {
+      throw new IllegalArgumentException(
+          "cannot co-sign: no schema registered with schemaId '" + schemaId
+              + "' (protocol §7.3 step 2 applies to co-signing too: the payload must decode"
+              + " under the schema the envelope names)", e);
+    }
+    Optional<PersonaSchema> byMessageType = schemaRegistry.byMessageType(messageType);
+    if (byMessageType.isPresent() && !byMessageType.get().equals(schema)) {
+      throw new IllegalArgumentException(
+          "cannot co-sign: schemaId '" + schemaId + "' does not match the schema registered for"
+              + " messageType '" + messageType + "' (docs/SCHEMA.md §6 rule 4: the digest and"
+              + " the message-type entry must agree — neither takes silent precedence)");
+    }
+    return schema;
   }
 
   /** §7.2 step 4: sign the preimage with every algorithm of the preferred set. */

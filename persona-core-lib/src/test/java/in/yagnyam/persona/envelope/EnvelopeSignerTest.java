@@ -5,14 +5,23 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import in.yagnyam.persona.PersonaId;
 import in.yagnyam.persona.PersonaKey;
+import in.yagnyam.persona.Validatable;
 import in.yagnyam.persona.crypto.BouncyCastleCryptographyService;
 import in.yagnyam.persona.crypto.CipherText;
 import in.yagnyam.persona.crypto.CryptographyService;
 import in.yagnyam.persona.crypto.PersonaVersion;
+import in.yagnyam.persona.resolver.InMemoryPersonaResolver;
 import in.yagnyam.persona.schema.InMemorySchemaRegistry;
+import in.yagnyam.persona.schema.PersonaSchema;
 import in.yagnyam.persona.schema.codec.BinaryPayloadCodec;
+import in.yagnyam.persona.schema.codec.JsonPayloadCodec;
 import java.security.GeneralSecurityException;
+import java.time.Clock;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -235,6 +244,126 @@ class EnvelopeSignerTest {
     assertThatThrownBy(() -> world.signer().addSignature(initial, mallory.key()))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("not authorized to co-sign");
+  }
+
+  @Test
+  void coSignsAnEnvelopeWhoseSchemaIsIdentifiedByDigestOnly() {
+    EnvelopeWorld world = new EnvelopeWorld();
+    PersonaFixture alice = world.mint();
+    PersonaFixture bob = world.mint();
+
+    // A charter-shaped schema with NO messageType declaration: it is
+    // registered by digest only, so the envelope can name it solely via
+    // schemaId (docs/SCHEMA.md §6 rule 4). A message-type-only lookup —
+    // what addSignature used to do — cannot find it.
+    InMemorySchemaRegistry registry = new InMemorySchemaRegistry();
+    PersonaSchema schema = registry.register("""
+        {"type":"record","name":"DigestCharter","namespace":"example",
+         "fields":[{"name":"charterId","type":"string"},
+                   {"name":"founders","type":{"type":"array","items":"string"}},
+                   {"name":"minimumSignatures","type":"int"},
+                   {"name":"terms","type":"string"}]}""");
+    String schemaId = registry.idOf(schema).value();
+    String messageType = "example.DigestCharter@v1";
+    MessageBindings bindings = MessageBindings.of(digestCharterBinding(messageType));
+    assertThat(registry.byMessageType(messageType)).isEmpty();
+
+    // The initial envelope as a peer would emit it: payload encoded under
+    // the digest-only schema, signed by alice (hand-built because
+    // signMulti resolves the schema by message type at emission).
+    Map<String, Object> value = new LinkedHashMap<>();
+    value.put("charterId", "c-1");
+    value.put("founders",
+        List.of(alice.unpinnedId().uniqueId(), bob.unpinnedId().uniqueId()));
+    value.put("minimumSignatures", 2);
+    value.put("terms", "terms");
+    byte[] payload = new JsonPayloadCodec().encode(schema, value);
+    byte[] preimage =
+        SigningPreimage.forMultiSignedEnvelope(messageType, "json", schemaId, payload);
+    MultiSignedEnvelope initial = new MultiSignedEnvelope(messageType, "json", schemaId, payload,
+        List.of(new MultiSignature(alice.pinnedId(), signAll(preimage, alice))));
+
+    EnvelopeSigner signer =
+        new EnvelopeSigner(CRYPTO, PersonaVersion.latestVersion(), registry, bindings);
+    MultiSignedEnvelope extended = signer.addSignature(initial, bob.key());
+
+    // The co-signed envelope carries both entries and verifies end-to-end.
+    assertThat(extended.signatures()).hasSize(2);
+    assertThat(extended.signatures().get(0)).isEqualTo(initial.signatures().get(0));
+    assertThat(extended.signatures().get(1).signedBy()).isEqualTo(bob.pinnedId());
+    EnvelopeVerifier verifier = new EnvelopeVerifier(
+        PersonaVersion.latestVersion(), CRYPTO, registry, bindings,
+        new InMemoryPersonaResolver(world.registrar()), world.trust(), Clock.systemUTC());
+    assertThat(verifier.verify(extended).verified()).isTrue();
+  }
+
+  @Test
+  void coSigningRejectsAConflictingMessageTypeAndSchemaId() {
+    EnvelopeWorld world = new EnvelopeWorld();
+    PersonaFixture alice = world.mint();
+    PersonaFixture bob = world.mint();
+    TestMessages.TestCharter charter = new TestMessages.TestCharter(
+        "c-1", Set.of(alice.unpinnedId(), bob.unpinnedId()), 1, "terms");
+    MultiSignedEnvelope initial = world.signer().signMulti(
+        TestMessages.TestCharter.MESSAGE_TYPE, charter, alice.key(), "json");
+
+    // The envelope names the charter message type but the digest of the
+    // (different) greeting schema: digest and message-type entry disagree,
+    // and neither may take silent precedence (docs/SCHEMA.md §6 rule 4).
+    MultiSignedEnvelope conflicting = new MultiSignedEnvelope(
+        initial.messageType(), initial.payloadFormat(),
+        world.schemaIdOf("example.Greeting@v1"), initial.payload(), initial.signatures());
+
+    assertThatThrownBy(() -> world.signer().addSignature(conflicting, bob.key()))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("does not match the schema registered for messageType")
+        .hasMessageContaining("§6 rule 4");
+  }
+
+  /**
+   * A binding of {@code messageType} to {@link TestMessages.TestCharter},
+   * for a schema that is registered by digest only (no messageType of its
+   * own).
+   */
+  private static MessageBinding digestCharterBinding(String messageType) {
+    return new MessageBinding() {
+      @Override
+      public String messageType() {
+        return messageType;
+      }
+
+      @Override
+      public Validatable bind(Map<String, Object> payloadValue) {
+        Set<PersonaId> founders = new LinkedHashSet<>();
+        for (Object founder : (List<?>) payloadValue.get("founders")) {
+          founders.add(PersonaId.of((String) founder));
+        }
+        return new TestMessages.TestCharter(
+            (String) payloadValue.get("charterId"),
+            founders,
+            (Integer) payloadValue.get("minimumSignatures"),
+            (String) payloadValue.get("terms"));
+      }
+
+      @Override
+      public Map<String, Object> wireValue(Validatable message) {
+        throw new UnsupportedOperationException("co-sign tests only ever bind");
+      }
+    };
+  }
+
+  /** Signs {@code preimage} as {@code signer} with every preferred algorithm. */
+  private static List<Signature> signAll(byte[] preimage, PersonaFixture signer) {
+    List<Signature> signatures = new ArrayList<>();
+    for (String algorithm : PersonaVersion.latestVersion().preferredSignatureAlgorithmSet()) {
+      try {
+        signatures.add(new Signature(algorithm,
+            CRYPTO.getSignature(algorithm, signer.key().privateKey(), preimage)));
+      } catch (GeneralSecurityException e) {
+        throw new IllegalStateException(e);
+      }
+    }
+    return signatures;
   }
 
   @Test
