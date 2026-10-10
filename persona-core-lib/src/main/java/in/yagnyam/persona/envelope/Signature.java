@@ -111,6 +111,9 @@ public record Signature(String algorithm, byte[] value) implements Validatable {
   /**
    * Materializes a signature list from a decoded wire value.
    *
+   * @param ownerType wire name of the record the array belongs to (e.g.
+   *                  {@code "SignedEnvelope"}, {@code "MultiSignature"}),
+   *                  used in error messages
    * @param value decoded {@code signatures} array value
    * @param field name of the field the array was read from, used in error
    *              messages
@@ -118,10 +121,10 @@ public record Signature(String algorithm, byte[] value) implements Validatable {
    * @throws IllegalArgumentException if the value is not a list of
    *     well-shaped signature records
    */
-  static List<Signature> listFromValue(Object value, String field) {
-    List<?> items = EnvelopeValues.requireList("SignedEnvelope", value, field);
+  static List<Signature> listFromValue(String ownerType, Object value, String field) {
+    List<?> items = EnvelopeValues.requireList(ownerType, value, field);
     return items.stream()
-        .map(item -> EnvelopeValues.requireMap("SignedEnvelope", item, field))
+        .map(item -> EnvelopeValues.requireMap(ownerType, item, field))
         .map(Signature::fromValue)
         .toList();
   }

@@ -7,13 +7,18 @@ hex vectors it prints can be embedded as literals in
 ``SigningPreimageTest`` and cross-check the Java implementation instead of
 re-deriving the expected bytes with the code under test.
 
-Preimage (§6.4):
+Preimage (§6.4, as amended — all five fields uniformly length-prefixed):
 
     preimage = uvarint(len(domain))       || domain (UTF-8)
              || uvarint(len(messageType)) || messageType (UTF-8)
              || uvarint(len(payloadFormat)) || payloadFormat (UTF-8)
              || uvarint(len(schemaId))    || schemaId (UTF-8; empty if absent)
-             || payload (raw bytes)
+             || uvarint(len(payload))     || payload (raw bytes)
+
+Note: the formula quoted here previously ended with ``payload (raw bytes)``
+without the length prefix — that quote was stale relative to this script's
+own encoder (and to the Java implementation), which has always prefixed the
+payload length; §6.4 was amended to say so. The output vectors are unchanged.
 
 Run:  python3 preimage_golden.py
 """

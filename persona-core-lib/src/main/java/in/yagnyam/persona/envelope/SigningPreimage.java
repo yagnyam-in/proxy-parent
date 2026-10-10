@@ -22,14 +22,15 @@ import java.util.Objects;
  *              || uvarint(len(messageType)) || messageType (UTF-8)
  *              || uvarint(len(payloadFormat)) || payloadFormat (UTF-8)
  *              || uvarint(len(schemaId))    || schemaId (UTF-8; empty if absent)
- *              || payload (raw bytes)
+ *              || uvarint(len(payload))     || payload (raw bytes)
  * </pre>
  *
  * <p>{@code uvarint(n)} is the unsigned LEB128 encoding of the byte length
  * {@code n}: least-significant 7-bit group first, high bit set on every byte
- * but the last. Note that the payload is length-prefixed as well, so the
- * preimage is unambiguous even between payloads where one is a prefix of the
- * other.
+ * but the last. Per §6.4 all five fields are uniformly length-prefixed —
+ * the payload included — so the preimage is self-framing and unambiguous,
+ * in particular between payloads where one is a prefix of the other; the
+ * {@code domain} string still versions the format.
  *
  * <p>The distinct {@code domain} constants are what prevent signature
  * transplant between single-signed and multi-signed envelopes carrying

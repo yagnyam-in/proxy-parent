@@ -24,15 +24,15 @@ import in.yagnyam.persona.schema.TypeNode;
 import in.yagnyam.persona.schema.codec.PayloadCodec;
 import java.security.GeneralSecurityException;
 import java.time.Clock;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Envelope verification per protocol §7.3 (fail-fast, §4: "Failure of any
@@ -91,7 +91,11 @@ import java.util.concurrent.ConcurrentMap;
  * certificate is rejected even when its cached crypto sub-result is
  * positive. Only positive results are cached: a cache entry therefore
  * requires a genuine successful verification with the private key, which an
- * attacker cannot forge, so hostile input cannot grow the cache. This
+ * attacker cannot forge, so hostile input cannot grow the cache — and the
+ * cache is additionally bounded to
+ * {@link #DEFAULT_VERIFIED_SIGNATURE_CACHE_CAPACITY} entries with LRU
+ * eviction as a second line of defense (eviction only ever costs one
+ * recomputed signature verification; it never changes a verdict). This
  * implements exactly the option protocol §7.3 sanctions: "Caching MAY
  * instead be applied only to the cryptographic sub-result (signature
  * verification against a specific certificate), with policy and certificate
@@ -128,11 +132,22 @@ public final class EnvelopeVerifier {
   private final Clock clock;
 
   /**
+   * The default capacity of {@link #verifiedSignatureCache} in entries:
+   * comfortably above any plausible working set of distinct verified
+   * (preimage, signature, certificate) triples of one verifier, so eviction
+   * only ever costs one recomputed signature verification — never a
+   * different outcome.
+   */
+  static final int DEFAULT_VERIFIED_SIGNATURE_CACHE_CAPACITY = 4096;
+
+  /**
    * The cryptographic-sub-result cache (see the class javadoc):
    * algorithm | sha256(preimage) | sha256(signature) | certificate
-   * thumbprint → verified.
+   * thumbprint → verified. Bounded to {@code cacheCapacity} entries with
+   * access-order (LRU) eviction: an evicted entry is simply recomputed on
+   * its next verification, so the bound cannot change any verdict.
    */
-  private final ConcurrentMap<String, Boolean> verifiedSignatureCache = new ConcurrentHashMap<>();
+  private final Map<String, Boolean> verifiedSignatureCache;
 
   /**
    * Creates a verifier that evaluates certificate validity at the system
@@ -180,6 +195,27 @@ public final class EnvelopeVerifier {
       PersonaResolver resolver,
       TrustValidator trustValidator,
       Clock clock) {
+    this(version, cryptographyService, schemaRegistry, bindings, resolver, trustValidator,
+        clock, DEFAULT_VERIFIED_SIGNATURE_CACHE_CAPACITY);
+  }
+
+  /**
+   * Creates a verifier with an explicit crypto-sub-result cache capacity —
+   * package-private so tests can exercise eviction without flooding the
+   * default capacity.
+   *
+   * @param cacheCapacity maximum number of cached cryptographic sub-results
+   *                      (see {@link #DEFAULT_VERIFIED_SIGNATURE_CACHE_CAPACITY})
+   */
+  EnvelopeVerifier(
+      PersonaVersion version,
+      CryptographyService cryptographyService,
+      SchemaRegistry schemaRegistry,
+      MessageBindings bindings,
+      PersonaResolver resolver,
+      TrustValidator trustValidator,
+      Clock clock,
+      int cacheCapacity) {
     this.version = Objects.requireNonNull(version, "version");
     this.cryptographyService = Objects.requireNonNull(cryptographyService, "cryptographyService");
     this.schemaRegistry = Objects.requireNonNull(schemaRegistry, "schemaRegistry");
@@ -187,6 +223,16 @@ public final class EnvelopeVerifier {
     this.resolver = Objects.requireNonNull(resolver, "resolver");
     this.trustValidator = Objects.requireNonNull(trustValidator, "trustValidator");
     this.clock = Objects.requireNonNull(clock, "clock");
+    if (cacheCapacity < 1) {
+      throw new IllegalArgumentException("cacheCapacity must be at least 1: " + cacheCapacity);
+    }
+    this.verifiedSignatureCache = Collections.synchronizedMap(
+        new LinkedHashMap<>(256, 0.75f, true) {
+          @Override
+          protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
+            return size() > cacheCapacity;
+          }
+        });
   }
 
   /**
@@ -519,12 +565,37 @@ public final class EnvelopeVerifier {
     Persona persona = resolved.orElseThrow(() -> new Rejected(
         "the persona '" + signedBy + "' could not be resolved via the PersonaResolver (unknown id,"
             + " revoked certificate, or pin mismatch; protocol §7.3 step 6)"));
+    assertThumbprintPin(signedBy, persona);
     TrustResult trust = trustValidator.validate(persona, clock.instant());
     if (!trust.trusted()) {
       throw new Rejected("the persona '" + signedBy + "' is not trusted at verification time"
           + " (protocol §7.3 step 6): " + trust.reason().orElse("?"));
     }
     return persona;
+  }
+
+  /**
+   * Pin consistency at the trust boundary (§7.3 step 6): when
+   * {@code signedBy} carries a thumbprint pin, the persona the resolver
+   * returned must actually be pinned to that certificate. A resolver that
+   * silently widens a pinned id — e.g. strips the thumbprint and resolves
+   * <em>some</em> certificate of the same persona — would otherwise let an
+   * envelope claim a pin nobody signed up to; the verifier, not resolver
+   * etiquette, is where that widening is stopped.
+   */
+  private static void assertThumbprintPin(PersonaId signedBy, Persona persona) {
+    if (signedBy.sha256Thumbprint().isEmpty() || signedBy.isWildcard()) {
+      return;
+    }
+    PersonaCertificate certificate = persona.certificate();
+    String resolvedThumbprint = certificate == null ? null : certificate.sha256Thumbprint();
+    if (!signedBy.sha256Thumbprint().get().equals(resolvedThumbprint)) {
+      throw new Rejected("the persona '" + signedBy + "' carries a certificate thumbprint pin"
+          + " but resolved to certificate thumbprint '"
+          + (resolvedThumbprint == null ? "<none>" : resolvedThumbprint)
+          + "' (protocol §7.3 step 6: a pinned signedBy must resolve to the pinned"
+          + " certificate)");
+    }
   }
 
   // -------------------------------------------------------------------------------------

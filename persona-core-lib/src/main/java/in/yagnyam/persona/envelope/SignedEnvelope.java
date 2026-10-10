@@ -181,7 +181,7 @@ public record SignedEnvelope(
     String signedBy = EnvelopeValues.requireText("SignedEnvelope",
         value.get("signedBy"), "signedBy");
     List<Signature> signatures = Signature.listFromValue(
-        value.get("signatures"), "signatures");
+        "SignedEnvelope", value.get("signatures"), "signatures");
     return new SignedEnvelope(messageType, payloadFormat, schemaId, payload,
         PersonaId.of(signedBy), signatures);
   }
