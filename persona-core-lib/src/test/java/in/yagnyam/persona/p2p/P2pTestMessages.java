@@ -100,6 +100,44 @@ final class P2pTestMessages {
   }
 
   // -------------------------------------------------------------------------------------
+  // example.JointRequest@v1: multi-signable + request (§5.5 + §5.2 — the
+  // replay-dedup target for multi-signed requests)
+  // -------------------------------------------------------------------------------------
+
+  /** A quorum-authorized request: founders co-sign one request id (§5.2, §5.5). */
+  record TestJointRequest(
+      String requestId, Set<PersonaId> founders, int minimumSignatures, String action)
+      implements MultiSignableMessage, RequestMessage {
+
+    static final String MESSAGE_TYPE = "example.JointRequest@v1";
+
+    @Override
+    public Set<PersonaId> validSigners() {
+      return founders;
+    }
+
+    @Override
+    public int minimumRequiredSignatures() {
+      return minimumSignatures;
+    }
+
+    @Override
+    public String requestId() {
+      return requestId;
+    }
+
+    @Override
+    public boolean isValid() {
+      return requestId != null && !requestId.isEmpty()
+          && founders != null && !founders.isEmpty()
+          && founders.stream().allMatch(id -> id != null && id.isValid())
+          && minimumSignatures >= 1
+          && minimumSignatures <= founders.size()
+          && action != null && !action.isEmpty();
+    }
+  }
+
+  // -------------------------------------------------------------------------------------
   // example.MaintenanceAlert@v1: the alert broadcast payload (§5.4)
   // -------------------------------------------------------------------------------------
 
@@ -143,7 +181,8 @@ final class P2pTestMessages {
    * @return an immutable binding registry
    */
   static MessageBindings bindings() {
-    return MessageBindings.of(greetingBinding(), charterBinding(), alertBinding());
+    return MessageBindings.of(
+        greetingBinding(), charterBinding(), jointRequestBinding(), alertBinding());
   }
 
   private static MessageBinding greetingBinding() {
@@ -207,6 +246,43 @@ final class P2pTestMessages {
         value.put("founders", founders);
         value.put("minimumSignatures", charter.minimumSignatures());
         value.put("terms", charter.terms());
+        return value;
+      }
+    };
+  }
+
+  private static MessageBinding jointRequestBinding() {
+    return new MessageBinding() {
+      @Override
+      public String messageType() {
+        return TestJointRequest.MESSAGE_TYPE;
+      }
+
+      @Override
+      public Validatable bind(Map<String, Object> payloadValue) {
+        Set<PersonaId> founders = new LinkedHashSet<>();
+        for (Object founder : list(payloadValue, "founders")) {
+          founders.add(PersonaId.of(asString(founder, "founders")));
+        }
+        return new TestJointRequest(
+            text(payloadValue, "requestId"),
+            founders,
+            integer(payloadValue, "minimumSignatures"),
+            text(payloadValue, "action"));
+      }
+
+      @Override
+      public Map<String, Object> wireValue(Validatable message) {
+        TestJointRequest request = as(message, TestJointRequest.class);
+        Map<String, Object> value = new LinkedHashMap<>();
+        value.put("requestId", request.requestId());
+        List<Object> founders = new ArrayList<>();
+        for (PersonaId founder : request.founders()) {
+          founders.add(founder.uniqueId());
+        }
+        value.put("founders", founders);
+        value.put("minimumSignatures", request.minimumSignatures());
+        value.put("action", request.action());
         return value;
       }
     };

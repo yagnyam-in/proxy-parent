@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import in.yagnyam.persona.PersonaId;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -23,6 +24,8 @@ class RequestDeduplicatorTest {
 
   private static final PersonaId ALICE = PersonaId.of("alice");
   private static final PersonaId BOB = PersonaId.of("bob");
+  private static final PersonaId CAROL = PersonaId.of("carol");
+  private static final PersonaId DAVE = PersonaId.of("dave");
 
   @Test
   void firstOccurrenceIsAcceptedAndDuplicatesAreRejected() {
@@ -158,13 +161,65 @@ class RequestDeduplicatorTest {
   }
 
   @Test
+  void multiSignerRequestsAreDeduplicatedOrderIndependently() {
+    RequestDeduplicator dedup = new RequestDeduplicator();
+
+    assertThat(dedup.checkAndRecord(BOB, List.of(ALICE, BOB), "req-1")).isTrue();
+    // Signature order on the wire is unauthenticated (protocol §7.4): any
+    // permutation of the same verified signer set is the same request.
+    assertThat(dedup.checkAndRecord(BOB, List.of(BOB, ALICE), "req-1")).isFalse();
+    assertThat(dedup.checkAndRecord(BOB, List.of(ALICE, BOB), "req-1")).isFalse();
+    // Recipient scoping still applies to the set form.
+    assertThat(dedup.checkAndRecord(ALICE, List.of(BOB, ALICE), "req-1")).isTrue();
+  }
+
+  @Test
+  void overlappingSignerSetsOfOneRequestIdAreReplaysDisjointOnesAreNot() {
+    RequestDeduplicator dedup = new RequestDeduplicator();
+
+    assertThat(dedup.checkAndRecord(BOB, List.of(ALICE, BOB), "req-1")).isTrue();
+    // Incremental §7.4 co-signing supersedes (§5.5): same requestId,
+    // identical payload, stronger authorization — a replay, not a new
+    // request (no double execution).
+    assertThat(dedup.checkAndRecord(BOB, List.of(ALICE, BOB, CAROL), "req-1")).isFalse();
+    // A subset and a partially overlapping set are replays too: the shared
+    // signer already spent this requestId with this recipient.
+    assertThat(dedup.checkAndRecord(BOB, List.of(ALICE), "req-1")).isFalse();
+    assertThat(dedup.checkAndRecord(BOB, List.of(BOB, DAVE), "req-1")).isFalse();
+    // A genuinely disjoint signer set is a different authorized request
+    // (protocol §5.2: duplicates are per requester).
+    assertThat(dedup.checkAndRecord(BOB, List.of(CAROL, DAVE), "req-1")).isTrue();
+    // ...and the new set is recorded: its own permutations now dedup.
+    assertThat(dedup.checkAndRecord(BOB, List.of(DAVE, CAROL), "req-1")).isFalse();
+  }
+
+  @Test
+  void pinnedAndUnpinnedSpellingsShareTheMultiSignerNamespace() {
+    RequestDeduplicator dedup = new RequestDeduplicator();
+    PersonaId pinnedAlice = PersonaId.of("alice#"
+        + "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+
+    assertThat(dedup.checkAndRecord(BOB, List.of(pinnedAlice, BOB), "req-1")).isTrue();
+    assertThat(dedup.checkAndRecord(BOB, List.of(BOB, ALICE), "req-1")).isFalse();
+  }
+
+  @Test
+  void anEmptySignerSetIsRejected() {
+    RequestDeduplicator dedup = new RequestDeduplicator();
+    assertThatThrownBy(() -> dedup.checkAndRecord(BOB, List.of(), "req-1"))
+        .isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> dedup.checkAndRecord(BOB, (List<PersonaId>) null, "req"))
+        .isInstanceOf(NullPointerException.class);
+  }
+
+  @Test
   void invalidConstructionAndArgumentsAreRejected() {
     assertThatThrownBy(() -> new RequestDeduplicator(0))
         .isInstanceOf(IllegalArgumentException.class);
     RequestDeduplicator dedup = new RequestDeduplicator(1);
     assertThatThrownBy(() -> dedup.checkAndRecord(null, ALICE, "req"))
         .isInstanceOf(NullPointerException.class);
-    assertThatThrownBy(() -> dedup.checkAndRecord(BOB, null, "req"))
+    assertThatThrownBy(() -> dedup.checkAndRecord(BOB, (PersonaId) null, "req"))
         .isInstanceOf(NullPointerException.class);
     assertThatThrownBy(() -> dedup.checkAndRecord(BOB, ALICE, null))
         .isInstanceOf(NullPointerException.class);

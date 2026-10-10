@@ -45,6 +45,15 @@ final class P2pWorld {
                  {"name":"minimumSignatures","type":"int"},
                  {"name":"terms","type":"string"}]}""";
 
+  /** The {@code example.JointRequest@v1} schema (§5.5 + §5.2). */
+  static final String JOINT_REQUEST_SCHEMA = """
+      {"type":"record","name":"JointRequest","namespace":"example",
+       "messageType":"example.JointRequest@v1",
+       "fields":[{"name":"requestId","type":"string"},
+                 {"name":"founders","type":{"type":"array","items":"string"}},
+                 {"name":"minimumSignatures","type":"int"},
+                 {"name":"action","type":"string"}]}""";
+
   /** The {@code example.MaintenanceAlert@v1} schema (protocol §5.4). */
   static final String ALERT_SCHEMA = """
       {"type":"record","name":"MaintenanceAlert","namespace":"example",
@@ -68,6 +77,7 @@ final class P2pWorld {
   P2pWorld() {
     schemaRegistry.register(GREETING_SCHEMA);
     schemaRegistry.register(CHARTER_SCHEMA);
+    schemaRegistry.register(JOINT_REQUEST_SCHEMA);
     schemaRegistry.register(ALERT_SCHEMA);
   }
 

@@ -6,11 +6,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import in.yagnyam.persona.PersonaId;
 import in.yagnyam.persona.PersonaKey;
+import in.yagnyam.persona.envelope.MultiSignature;
 import in.yagnyam.persona.envelope.MultiSignedEnvelope;
 import in.yagnyam.persona.envelope.SignedEnvelope;
 import in.yagnyam.persona.p2p.P2pTestMessages.TestAlert;
 import in.yagnyam.persona.p2p.P2pTestMessages.TestCharter;
 import in.yagnyam.persona.p2p.P2pTestMessages.TestGreeting;
+import in.yagnyam.persona.p2p.P2pTestMessages.TestJointRequest;
 import in.yagnyam.persona.schema.codec.JsonPayloadCodec;
 import java.util.List;
 import java.util.Set;
@@ -352,6 +354,129 @@ class PersonaMessengerTest {
 
     assertThat(bob.receive(alertWire).verified()).isTrue();
     assertThat(bob.receive(alertWire).verified()).isTrue();
+  }
+
+  // -------------------------------------------------------------------------------------
+  // Replay protection of multi-signed requests (protocol §5.2 over §7.4):
+  // the dedup identity must be order-independent and derived from
+  // authenticated data — a transport attacker may legally reorder the
+  // signature entries of a captured envelope (order is not authenticated,
+  // §6.4, and §7.4 requires any order to verify), and that reordered
+  // envelope must still dedup against the original delivery.
+  // -------------------------------------------------------------------------------------
+
+  @Test
+  void aMultiSignedRequestReplayedWithReorderedSignaturesIsAcceptedExactlyOnce() {
+    PersonaMessenger carol = world.messenger(world.mint());
+    TestJointRequest request = new TestJointRequest(
+        "joint-1", Set.of(aliceKey.id(), bobKey.id()), 2, "open the vault");
+    MultiSignedEnvelope completed = world.signer().addSignature(
+        world.signer().signMulti(TestJointRequest.MESSAGE_TYPE, request, aliceKey, "json"),
+        bobKey);
+    assertThat(completed.signatures()).hasSize(2);
+
+    // The attacker-legal wire transformation: swap the signature entries.
+    // The reordered envelope still verifies (§7.4) — only dedup can stop
+    // the second delivery from reaching handlers.
+    MultiSignedEnvelope reordered = new MultiSignedEnvelope(
+        completed.messageType(), completed.payloadFormat(), completed.schemaId(),
+        completed.payload(),
+        List.of(completed.signatures().get(1), completed.signatures().get(0)));
+
+    ReceivedMessage accepted = carol.receive(completed.encode(new JsonPayloadCodec()));
+    ReceivedMessage replay = carol.receive(reordered.encode(new JsonPayloadCodec()));
+
+    assertThat(accepted.verified()).isTrue();
+    assertThat(accepted.payload()).contains(request);
+
+    assertThat(replay.verified()).isFalse();
+    assertThat(replay.replayed()).isTrue();
+    assertThat(replay.payload()).isEmpty();
+    assertThat(replay.signers()).containsExactly(bobKey.id(), aliceKey.id());
+    assertThat(replay.verification().reason()).hasValueSatisfying(
+        reason -> assertThat(reason).contains("duplicate request id"));
+  }
+
+  @Test
+  void aMultiSignedRequestReplayedWithRespelledSignerIdsIsDeduplicated() {
+    PersonaMessenger carol = world.messenger(world.mint());
+    // Unpinned founders, so both the pinned and the unpinned signedBy
+    // spellings are authorized (§5.1 delegation) and the respelled envelope
+    // still verifies.
+    TestJointRequest request = new TestJointRequest(
+        "joint-1",
+        Set.of(PersonaId.of(aliceKey.id().id()), PersonaId.of(bobKey.id().id())),
+        2, "open the vault");
+    MultiSignedEnvelope completed = world.signer().addSignature(
+        world.signer().signMulti(TestJointRequest.MESSAGE_TYPE, request, aliceKey, "json"),
+        bobKey);
+
+    // An unauthenticated respelling: strip the certificate pins from the
+    // signedBy ids (and reorder for good measure). 'alice' and
+    // 'alice#<thumbprint>' resolving to one certificate are one signer
+    // (protocol §6.2), so the respelled envelope verifies — and dedups.
+    List<MultiSignature> respelled = completed.signatures().stream()
+        .map(entry -> new MultiSignature(
+            PersonaId.of(entry.signedBy().id()), entry.signatures()))
+        .toList();
+    MultiSignedEnvelope variant = new MultiSignedEnvelope(
+        completed.messageType(), completed.payloadFormat(), completed.schemaId(),
+        completed.payload(), List.of(respelled.get(1), respelled.get(0)));
+
+    assertThat(carol.receive(completed.encode(new JsonPayloadCodec())).verified()).isTrue();
+    ReceivedMessage replay = carol.receive(variant.encode(new JsonPayloadCodec()));
+    assertThat(replay.replayed()).isTrue();
+    assertThat(replay.payload()).isEmpty();
+  }
+
+  @Test
+  void aRequestReSignedWithAnAdditionalCoSignerDeduplicatesAsAReplay() {
+    // Incremental §7.4 co-signing: the payload MAY be signed incrementally
+    // and each additional signature yields a new envelope that SUPERSEDES
+    // the previous one (protocol §5.5). The requestId is the same, the
+    // payload bytes are identical; only the authorization grew. Executing
+    // the request again would double-execute it, so the stronger envelope
+    // dedups as a replay — the safe direction.
+    PersonaKey daveKey = world.mint();
+    PersonaMessenger carol = world.messenger(world.mint());
+    TestJointRequest request = new TestJointRequest(
+        "joint-2", Set.of(aliceKey.id(), bobKey.id(), daveKey.id()), 2, "open the vault");
+    MultiSignedEnvelope twoOfThree = world.signer().addSignature(
+        world.signer().signMulti(TestJointRequest.MESSAGE_TYPE, request, aliceKey, "json"),
+        bobKey);
+    MultiSignedEnvelope threeOfThree = world.signer().addSignature(twoOfThree, daveKey);
+
+    ReceivedMessage accepted = carol.receive(twoOfThree.encode(new JsonPayloadCodec()));
+    assertThat(accepted.verified()).isTrue();
+
+    ReceivedMessage superseding = carol.receive(threeOfThree.encode(new JsonPayloadCodec()));
+    assertThat(superseding.replayed()).isTrue();
+    assertThat(superseding.payload()).isEmpty();
+  }
+
+  @Test
+  void theSameRequestIdFromDisjointSignerSetsAreDifferentRequests() {
+    // §5.2 scopes dedup to the requester: a disjoint quorum reusing a
+    // request id is a different authorized request and must be processed.
+    PersonaKey carolKey = world.mint();
+    PersonaKey daveKey = world.mint();
+    PersonaMessenger erin = world.messenger(world.mint());
+    TestJointRequest aliceBob = new TestJointRequest(
+        "shared-id", Set.of(aliceKey.id(), bobKey.id()), 2, "action A");
+    TestJointRequest carolDave = new TestJointRequest(
+        "shared-id", Set.of(carolKey.id(), daveKey.id()), 2, "action B");
+
+    MultiSignedEnvelope first = world.signer().addSignature(
+        world.signer().signMulti(TestJointRequest.MESSAGE_TYPE, aliceBob, aliceKey, "json"),
+        bobKey);
+    MultiSignedEnvelope second = world.signer().addSignature(
+        world.signer().signMulti(TestJointRequest.MESSAGE_TYPE, carolDave, carolKey, "json"),
+        daveKey);
+
+    assertThat(erin.receive(first.encode(new JsonPayloadCodec())).verified()).isTrue();
+    ReceivedMessage other = erin.receive(second.encode(new JsonPayloadCodec()));
+    assertThat(other.verified()).isTrue();
+    assertThat(other.payload()).contains(carolDave);
   }
 
   // -------------------------------------------------------------------------------------
