@@ -248,6 +248,32 @@ PaymentAuthorization {
 }
 ```
 
+### 6.4 Signature preimage (type binding)
+
+Signatures are computed over a **signing preimage** that binds the payload
+bytes to the envelope fields that determine how the payload is interpreted.
+This prevents type-confusion attacks in which an attacker re-labels a valid
+signed payload with a different `messageType` or schema and the signature
+still verifies.
+
+The preimage is an unambiguous byte sequence built from:
+
+```
+domain       = "persona.signed-envelope@v1"          // for SignedEnvelope
+             | "persona.multi-signed-envelope@v1"     // for MultiSignedEnvelope
+
+preimage     = uvarint(len(domain))       || domain (UTF-8)
+             || uvarint(len(messageType)) || messageType (UTF-8)
+             || uvarint(len(payloadFormat)) || payloadFormat (UTF-8)
+             || uvarint(len(schemaId))    || schemaId (UTF-8; empty if absent)
+             || payload (raw bytes)
+```
+
+Where `uvarint(n)` is the unsigned LEB128 encoding of the byte length `n`.
+All signature algorithms in an envelope's signature set are computed over this
+same preimage. The distinct `domain` constants prevent signature transplant
+between single-signed and multi-signed envelopes carrying identical payloads.
+
 ---
 
 ## 7. Protocols
@@ -296,18 +322,23 @@ Given a payload `P` and a Persona Key `K`:
 ```
 1. Assert P.isValid() and K.id.canSignOnBehalfOf(v) for some v in P.validSigners().
 2. Serialize P once with the chosen payload format → payloadBytes.
-3. For each algorithm A in ActiveVersion.preferredSignatureAlgorithmSet:
-       sig[A] = sign(A, K.privateKey, payloadBytes)
-4. Emit SignedEnvelope {
+3. Compute the signing preimage (§6.4) from
+       {messageType, payloadFormat, schemaId, payloadBytes}.
+4. For each algorithm A in ActiveVersion.preferredSignatureAlgorithmSet:
+       sig[A] = sign(A, K.privateKey, preimage)
+5. Emit SignedEnvelope {
        messageType   = P.messageType(),
        payload       = payloadBytes,
        payloadFormat = ...,
+       schemaId      = ...,
        signedBy      = K.id,
        signatures    = [Signature(A, sig[A]) for each A]
    }
 ```
 
 Implementations MUST NOT re-serialize `P` between signing and transmission.
+Signatures cover the preimage (§6.4), which includes the payload bytes
+exactly as they appear in the envelope.
 
 ### 7.3 Verification
 
@@ -324,12 +355,21 @@ Given an incoming envelope `E`:
 6. Resolve Persona for E.signedBy via the Resolver.
    - Assert the Persona's certificate is within its validity window.
    - Assert its certificate chains to a trusted Registrar root.
-7. For each Signature in E.signatures:
-       assert verify(A.algorithm, Persona.publicKey, E.payload, A.value)
+7. Recompute the signing preimage (§6.4) from E's
+   {messageType, payloadFormat, schemaId, payload}.
+   For each Signature in E.signatures:
+       assert verify(A.algorithm, Persona.publicKey, preimage, A.value)
 8. Mark E as verified.
 ```
 
-If any step fails, the envelope MUST be rejected. Verification results MAY be cached keyed by `(messageType, hash(payload), Set(signatures))`.
+If any step fails, the envelope MUST be rejected. Verification results MAY be
+cached, but the cache key MUST include `messageType`, a hash of the preimage
+(or of the payload together with the type-binding fields), `signedBy`, the
+signature set, and the thumbprint of the certificate that was used to verify.
+Cache entries MUST be invalidated when the resolved certificate is revoked,
+renewed, or otherwise changes trust state. Caching MAY instead be applied only
+to the cryptographic sub-result (signature verification against a specific
+certificate), with policy and certificate checks repeated per envelope.
 
 ### 7.4 Multi-Signature
 
@@ -461,7 +501,7 @@ Recommended path:
 7. `PersonaId` equality is structural over `(id, thumbprint)`. Cross-instance signing is governed by `canSignOnBehalfOf`.
 8. Certificates MUST chain to a trusted Registrar root and be within their validity window at verification time.
 9. Nested envelopes MUST be verified before the outer payload is considered verified.
-10. The bytes that were signed MUST be the exact bytes that are verified; no re-serialization at any layer.
+10. The bytes that were signed MUST be the exact bytes that are verified; no re-serialization at any layer. Signatures are computed over the signing preimage (§6.4), which authenticates the payload bytes together with the envelope's `messageType`, `payloadFormat`, and `schemaId`.
 11. Revocation of a Persona MUST invalidate cached resolutions; verifiers SHOULD accept a signed-and-timestamped revocation notice from the Registrar or from the Persona owner (authenticated by the pre-registered passphrase hash).
 12. A Realm boundary MUST NOT be crossed: envelopes signed under one Realm's Registrar MUST NOT be accepted by peers of another Realm.
 
