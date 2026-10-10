@@ -198,6 +198,24 @@
       "inputJson": "{\"v\":\"2026-10-10\"}"
     },
     {
+      "id": "json/decode-reject/timestamp-hour-out-of-range",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "The hour component is 0-23 (T24:00:00 end-of-day aside); 25:00:00 is not an ISO-8601 instant.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"2026-10-10T25:00:00.000Z\"}"
+    },
+    {
+      "id": "json/decode-reject/timestamp-offset-out-of-range",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "The numeric UTC offset is at most ±18:00 (java.time.ZoneOffset); +25:00 is not an ISO-8601 instant.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"2026-10-10T00:00:00.000+25:00\"}"
+    },
+    {
       "id": "json/decode-reject/timestamp-sub-millisecond-precision",
       "spec": "docs/SCHEMA.md §4.1",
       "description": "timestamp-millis has millisecond precision only.",
