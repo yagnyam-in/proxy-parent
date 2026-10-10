@@ -65,9 +65,10 @@
     </properties>
 
     <modules>
-        <module>proxy-core-lib</module>
-        <module>proxy-messages</module>
-        <module>proxy-server-lib</module>
+        <!-- Current generation (Persona) — Java 21, built by default -->
+        <module>persona-core-lib</module>
+        <module>persona-conformance</module>
+        <module>persona-examples</module>
     </modules>
 
     <dependencyManagement>
@@ -313,6 +314,20 @@
 
 
     <profiles>
+        <!--
+          Legacy (Proxy) generation. Frozen source of the pre-rewrite framework.
+          Requires a JDK 8 toolchain; does not build under JDK 21.
+          Build explicitly with: ./mvnw -Plegacy verify
+        -->
+        <profile>
+            <id>legacy</id>
+            <modules>
+                <module>proxy-core-lib</module>
+                <module>proxy-messages</module>
+                <module>proxy-server-lib</module>
+            </modules>
+        </profile>
+
         <!-- Code signing for release: http://stackoverflow.com/a/14869692/101923 -->
         <profile>
             <id>release</id>
