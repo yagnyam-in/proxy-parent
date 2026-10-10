@@ -3,6 +3,7 @@ package in.yagnyam.persona.crypto;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import in.yagnyam.persona.PersonaCertificate;
 import in.yagnyam.persona.TestCertificates;
 import in.yagnyam.persona.TestSupport;
 import java.io.IOException;
@@ -84,6 +85,25 @@ class PemServiceTest {
         .isInstanceOf(IOException.class);
     assertThatThrownBy(() -> pemService.decodePublicKey("-----BEGIN PUBLIC KEY-----\ngarbage\n-----END PUBLIC KEY-----"))
         .isInstanceOf(IOException.class);
+  }
+
+  /**
+   * {@code CertificateFactory.generateCertificate} returns {@code null} for a
+   * non-empty PEM envelope with an empty DER body rather than throwing; the
+   * decode boundary must reject it instead of letting a {@code null} escape
+   * (protocol §9.1). Found by the conformance vector
+   * {@code identity/pem-reject/certificate-header-only}.
+   */
+  @Test
+  void rejectsCertificateWithEmptyBody() {
+    String emptyBodyPem = "-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n";
+    assertThatThrownBy(() -> pemService.decodeCertificate(emptyBodyPem))
+        .isInstanceOf(IOException.class)
+        .hasMessageContaining("does not hold a certificate");
+    // The declared contract of the caller is IllegalArgumentException, not NPE.
+    assertThatThrownBy(() -> PersonaCertificate.parsePem(emptyBodyPem))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("Invalid certificate PEM");
   }
 
   @Test
