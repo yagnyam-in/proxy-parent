@@ -860,7 +860,11 @@ def iso_from_millis(millis):
     minute, second = divmod(rest, 60)
     if 0 <= year <= 9999:
         return "%04d-%02d-%02dT%02d:%02d:%02d.%03dZ" % (year, month, day, hour, minute, second, milli)
-    return "%d-%02d-%02dT%02d:%02d:%02d.%03dZ" % (year, month, day, hour, minute, second, milli)
+    # Signed expanded years, exactly as java.time renders them (and as the
+    # reference codec's uuuu-pattern with SignStyle.EXCEEDS_PAD does): a '+'
+    # sign past year 9999, a signed zero-padded year below year 0.
+    year_text = "+%d" % year if year > 9999 else "-%04d" % -year
+    return "%s-%02d-%02dT%02d:%02d:%02d.%03dZ" % (year_text, month, day, hour, minute, second, milli)
 
 
 def encode_json(node, value, depth=0):
@@ -1039,9 +1043,26 @@ def _require_json_string(document, what):
     return document
 
 
+_BASE64_DATA_RE = re.compile(r"[A-Za-z0-9+/]*")
+
+
 def _decode_base64(text):
-    """Standard base64 with padding only (§4.1, §3.4 rule 10)."""
-    if len(text) % 4 != 0:
+    """Standard base64 with padding only (§4.1, §3.4 rule 10).
+
+    The padding grammar is validated before decoding because
+    ``base64.b64decode``'s strictness varies across Python versions: padding
+    may only complete the final group (0, 1 or 2 '=' as the data bits require),
+    never pad a group that is already complete. This mirrors
+    ``java.util.Base64.getDecoder()``, which rejects 'AAAA====' with "wrong
+    4-byte ending unit"."""
+    data = text.rstrip("=")
+    padding = len(text) - len(data)
+    if (
+        len(text) % 4 != 0
+        or padding > 2
+        or (padding and len(data) % 4 + padding != 4)
+        or not _BASE64_DATA_RE.fullmatch(data)
+    ):
         raise Reject("SCHEMA.md §3.4 rule 10", "%r is not padded standard base64" % text)
     try:
         return base64.b64decode(text, validate=True)
@@ -1147,13 +1168,20 @@ def _parse_instant(text):
 DOUBLE_TOKENS = {"NaN": "nan", "Infinity": "inf", "-Infinity": "-inf"}
 
 
-def read_vector_value(node, document, path="v"):
+def read_vector_value(node, document, path="v", lenient=False):
     """Reads a vector ``value``/``expectedValue`` JSON document into the value model.
 
     Extensions (documented in vectors/README.md): a ``timestamp-millis``
     position may hold ``"@epoch-millis:<int>"``, a ``double`` position may hold
     ``"NaN"``/``"Infinity"``/``"-Infinity"``, and JSON ``null`` denotes the null
     value (which every encoder must reject).
+
+    With ``lenient=True`` (encode-reject vectors only) a wrong-shaped value is
+    passed through raw — mirroring the Java runner's ``VectorValues``, whose
+    conversion is schema-driven only where the vector encoding is type-specific
+    — so the *encoder's* own type/range validation produces the rejection
+    instead of this reader aborting the check before the encoder runs. Accept
+    vectors keep the strict conversion.
     """
     if document is None:
         return None
@@ -1161,10 +1189,21 @@ def read_vector_value(node, document, path="v"):
     if kind == "primitive":
         name = node["name"]
         if name == "string":
+            if lenient and not isinstance(document, str):
+                return document
             return _require(document, str, path)
         if name == "bytes":
             if not isinstance(document, str):
+                if lenient:
+                    return document
                 raise VectorError("%s must be a base64 string" % path)
+            if lenient:
+                # Not base64: hand the string through so the encoder rejects it
+                # for the right reason (expected bytes, found a string).
+                try:
+                    return _decode_base64(document)
+                except Reject:
+                    return document
             return _decode_base64(document)
         if name == "boolean":
             if not isinstance(document, bool):
@@ -1187,43 +1226,65 @@ def read_vector_value(node, document, path="v"):
             return float(document)
         if name == "timestamp-millis":
             if isinstance(document, str) and document.startswith("@epoch-millis:"):
-                return int(document[len("@epoch-millis:") :])
+                try:
+                    return int(document[len("@epoch-millis:") :])
+                except ValueError:
+                    if lenient:
+                        return document
+                    raise VectorError("%s has a malformed @epoch-millis token" % path)
             if isinstance(document, str):
+                if lenient:
+                    # Not an instant: hand the string through so the encoder
+                    # rejects it for the right reason.
+                    try:
+                        return _parse_instant(document)
+                    except Reject:
+                        return document
                 return _parse_instant(document)
+            if lenient:
+                return document
             raise VectorError("%s must be an ISO-8601 string or @epoch-millis" % path)
         raise VectorError("unknown primitive %r" % name)
     if kind == "enum":
+        if lenient and not isinstance(document, str):
+            return document
         return _require(document, str, path)
     if kind == "array":
         if not isinstance(document, list):
+            if lenient:
+                return document
             raise VectorError("%s must be a JSON array" % path)
-        return [read_vector_value(node["items"], item, path + "[]") for item in document]
+        return [read_vector_value(node["items"], item, path + "[]", lenient) for item in document]
     if kind == "map":
         if not isinstance(document, dict):
+            if lenient:
+                return document
             raise VectorError("%s must be a JSON object" % path)
-        return dict((key, read_vector_value(node["values"], value, path + "[]")) for key, value in document.items())
+        return dict((key, read_vector_value(node["values"], value, path + "[]", lenient)) for key, value in document.items())
     if kind == "record":
-        return _read_vector_record(node, document, path)
+        return _read_vector_record(node, document, path, lenient)
     if kind == "envelope":
         builtin = BUILTIN_SCHEMAS[
             "persona.MultiSignedEnvelope@v1" if node["multi"] else "persona.SignedEnvelope@v1"
         ]
-        return _read_vector_record(builtin, document, path)
+        return _read_vector_record(builtin, document, path, lenient)
     raise VectorError("unknown node kind %r" % kind)
 
 
-def _read_vector_record(record, document, path):
+def _read_vector_record(record, document, path, lenient=False):
     """Reads a record value leniently: absent fields stay absent and unknown keys
     are carried through with a generic conversion, so that reject vectors can
     reach the encoder's own missing/unknown-field check instead of failing in the
     vector reader."""
     if not isinstance(document, dict):
+        if lenient:
+            return document
         raise VectorError("%s must be a JSON object for record %r" % (path, record["name"]))
     declared = dict((f["name"], f["type"]) for f in record["fields"])
     value = {}
     for key, entry in document.items():
         if key in declared:
-            value[key] = read_vector_value(declared[key], entry, path + "." + key)
+            value[key] = read_vector_value(declared[key], entry, path + "." + key, lenient)
         else:
             value[key] = _generic_value(entry)
     return value
@@ -1599,7 +1660,10 @@ def _check_schema_digest(report, vector, expects):
 
 def _check_binary_encode(report, vector, expects):
     node = resolve_schema(vector, vector.document)
-    value = read_vector_value(node, vector.document.get("value"))
+    # Encode-reject vectors read leniently so a wrong-shaped 'value' reaches the
+    # encoder, whose own type/range validation must produce the rejection (as
+    # the Java runner's VectorValues does); accept vectors keep strict reading.
+    value = read_vector_value(node, vector.document.get("value"), lenient=expects == "reject")
     encoded = _recompute(
         report, vector, expects, lambda: encode_binary(node, value), "reference encoded the value"
     )
@@ -1633,7 +1697,8 @@ def _check_binary_decode(report, vector, expects):
 
 def _check_json_encode(report, vector, expects):
     node = resolve_schema(vector, vector.document)
-    value = read_vector_value(node, vector.document.get("value"))
+    # See _check_binary_encode for the lenient reading of reject vectors.
+    value = read_vector_value(node, vector.document.get("value"), lenient=expects == "reject")
     encoded = _recompute(
         report, vector, expects, lambda: encode_json(node, value), "reference encoded the value"
     )
