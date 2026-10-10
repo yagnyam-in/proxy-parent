@@ -1,7 +1,7 @@
 package in.yagnyam.persona.conformance;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import in.yagnyam.persona.PersonaCertificate;
@@ -10,10 +10,15 @@ import in.yagnyam.persona.Realm;
 import in.yagnyam.persona.crypto.Digests;
 import in.yagnyam.persona.crypto.PemService;
 import in.yagnyam.persona.crypto.PersonaVersion;
+import in.yagnyam.persona.schema.ArrayType;
+import in.yagnyam.persona.schema.Field;
 import in.yagnyam.persona.schema.PersonaSchema;
 import in.yagnyam.persona.schema.PersonaSchemas;
+import in.yagnyam.persona.schema.PrimitiveType;
+import in.yagnyam.persona.schema.RecordType;
 import in.yagnyam.persona.schema.SchemaCanonicalizer;
 import in.yagnyam.persona.schema.SchemaParser;
+import in.yagnyam.persona.schema.TypeNode;
 import in.yagnyam.persona.schema.codec.BinaryPayloadCodec;
 import in.yagnyam.persona.schema.codec.JsonPayloadCodec;
 import java.nio.charset.StandardCharsets;
@@ -26,6 +31,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -36,7 +42,21 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
  * Executes one vector against {@code persona-core-lib}, the implementation under
  * test. The dispatch is the executable definition of the vector kinds of
  * {@code vectors/README.md}: an unknown kind fails the suite instead of being
- * skipped, and a rejection must be caused by the rule the vector cites.
+ * skipped.
+ *
+ * <p>A reject vector asserts two things: that the operation fails, and — where the
+ * implementation under test declares an exception contract — that the failure has
+ * the contracted type ({@code IllegalArgumentException} for the schema parser and
+ * both payload codecs; {@code RuntimeException} for the persona-id grammar,
+ * whose null input surfaces as a {@code NullPointerException}; any
+ * {@code Exception} for PEM, whose contract is being tightened). It cannot
+ * prove the failure was <em>caused
+ * by</em> the cited {@code rejectionRule}: a vector may carry an optional
+ * {@code rejectionMessageFragment} that additionally pins a substring of the
+ * reference implementation's failure message when that message already names the
+ * violated rule. The fragment is reference-implementation specific; a foreign
+ * implementation MUST NOT be required to reproduce message text (see
+ * {@code vectors/README.md}).
  */
 final class VectorKinds {
 
@@ -99,9 +119,12 @@ final class VectorKinds {
   /** {@code schema.digest}: canonical form and SHA-1 digest of a schema (§2). */
   private static void schemaDigest(ConformanceVector vector) {
     if (vector.expectsRejection()) {
-      assertThatCode(() -> SchemaParser.parse(vector.text("schema")))
-          .as("%s: schema document must be rejected per %s", vector.describe(), vector.rejectionRule())
-          .isInstanceOf(IllegalArgumentException.class);
+      // Input extraction stays outside the asserted operation: a malformed
+      // vector must fail the suite (VectorFormatException), never count as a
+      // rejection of the input.
+      String schemaDocument = vector.text("schema");
+      assertRejection(vector, IllegalArgumentException.class,
+          () -> SchemaParser.parse(schemaDocument));
       return;
     }
     PersonaSchema schema = schema(vector);
@@ -122,9 +145,7 @@ final class VectorKinds {
         VectorValues.toRecordValue(schema.rootRecord(), vector.require("value"));
     BinaryPayloadCodec codec = new BinaryPayloadCodec();
     if (vector.expectsRejection()) {
-      assertThatCode(() -> codec.encode(schema, value))
-          .as("%s: encoding must be rejected per %s", vector.describe(), vector.rejectionRule())
-          .isInstanceOf(IllegalArgumentException.class);
+      assertRejection(vector, IllegalArgumentException.class, () -> codec.encode(schema, value));
       return;
     }
     String actual = hex(codec.encode(schema, value));
@@ -139,9 +160,7 @@ final class VectorKinds {
     byte[] input = bytes(vector.text("inputHex"));
     BinaryPayloadCodec codec = new BinaryPayloadCodec();
     if (vector.expectsRejection()) {
-      assertThatCode(() -> codec.decode(schema, input))
-          .as("%s: decoding must be rejected per %s", vector.describe(), vector.rejectionRule())
-          .isInstanceOf(IllegalArgumentException.class);
+      assertRejection(vector, IllegalArgumentException.class, () -> codec.decode(schema, input));
       return;
     }
     Map<String, Object> decoded = codec.decode(schema, input);
@@ -157,9 +176,7 @@ final class VectorKinds {
         VectorValues.toRecordValue(schema.rootRecord(), vector.require("value"));
     JsonPayloadCodec codec = new JsonPayloadCodec();
     if (vector.expectsRejection()) {
-      assertThatCode(() -> codec.encode(schema, value))
-          .as("%s: encoding must be rejected per %s", vector.describe(), vector.rejectionRule())
-          .isInstanceOf(IllegalArgumentException.class);
+      assertRejection(vector, IllegalArgumentException.class, () -> codec.encode(schema, value));
       return;
     }
     String actual = new String(codec.encode(schema, value), StandardCharsets.UTF_8);
@@ -174,9 +191,7 @@ final class VectorKinds {
     byte[] input = vector.text("inputJson").getBytes(StandardCharsets.UTF_8);
     JsonPayloadCodec codec = new JsonPayloadCodec();
     if (vector.expectsRejection()) {
-      assertThatCode(() -> codec.decode(schema, input))
-          .as("%s: decoding must be rejected per %s", vector.describe(), vector.rejectionRule())
-          .isInstanceOf(IllegalArgumentException.class);
+      assertRejection(vector, IllegalArgumentException.class, () -> codec.decode(schema, input));
       return;
     }
     Map<String, Object> decoded = codec.decode(schema, input);
@@ -188,9 +203,15 @@ final class VectorKinds {
   /** {@code identity.persona-id}: the §3.2 {@code <id>#<thumbprint>} grammar. */
   private static void personaId(ConformanceVector vector) {
     if (vector.expectsRejection()) {
-      assertThatCode(() -> PersonaId.of(vector.optionalText("input")))
-          .as("%s: persona id must be rejected per %s", vector.describe(), vector.rejectionRule())
-          .isInstanceOf(RuntimeException.class);
+      // Hoisted out of the asserted operation: a malformed vector (e.g. a
+      // non-string 'input') must fail the suite, never satisfy the rejection.
+      String input = vector.optionalText("input");
+      // The declared contract is RuntimeException: PersonaId.of rejects a
+      // malformed grammar with IllegalArgumentException but a null input with
+      // NullPointerException (a persona-core-lib wart, reported separately;
+      // VectorFormatException is an AssertionError and can never pose as
+      // either).
+      assertRejection(vector, RuntimeException.class, () -> PersonaId.of(input));
       return;
     }
     PersonaId parsed = PersonaId.of(vector.text("input"));
@@ -225,23 +246,51 @@ final class VectorKinds {
         .isEqualTo(vector.booleanValue("expected"));
   }
 
-  /** {@code identity.pem}: §9.1 PEM decoding and its derived facts. */
+  /** {@code identity.pem}: §10.1 PEM decoding and its derived facts. */
   private static void pem(ConformanceVector vector) throws Exception {
     String objectType = vector.text("objectType");
     if (vector.expectsRejection()) {
-      // §9.1 mandates that these PEM inputs must not parse; it does not mandate
-      // an exception type, so any failure counts and the check stays at
-      // Exception level. (One certificate reject — headers with an empty body —
-      // currently surfaces as a NullPointerException from
-      // PersonaCertificate.of(null), because PemService.decodeCertificate does
-      // not guard CertificateFactory.generateCertificate returning null; a
-      // contract bug in persona-core-lib, reported but not fixed here.)
-      assertThatCode(() -> decodePem(objectType, vector.text("pem")))
-          .as("%s: PEM must be rejected per %s", vector.describe(), vector.rejectionRule())
-          .isInstanceOf(Exception.class);
+      // Hoisted out of the asserted operation: a malformed vector (e.g. an
+      // unknown 'objectType') must fail the suite, never satisfy the rejection.
+      String pem = vector.text("pem");
+      // §10.1 mandates that these PEM inputs must not parse; it does not mandate
+      // an exception type, so the check stays at Exception level.
+      // TODO(persona/pem-npe): once the PemService fix of PR #193 lands,
+      // tighten this to IllegalArgumentException — today
+      // identity/pem-reject/certificate-header-only surfaces as a
+      // NullPointerException from PersonaCertificate.of(null), because
+      // PemService.decodeCertificate does not guard
+      // CertificateFactory.generateCertificate returning null.
+      assertRejection(vector, Exception.class, () -> decodePem(objectType, pem));
       return;
     }
     checkPemFacts(vector, objectType);
+  }
+
+  /**
+   * Asserts that {@code operation} fails with the contracted exception type,
+   * and — when the vector pins {@code rejectionMessageFragment} — that the
+   * reference implementation's failure message names the violated rule. The
+   * fragment pins reference behavior only (see {@code vectors/README.md}).
+   *
+   * @param vector the reject vector
+   * @param expectedType the exception type the operation's contract declares
+   * @param operation the operation that must fail
+   */
+  private static void assertRejection(
+      ConformanceVector vector,
+      Class<? extends Throwable> expectedType,
+      org.assertj.core.api.ThrowableAssert.ThrowingCallable operation) {
+    var assertion = assertThatThrownBy(operation)
+        .as("%s: must be rejected per %s", vector.describe(), vector.rejectionRule())
+        .isInstanceOf(expectedType);
+    String fragment = vector.optionalText("rejectionMessageFragment");
+    if (fragment != null) {
+      assertion
+          .as("%s: the rejection must name the violated rule (reference implementation message)",
+              vector.describe())
+          .hasMessageContaining(fragment);
+    }
   }
 
   /** {@code crypto.policy-v0}: the §8 policy table, field by field. */
@@ -302,20 +351,53 @@ final class VectorKinds {
    * registration named by {@code schemaRef} (§5).
    */
   private static PersonaSchema schema(ConformanceVector vector) {
-    boolean inline = vector.has("schema");
-    boolean reference = vector.has("schemaRef");
-    if (inline && reference) {
+    int forms = (vector.has("schema") ? 1 : 0)
+        + (vector.has("schemaRef") ? 1 : 0)
+        + (vector.has("generatedSchema") ? 1 : 0);
+    if (forms > 1) {
       throw new VectorFormatException(
-          vector.describe() + ": carries both 'schema' and 'schemaRef'");
+          vector.describe() + ": carries more than one of 'schema', 'schemaRef', 'generatedSchema'");
     }
-    if (inline) {
+    if (vector.has("schema")) {
       return SchemaParser.parse(vector.text("schema"));
     }
-    if (reference) {
+    if (vector.has("schemaRef")) {
       return builtInSchema(vector.text("schemaRef"));
     }
+    if (vector.has("generatedSchema")) {
+      return generatedSchema(vector);
+    }
     throw new VectorFormatException(
-        vector.describe() + ": carries neither 'schema' nor 'schemaRef'");
+        vector.describe() + ": carries none of 'schema', 'schemaRef', 'generatedSchema'");
+  }
+
+  /**
+   * Builds the schema a {@code generatedSchema} block describes, without
+   * parsing JSON: the templates exist for schemas whose type tree is deeper
+   * than a JSON document should be (the §3.4 rule 2 nesting vectors). The only
+   * template is {@code nested-array}: a one-field record {@code Nest} whose
+   * field {@code v} is {@code depth} nested arrays over {@code elementType}.
+   */
+  private static PersonaSchema generatedSchema(ConformanceVector vector) {
+    JsonNode node = vector.require("generatedSchema");
+    String template = text(node.required("template"));
+    String elementType = text(node.required("elementType"));
+    JsonNode depthNode = node.required("depth");
+    if (!depthNode.isIntegralNumber() || !depthNode.canConvertToInt() || depthNode.intValue() < 1) {
+      throw new VectorFormatException(
+          vector.describe() + ": generatedSchema.depth must be a positive integer");
+    }
+    if (!"nested-array".equals(template) || !"int".equals(elementType)) {
+      throw new VectorFormatException(
+          vector.describe() + ": unknown generatedSchema template " + node
+              + " (supported: {\"template\":\"nested-array\",\"elementType\":\"int\",\"depth\":N})");
+    }
+    TypeNode type = new PrimitiveType(elementType);
+    for (int i = 0; i < depthNode.intValue(); i++) {
+      type = new ArrayType(type);
+    }
+    return new PersonaSchema(
+        new RecordType("Nest", Optional.empty(), Optional.empty(), List.of(new Field("v", type))));
   }
 
   /** Resolves a {@code schemaRef} against the implementation's §5 built-ins. */

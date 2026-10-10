@@ -3,8 +3,8 @@
   "vectorFormatVersion": 1,
   "kind": "manifest",
   "description": "Index of every vector file (see vectors/README.md). Regenerate with 'python3 tools/reference_vectors.py manifest' after adding, removing or renaming a vector file; the reference check and the Java runner both fail when this index is stale.",
-  "fileCount": 23,
-  "vectorCount": 378,
+  "fileCount": 27,
+  "vectorCount": 385,
   "kinds": [
     {
       "kind": "crypto.policy-v0",
@@ -32,11 +32,11 @@
     },
     {
       "kind": "payload.binary.decode",
-      "vectorCount": 59
+      "vectorCount": 62
     },
     {
       "kind": "payload.binary.encode",
-      "vectorCount": 78
+      "vectorCount": 80
     },
     {
       "kind": "payload.json.decode",
@@ -44,7 +44,7 @@
     },
     {
       "kind": "payload.json.encode",
-      "vectorCount": 57
+      "vectorCount": 59
     },
     {
       "kind": "schema.digest",
@@ -56,6 +56,11 @@
       "path": "binary/compound-encode.json",
       "kind": "payload.binary.encode",
       "vectorCount": 19
+    },
+    {
+      "path": "binary/decode-reject-cumulative-cap.json",
+      "kind": "payload.binary.decode",
+      "vectorCount": 1
     },
     {
       "path": "binary/decode-reject.json",
@@ -76,6 +81,16 @@
       "path": "binary/kitchen-sink.json",
       "kind": "payload.binary.encode",
       "vectorCount": 1
+    },
+    {
+      "path": "binary/nesting-depth-encode.json",
+      "kind": "payload.binary.encode",
+      "vectorCount": 2
+    },
+    {
+      "path": "binary/nesting-depth.json",
+      "kind": "payload.binary.decode",
+      "vectorCount": 2
     },
     {
       "path": "binary/primitive-encode.json",
@@ -151,6 +166,11 @@
       "path": "json/kitchen-sink.json",
       "kind": "payload.json.encode",
       "vectorCount": 1
+    },
+    {
+      "path": "json/nesting-depth-encode.json",
+      "kind": "payload.json.encode",
+      "vectorCount": 2
     },
     {
       "path": "json/primitive-encode.json",

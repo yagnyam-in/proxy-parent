@@ -48,6 +48,10 @@ import struct
 import sys
 import datetime
 
+# The §3.4 rule 2 nesting-depth vectors nest 1000 collection levels deep,
+# which exceeds the default recursion limit of the codecs below.
+sys.setrecursionlimit(100000)
+
 VECTOR_FORMAT = "persona-conformance-vectors"
 VECTOR_FORMAT_VERSION = 1
 
@@ -1253,9 +1257,9 @@ PEM_BEGIN_RE = re.compile(r"^-----BEGIN ([A-Z0-9 ]+)-----$")
 def first_pem_body(pem_text):
     """Returns the base64 body of the FIRST PEM object in ``pem_text``.
 
-    §9.1 chains travel as multi-object PEM files, so "parse a PEM" must be
-    defined as "parse the first object" (both BouncyCastle's PemReader and this
-    reference stop at the first object).
+    PERSONA-PROTOCOL.md §10.1: chains travel as multi-object PEM files, so
+    "parse a PEM" must be defined as "parse the first object" (both
+    BouncyCastle's PemReader and this reference stop at the first object).
     """
     body_lines = []
     in_object = False
@@ -1431,20 +1435,57 @@ def load_vector_files(directory):
 
 
 def resolve_schema(vector, document):
-    """Resolves a vector's schema: file-local ``schemas`` entry, built-in, or inline text."""
+    """Resolves a vector's schema: file-local ``schemas`` entry, built-in, inline text,
+    or a ``generatedSchema`` template."""
     document = vector.document
-    has_inline = "schema" in document
-    has_ref = "schemaRef" in document
-    if has_inline == has_ref:
-        raise VectorError("%s: exactly one of 'schema' and 'schemaRef' is required" % vector)
-    if has_inline:
+    forms = ["schema" in document, "schemaRef" in document, "generatedSchema" in document]
+    if sum(forms) != 1:
+        raise VectorError(
+            "%s: exactly one of 'schema', 'schemaRef' and 'generatedSchema' is required" % vector
+        )
+    if "schema" in document:
         return parse_schema(document["schema"])
+    if "generatedSchema" in document:
+        return _generated_schema(vector, document["generatedSchema"])
     reference = document["schemaRef"]
     if reference in document.get("_file_schemas", {}):
         return parse_schema(document["_file_schemas"][reference])
     if reference in BUILTIN_SCHEMAS:
         return BUILTIN_SCHEMAS[reference]
     raise VectorError("%s: unknown schemaRef %r" % (vector, reference))
+
+
+def _generated_schema(vector, block):
+    """Builds a schema without parsing JSON, for type trees deeper than a JSON
+    document should be (the §3.4 rule 2 nesting vectors). The only template is
+    ``nested-array``: a one-field record ``Nest`` whose field ``v`` is ``depth``
+    nested arrays over ``elementType``."""
+    if not isinstance(block, dict):
+        raise VectorError("%s: 'generatedSchema' must be an object" % vector)
+    template = block.get("template")
+    element_type = block.get("elementType")
+    depth = block.get("depth")
+    if (
+        template != "nested-array"
+        or element_type != "int"
+        or isinstance(depth, bool)
+        or not isinstance(depth, int)
+        or depth < 1
+    ):
+        raise VectorError(
+            "%s: unknown generatedSchema %r (supported: template 'nested-array', "
+            "elementType 'int', depth a positive integer)" % (vector, block)
+        )
+    node = _node("primitive", name="int")
+    for _ in range(depth):
+        node = _node("array", items=node)
+    return _node(
+        "record",
+        name="Nest",
+        namespace=None,
+        messageType=None,
+        fields=[{"name": "v", "type": node}],
+    )
 
 
 def expect_string(vector, key):
@@ -1650,6 +1691,63 @@ def _check_realm(report, vector):
     )
 
 
+def _der_tlvs(buf, start, end):
+    """Parses the DER content ``buf[start:end]`` into ``(tag, tlv_start,
+    content_start, tlv_end)`` tuples with offsets into ``buf``."""
+    tlvs = []
+    offset = start
+    while offset < end:
+        tlv_start = offset
+        tag = buf[offset]
+        offset += 1
+        if offset >= end:
+            raise VectorError("truncated DER length")
+        length = buf[offset]
+        offset += 1
+        if length & 0x80:
+            nbytes = length & 0x7F
+            length = int.from_bytes(buf[offset : offset + nbytes], "big")
+            offset += nbytes
+        tlvs.append((tag, tlv_start, offset, offset + length))
+        offset += length
+    return tlvs
+
+
+def _extract_spki(der, what):
+    """Extracts the SubjectPublicKeyInfo TLV of a certificate (RFC 5280) or PKCS#10
+    certification request (RFC 2986) body, without a full X.509 model: it is the
+    child SEQUENCE of the TBS/request-info shaped as ``SEQUENCE { SEQUENCE {
+    OID, ... }, BIT STRING }``."""
+    outer = _der_tlvs(der, 0, len(der))
+    if not outer or outer[0][0] != 0x30:
+        raise VectorError("%s: top-level object is not a SEQUENCE" % what)
+    body = _der_tlvs(der, outer[0][2], outer[0][3])
+    if not body or body[0][0] != 0x30:
+        raise VectorError("%s: the TBS/request-info is not a SEQUENCE" % what)
+    for tag, start, content_start, end in _der_tlvs(der, body[0][2], body[0][3]):
+        if tag != 0x30:
+            continue
+        fields = _der_tlvs(der, content_start, end)
+        if len(fields) == 2 and fields[0][0] == 0x30 and fields[1][0] == 0x03:
+            algorithm = _der_tlvs(der, fields[0][2], fields[0][3])
+            if algorithm and algorithm[0][0] == 0x06:
+                return der[start:end]
+    raise VectorError("%s: no SubjectPublicKeyInfo found" % what)
+
+
+def _pem_der(report, vector, pem):
+    """Decodes the first PEM object's body to DER, recording failures as check failures."""
+    body = first_pem_body(pem)
+    if body is None:
+        report.check(vector, False, "the committed PEM has no parsable first object")
+        return None
+    try:
+        return base64.b64decode(body, validate=True)
+    except (binascii.Error, ValueError):
+        report.check(vector, False, "the committed PEM has a malformed base64 body")
+        return None
+
+
 def _check_pem(report, vector, expects):
     pem = expect_string(vector, "pem")
     object_type = vector.document.get("objectType")
@@ -1659,15 +1757,12 @@ def _check_pem(report, vector, expects):
         # expectations of accept vectors are mechanically checkable here.
         report.skip(vector, "PEM rejection is not re-implemented in pure Python")
         return
-    if object_type == "certificate" and isinstance(expected, dict) and "sha256Thumbprint" in expected:
-        body = first_pem_body(pem)
-        if body is None:
-            report.check(vector, False, "the committed PEM has no parsable first object")
-            return
-        try:
-            der = base64.b64decode(body, validate=True)
-        except (binascii.Error, ValueError):
-            report.check(vector, False, "the committed PEM has a malformed base64 body")
+    if not isinstance(expected, dict):
+        report.skip(vector, "no pure-Python X.509/PKCS#8/PKCS#10 model")
+        return
+    if object_type == "certificate" and "sha256Thumbprint" in expected:
+        der = _pem_der(report, vector, pem)
+        if der is None:
             return
         digest = hashlib.sha256(der).hexdigest()
         report.check(
@@ -1676,7 +1771,44 @@ def _check_pem(report, vector, expects):
             "certificate thumbprint mismatch: expected %s, hashlib(SHA-256(DER)) %s"
             % (expected["sha256Thumbprint"], digest),
         )
+        if "publicKeySha256Thumbprint" in expected:
+            spki_digest = hashlib.sha256(_extract_spki(der, vector.id)).hexdigest()
+            report.check(
+                vector,
+                spki_digest == expected["publicKeySha256Thumbprint"],
+                "certificate public key thumbprint mismatch: expected %s, "
+                "hashlib(SHA-256(SPKI DER)) %s"
+                % (expected["publicKeySha256Thumbprint"], spki_digest),
+            )
         report.skip(vector, "remaining X.509 fields (owner/serial/validity/PEM re-encoding) are not re-implemented")
+        return
+    if object_type == "publicKey" and "publicKeySha256Thumbprint" in expected:
+        # A PUBLIC KEY body IS the SubjectPublicKeyInfo DER: the thumbprint is
+        # SHA-256 of the body, no X.509 model needed.
+        der = _pem_der(report, vector, pem)
+        if der is None:
+            return
+        digest = hashlib.sha256(der).hexdigest()
+        report.check(
+            vector,
+            digest == expected["publicKeySha256Thumbprint"],
+            "public key thumbprint mismatch: expected %s, hashlib(SHA-256(SPKI DER)) %s"
+            % (expected["publicKeySha256Thumbprint"], digest),
+        )
+        report.skip(vector, "PEM re-encoding (publicKeyPem) is not re-implemented")
+        return
+    if object_type == "csr" and "publicKeySha256Thumbprint" in expected:
+        der = _pem_der(report, vector, pem)
+        if der is None:
+            return
+        digest = hashlib.sha256(_extract_spki(der, vector.id)).hexdigest()
+        report.check(
+            vector,
+            digest == expected["publicKeySha256Thumbprint"],
+            "CSR public key thumbprint mismatch: expected %s, hashlib(SHA-256(SPKI DER)) %s"
+            % (expected["publicKeySha256Thumbprint"], digest),
+        )
+        report.skip(vector, "remaining PKCS#10 fields (subject CN, PEM re-encoding) are not re-implemented")
         return
     report.skip(vector, "no pure-Python X.509/PKCS#8/PKCS#10 model")
 
@@ -1763,6 +1895,16 @@ def manifest_check(directory, files, vectors):
     total = sum(count for _kind, count in discovered.values())
     if manifest.get("vectorCount") != total:
         failures.append("manifest.json vectorCount is %r but %d vectors were discovered" % (manifest.get("vectorCount"), total))
+    discovered_kinds = {}
+    for _relative, (kind, count) in discovered.items():
+        discovered_kinds[kind] = discovered_kinds.get(kind, 0) + count
+    listed_kinds = {}
+    for entry in manifest.get("kinds", []):
+        listed_kinds[entry["kind"]] = entry["vectorCount"]
+    if listed_kinds != discovered_kinds:
+        failures.append(
+            "manifest.json kinds are %r but discovery counts %r" % (listed_kinds, discovered_kinds)
+        )
     return failures
 
 

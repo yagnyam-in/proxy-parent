@@ -49,7 +49,7 @@ class ConformanceVectorSuite {
    * Common keys every vector may carry, before the per-kind keys.
    */
   private static final Set<String> COMMON_KEYS =
-      Set.of("id", "spec", "description", "expect", "rejectionRule");
+      Set.of("id", "spec", "description", "expect", "rejectionRule", "rejectionMessageFragment");
 
   /**
    * The keys each kind may carry (common keys plus the kind's inputs and
@@ -58,15 +58,15 @@ class ConformanceVectorSuite {
    */
   private static final Map<String, Set<String>> KEYS_BY_KIND = Map.ofEntries(
       Map.entry(VectorKinds.SCHEMA_DIGEST, Set.of(
-          "schema", "schemaRef", "expectedCanonicalForm", "expectedSchemaId")),
+          "schema", "schemaRef", "generatedSchema", "expectedCanonicalForm", "expectedSchemaId")),
       Map.entry(VectorKinds.BINARY_ENCODE, Set.of(
-          "schema", "schemaRef", "value", "expectedHex")),
+          "schema", "schemaRef", "generatedSchema", "value", "expectedHex")),
       Map.entry(VectorKinds.BINARY_DECODE, Set.of(
-          "schema", "schemaRef", "inputHex", "expectedValue")),
+          "schema", "schemaRef", "generatedSchema", "inputHex", "expectedValue")),
       Map.entry(VectorKinds.JSON_ENCODE, Set.of(
-          "schema", "schemaRef", "value", "expectedJson")),
+          "schema", "schemaRef", "generatedSchema", "value", "expectedJson")),
       Map.entry(VectorKinds.JSON_DECODE, Set.of(
-          "schema", "inputJson", "expectedValue")),
+          "schema", "generatedSchema", "inputJson", "expectedValue")),
       Map.entry(VectorKinds.PERSONA_ID, Set.of(
           "input", "expectedId", "expectedThumbprint", "expectedCanonical", "expectedWildcard")),
       Map.entry(VectorKinds.PERSONA_ID_DELEGATION, Set.of("signer", "signedFor", "expected")),
@@ -114,9 +114,9 @@ class ConformanceVectorSuite {
    */
   private static final Map<String, Integer> MINIMUM_VECTORS_PER_KIND = Map.ofEntries(
       Map.entry(VectorKinds.SCHEMA_DIGEST, 51),
-      Map.entry(VectorKinds.BINARY_ENCODE, 78),
-      Map.entry(VectorKinds.BINARY_DECODE, 59),
-      Map.entry(VectorKinds.JSON_ENCODE, 57),
+      Map.entry(VectorKinds.BINARY_ENCODE, 80),
+      Map.entry(VectorKinds.BINARY_DECODE, 62),
+      Map.entry(VectorKinds.JSON_ENCODE, 59),
       Map.entry(VectorKinds.JSON_DECODE, 48),
       Map.entry(VectorKinds.PERSONA_ID, 20),
       Map.entry(VectorKinds.PERSONA_ID_DELEGATION, 11),
@@ -135,9 +135,21 @@ class ConformanceVectorSuite {
       VectorKinds.POLICY_V0,
       VectorKinds.ALGORITHM_SET);
 
-  /** Duplicate-key detection keeps vector files honest while parsing. */
+  /**
+   * Duplicate-key detection keeps vector files honest while parsing. The
+   * nesting constraint is raised because the §3.4 rule 2 vectors nest values
+   * ~1000 levels deep *inside* a vector document, deeper than Jackson's
+   * default document limit of 1000.
+   */
   private static final ObjectMapper MAPPER =
-      new ObjectMapper().enable(com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
+      new ObjectMapper(
+              com.fasterxml.jackson.core.JsonFactory.builder()
+                  .streamReadConstraints(
+                      com.fasterxml.jackson.core.StreamReadConstraints.builder()
+                          .maxNestingDepth(100_000)
+                          .build())
+                  .build())
+          .enable(com.fasterxml.jackson.core.JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
 
   /** One discovered vector file: its path, kind and parsed entries. */
   private record VectorFile(Path path, String relativePath, String kind, List<ConformanceVector> vectors) {}
@@ -211,6 +223,22 @@ class ConformanceVectorSuite {
     if (manifest.get("vectorCount").asInt() != discoveredTotal) {
       problems.add(MANIFEST + " says vectorCount " + manifest.get("vectorCount").asInt()
           + " but " + discoveredTotal + " vectors were discovered");
+    }
+    Map<String, Integer> discoveredByKind = new LinkedHashMap<>();
+    files.forEach(file -> file.vectors()
+        .forEach(vector -> discoveredByKind.merge(vector.kind(), 1, Integer::sum)));
+    Map<String, Integer> listedByKind = new LinkedHashMap<>();
+    JsonNode kinds = manifest.get("kinds");
+    if (kinds == null || !kinds.isArray()) {
+      problems.add(MANIFEST + " must carry a 'kinds' array of per-kind vector counts");
+    } else {
+      for (JsonNode entry : kinds) {
+        listedByKind.put(entry.get("kind").asText(), entry.get("vectorCount").asInt());
+      }
+      if (!listedByKind.equals(discoveredByKind)) {
+        problems.add(MANIFEST + " kinds are " + listedByKind
+            + " but discovery counts " + discoveredByKind);
+      }
     }
     assertThat(problems)
         .as("%s must be regenerated after vector files change", MANIFEST)
@@ -402,8 +430,11 @@ class ConformanceVectorSuite {
         || VectorKinds.BINARY_DECODE.equals(vector.kind())
         || VectorKinds.JSON_ENCODE.equals(vector.kind())
         || VectorKinds.JSON_DECODE.equals(vector.kind());
-    if (schemaDriven && vector.has("schema") == vector.has("schemaRef")) {
-      problems.add(what + ": carry exactly one of 'schema' and 'schemaRef'");
+    int schemaForms = (vector.has("schema") ? 1 : 0)
+        + (vector.has("schemaRef") ? 1 : 0)
+        + (vector.has("generatedSchema") ? 1 : 0);
+    if (schemaDriven && schemaForms != 1) {
+      problems.add(what + ": carry exactly one of 'schema', 'schemaRef' and 'generatedSchema'");
     }
   }
 

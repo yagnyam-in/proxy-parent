@@ -10,7 +10,9 @@ Normative references:
 * `docs/SCHEMA.md` — the schema model (§1), canonical form + digest (§2),
   binary encoding (§3), canonical JSON (§4), built-in schemas (§5).
 * `PERSONA-PROTOCOL.md` — the wire/behavior protocol
-  (§3 identity, §7 registration, §8 crypto policy, §9 encoding, §11 verification).
+  (§3 core concepts: persona-id grammar §3.2, realm §3.5; §7 protocols;
+  §8 crypto policy; §10 encoding choices, with PEM transport in §10.1;
+  §11 rules and invariants).
   Paths cited from vectors as `PERSONA-PROTOCOL.md §x` refer to the repository
   root copy; vectors also cite `docs/SCHEMA.md §x`.
 
@@ -29,9 +31,11 @@ vectors/
 
 ## File format
 
-Every `*.json` file under this directory except `manifest.json` is a *vector
-file*. A runner discovers files by walking the tree recursively (sorted, so
-failures are deterministic) and dispatching on `kind`.
+Every `*.json` file under this directory is a *vector file*, with exactly one
+exclusion: the file `manifest.json` at the root of this directory. A file
+named `manifest.json` in a *subdirectory* is NOT excluded — it is a vector
+file like any other. A runner discovers files by walking the tree recursively
+(sorted, so failures are deterministic) and dispatching on `kind`.
 
 Top-level keys (all required):
 
@@ -53,6 +57,7 @@ Every vector entry has:
 | `description`  | What the vector proves, including any documented leniency. |
 | `expect`       | `reject` for negative vectors. Absent means `accept`. A runner MUST fail on any other value. |
 | `rejectionRule`| Required when `expect` is `reject`: the rule (with citation) that mandates the rejection, so a foreign implementation knows *why* and can map it to its own error surface. |
+| `rejectionMessageFragment` | Optional, reject vectors only: a substring of the **Java reference implementation's** failure message, pinned only where that message already names the violated rule (e.g. "element decoded without consuming any input byte"). Message text is implementation-specific: a foreign implementation MUST NOT be required to reproduce it. Vectors without this key pin only the failure itself (plus the exception contract where one is declared, see "Runner contract"); vectors with it additionally pin that the reference implementation rejects *for the cited reason*. Currently carried by the §3.4-rule-targeted vectors in `binary/decode-reject.json` (zero-progress, collection-cap, boolean, timestamp-floor, non-finite-double, duplicate-map-key, negative-block-count), by `binary/decode-reject-cumulative-cap.json`, and by the four nesting-depth reject vectors in `binary/nesting-depth{,-encode}.json` and `json/nesting-depth-encode.json`. |
 
 Accepted vectors carry inputs and expected outputs per kind (below). Rejected
 vectors carry only the input — never a golden output.
@@ -104,9 +109,24 @@ codec must produce or consume — not embedded JSON values.
 | `identity.persona-id` | `identity/` | `input`, `expectedId`, `expectedThumbprint`, `expectedCanonical`, `expectedWildcard` | Parse the `<id>#<thumbprint>` grammar of §3.2. `expectedThumbprint` is `null` when unpinned. |
 | `identity.persona-id-delegation` | `identity/` | `signer`, `signedFor`, `expected` | The §3.2 delegation truth table `X.canSignOnBehalfOf(Y)`; `signedFor` may be `null` (never delegable). |
 | `identity.realm` | `identity/` | `input`, `expected` | Realm identifier validity (§3.5). See the caveat in that file's `description`. |
-| `identity.pem` | `identity/` | `objectType`, `pem`, `expected` | §9.1 PEM decode of `certificate` / `publicKey` / `privateKey` / `csr`. Accept vectors pin the derived facts (owner, serial, validity window, SHA-256 DER thumbprint, re-encoded PEM byte identity); reject vectors pin §9.1 object-type mismatches. The suite ships **no private-key material** (repository security policy): `privateKey` coverage is reject-only, and a foreign implementation pairs it with a throwaway key of its own. |
+| `identity.pem` | `identity/` | `objectType`, `pem`, `expected` | §10.1 PEM decode of `certificate` / `publicKey` / `privateKey` / `csr`. Accept vectors pin the derived facts (owner, serial, validity window, SHA-256 DER thumbprint, re-encoded PEM byte identity); reject vectors pin §10.1 (malformed input, object-type mismatches). The suite ships **no private-key material** (repository security policy): `privateKey` coverage is reject-only, and a foreign implementation pairs it with a throwaway key of its own. |
 | `crypto.policy-v0` | `crypto/` | `policy`, `field`, `expected` | The §8 Persona Version v0 policy, field by field. |
 | `crypto.signature-algorithm-set` | `crypto/` | `signatureAlgorithms`, `expected` | §11 rule 3 exact-match acceptance of an envelope's signature algorithm set against the version's valid sets. |
+
+A schema-driven vector names its schema in exactly one of three ways: `schema`
+(inline schema document text), `schemaRef` (a §5 built-in), or
+`generatedSchema` — harness sugar for schemas whose type tree is too deep to
+be fed to a JSON parser (the §3.4 rule 2 nesting vectors: a 1000-level type
+tree is a JSON document nested thousands of levels deep, deeper than common
+parser limits such as Jackson's default `StreamReadConstraints` of 1000). The
+only template is
+`{"template":"nested-array","elementType":"int","depth":N}`: a one-field
+record `Nest` whose field `v` is `N` nested `{"type":"array","items":...}`
+levels over `int`, exactly as if spelled out as a `schema` document. A runner
+builds it directly in its schema model. Note the depth vectors also nest
+*values* ~1000 levels deep inside the vector document, so a runner's JSON
+parser for vector files must accept documents that deep (the Java runner
+raises its parser's nesting constraint for this reason).
 
 Envelope vectors are ordinary payload vectors whose `schemaRef` is one of the
 §5 built-ins (`persona.SignedEnvelope@v1`, `persona.MultiSignedEnvelope@v1`,
@@ -116,20 +136,35 @@ implementation reuses its own codec.
 
 ## Runner contract
 
-1. **Discover** every `*.json` under `vectors/` except `manifest.json`,
-   recursively.
+1. **Discover** every `*.json` under `vectors/` recursively, excluding exactly
+   one file: `manifest.json` at the root of `vectors/`. Any other `*.json` —
+   including a `manifest.json` in a subdirectory — is a vector file.
 2. **Refuse** any file whose `vectorFormat`/`vectorFormatVersion` is unknown,
    and fail the run for an unknown `kind` or an entry whose keys do not belong
    to the file's `kind`. Unknown vector kinds MUST fail the suite — skipping is
-   how a port silently diverges.
-3. **Execute every vector.** Rejections are checked by asserting that the
-   operation fails; the failure message should include the `rejectionRule`
-   citation so a foreign implementation can confirm it rejects for the
-   mandated reason and not by accident.
+   how a port silently diverges. A malformed vector file is a bug in the
+   suite, never a passing vector: in the Java runner it raises
+   `VectorFormatException`, an `AssertionError` (not an `Exception`), so it can
+   never satisfy a reject vector's failure assertion, and all vector input
+   extraction happens outside the asserted operation.
+3. **Execute every vector.** A reject vector asserts that the operation
+   *fails* — no more, no less: the suite cannot prove a failure was caused by
+   the cited `rejectionRule`. Where the implementation declares an exception
+   contract the runner also asserts it (schema parse and both payload codecs
+   reject with `IllegalArgumentException`; the persona-id grammar rejects with
+   `RuntimeException` — `IllegalArgumentException` for a malformed string,
+   `NullPointerException` for a null input, a reference wart; PEM reject
+   vectors assert only `Exception` because §10.1 mandates no exception type).
+   Vectors carrying `rejectionMessageFragment` additionally pin a substring of
+   the reference implementation's failure message — reference behavior, never
+   portable; see the key's table entry.
 4. **Report counts**: files, vectors, and per-kind executed counts. The Java
    runner additionally asserts a minimum per kind, so deleting vectors is loud.
 5. **Cross-check `manifest.json`**: the file index must list exactly the
-   discovered files with the right `kind` and `vectorCount`.
+   discovered files with the right `kind` and `vectorCount`, and its `kinds`
+   per-kind counts and grand `vectorCount` must match discovery. The manifest
+   is the source of truth for vector counts; this README deliberately does not
+   repeat them.
 
 The `../src/test/java/in/yagnyam/persona/conformance/` runner is the executable
 definition of these rules.
@@ -143,7 +178,7 @@ grammar, the delegation rule, the realm grammar and the v0 policy from the
 specification text, and it *executes every vector in this directory*:
 
 ```
-python3 tools/reference_vectors.py check      # all 379 vectors
+python3 tools/reference_vectors.py check      # every vector in manifest.json
 python3 tools/reference_vectors.py selftest   # pins the reference itself
 python3 tools/reference_vectors.py manifest    # regenerate manifest.json
 ```
@@ -152,10 +187,14 @@ Every mechanically reproducible golden in this directory was produced by that
 reference implementation, and the digest goldens were cross-checked a third
 time with `shasum -a 1` and `openssl sha1`; the certificate thumbprint with
 `openssl x509 -fingerprint -sha256`. The reference deliberately does **not**
-re-implement X.509/PKCS#8 parsing, so it verifies the PEM thumbprint
-computation and skips (reports, never hides) the X.509-derived fields and PEM
-rejections; those are covered by the Java runner against BouncyCastle, and by
-the `openssl` commands recorded in `identity/pem.json`.
+re-implement X.509/PKCS#8 parsing; for PEM it verifies the thumbprint
+computations it can derive without one — the certificate's SHA-256-over-DER,
+the public key's SHA-256 over the SubjectPublicKeyInfo body, and the CSR's
+public-key thumbprint via a minimal DER walk that extracts the
+SubjectPublicKeyInfo — and it skips (reports, never hides) the remaining
+X.509-derived fields, the PEM re-encodings and all PEM rejections; those are
+covered by the Java runner against BouncyCastle, and by the `openssl` commands
+recorded in `identity/pem.json`.
 
 ## Documented ambiguities and leniencies
 
@@ -181,9 +220,28 @@ vectors pin the reference implementation's behavior and mark it in the vector
 * **§3.5 realm grammar** — §3.5 defines what a Realm is but not the identifier
   grammar; the truth table in `identity/realm.json` is the reference
   implementation's grammar, documented as such in the file description.
-* **§9.1 multi-object PEM** — parsing a PEM *file* means parsing its **first**
+* **§10.1 multi-object PEM** — parsing a PEM *file* means parsing its **first**
   object; chains travel as multi-object PEM files
   (`identity/pem.json` → `certificate-with-a-csr-appended`).
+* **§3.4 rule 2 on the JSON decode side** — not pinned by this suite. The
+  Java reference JSON decoder delegates document parsing to Jackson, whose own
+  document-nesting constraint (default 1000) fires at the same magnitude as
+  rule 2 with a generic "not valid JSON" error, so neither the accepting nor
+  the rejecting boundary vector can attribute the outcome to the rule in the
+  reference runner. Rule 2 is pinned for the JSON *writer* and for the binary
+  codec in both directions (`json/nesting-depth-encode.json`,
+  `binary/nesting-depth{,-encode}.json`). Every implementation MUST still
+  accept 1000 and reject 1001 array/map levels on JSON decode per §3.4 rule 2;
+  closing the reference gap is tracked as a `persona-core-lib` issue, not a
+  vector.
+* **§3.4 rule 1 cumulative cap, vector size** — the cap is 2^20 items, so
+  isolating the *cumulative* counter needs two individually-valid blocks whose
+  sum exceeds 2^20 progress-making elements: `binary/decode-reject-cumulative-cap.json`
+  carries ~1 MB of payload (~2.1 MB of hex) on purpose; there is no smaller
+  honest shape. The *writer*-side cap has no compact vector at all (an
+  over-cap value must list every element in the vector file), so writer-side
+  enforcement is covered by the `persona-core-lib` unit tests and noted here
+  instead of pinned.
 * **Timestamps outside ISO-8601's year range** — the vectors use the
   `@epoch-millis` extension token because JSON cannot carry
   `+000001-01-01T00:00:00Z`. On *decode*, both codecs accept the

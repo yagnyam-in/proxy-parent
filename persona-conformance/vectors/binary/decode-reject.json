@@ -65,7 +65,7 @@
     {
       "id": "binary/decode-reject/int-out-of-32-bit-range",
       "spec": "docs/SCHEMA.md §3.1",
-      "description": "zigzag decodes to 2^31, which no int field can hold.",
+      "description": "The varint decodes to 2^33, which zigzag maps to 2^32 — outside the signed 32-bit range an int field can hold.",
       "expect": "reject",
       "rejectionRule": "docs/SCHEMA.md §3.1",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
@@ -86,6 +86,7 @@
       "description": "Only 0x00 and 0x01 are booleans.",
       "expect": "reject",
       "rejectionRule": "docs/SCHEMA.md §3.4 rule 4",
+      "rejectionMessageFragment": "invalid boolean byte",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"boolean\"}]}",
       "inputHex": "02"
     },
@@ -113,6 +114,7 @@
       "description": "A block count is a count, never negative.",
       "expect": "reject",
       "rejectionRule": "docs/SCHEMA.md §3.3",
+      "rejectionMessageFragment": "negative block count",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}",
       "inputHex": "0100"
     },
@@ -122,6 +124,7 @@
       "description": "A block count of 2^20 + 1 exceeds the cumulative collection cap of 2^20 and is rejected eagerly, before any item is read, so the vector needs no item bytes.",
       "expect": "reject",
       "rejectionRule": "docs/SCHEMA.md §3.4 rule 1",
+      "rejectionMessageFragment": "exceeds the implementation limit",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":\"string\"}}]}",
       "inputHex": "82808001"
     },
@@ -131,6 +134,7 @@
       "description": "A block of two zero-field records: each element consumes no input byte. Without the rule a handful of bytes could allocate millions of empty records.",
       "expect": "reject",
       "rejectionRule": "docs/SCHEMA.md §3.4 rule 1",
+      "rejectionMessageFragment": "element decoded without consuming any input byte",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}}}]}",
       "inputHex": "0400"
     },
@@ -140,6 +144,7 @@
       "description": "The amplification shape: one hundred blocks of 2^20 zero-field records in 401 bytes. The reader must reject it without allocating the elements.",
       "expect": "reject",
       "rejectionRule": "docs/SCHEMA.md §3.4 rule 1",
+      "rejectionMessageFragment": "element decoded without consuming any input byte",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}}}]}",
       "inputHex": "8080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800180808001808080018080800100"
     },
@@ -185,6 +190,7 @@
       "description": "The same key appears twice in one block; the second entry would silently win.",
       "expect": "reject",
       "rejectionRule": "docs/SCHEMA.md §3.3",
+      "rejectionMessageFragment": "appears more than once",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
       "inputHex": "04026102780261027900"
     },
@@ -194,6 +200,7 @@
       "description": "The raw IEEE 754 bits of NaN.",
       "expect": "reject",
       "rejectionRule": "docs/SCHEMA.md §3.4 rule 9",
+      "rejectionMessageFragment": "non-finite double",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
       "inputHex": "000000000000f87f"
     },
@@ -203,6 +210,7 @@
       "description": "The raw IEEE 754 bits of +Infinity.",
       "expect": "reject",
       "rejectionRule": "docs/SCHEMA.md §3.4 rule 9",
+      "rejectionMessageFragment": "non-finite double",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
       "inputHex": "000000000000f07f"
     },
@@ -212,6 +220,7 @@
       "description": "The raw IEEE 754 bits of -Infinity.",
       "expect": "reject",
       "rejectionRule": "docs/SCHEMA.md §3.4 rule 9",
+      "rejectionMessageFragment": "non-finite double",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
       "inputHex": "000000000000f0ff"
     },
@@ -221,6 +230,7 @@
       "description": "One millisecond below the floor: the value cannot round-trip the Instant re-encoding of §4.1.",
       "expect": "reject",
       "rejectionRule": "docs/SCHEMA.md §3.4 rule 7",
+      "rejectionMessageFragment": "below the minimum timestamp-millis value",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
       "inputHex": "b1f3ffffffffffffff01"
     },
@@ -230,6 +240,7 @@
       "description": "The bottom of the long range is the extreme case of the 808 rejected values.",
       "expect": "reject",
       "rejectionRule": "docs/SCHEMA.md §3.4 rule 7",
+      "rejectionMessageFragment": "below the minimum timestamp-millis value",
       "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
       "inputHex": "ffffffffffffffffff01"
     }

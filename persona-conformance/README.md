@@ -11,7 +11,7 @@ vectors/               Portable test vectors (JSON). THE cross-language artifact
   binary/              §3 binary payload encode/decode, kitchen sink, rejects
   json/                §4 canonical JSON payload encode/decode, rejects
   envelope/            §5 built-in envelope schemas over both codecs
-  identity/            §3.2 persona-id + delegation, §3.5 realm, §9.1 PEM
+  identity/            §3.2 persona-id + delegation, §3.5 realm, §10.1 PEM
   crypto/              §8 Persona Version v0 policy, §11 signature algorithm sets
   manifest.json        Index of every vector file (must stay in sync)
   README.md            The vector file format contract (Persona Conformance Vectors v1)
@@ -29,12 +29,16 @@ a normative citation, and — for negative vectors — the rule that mandates th
 rejection. A conforming implementation in any language (C++, Rust, Go, ...)
 must:
 
-1. Read every `*.json` file under `vectors/` recursively (except
-   `manifest.json`), refusing unknown `vectorFormat`/`vectorFormatVersion`.
+1. Read every `*.json` file under `vectors/` recursively (except exactly
+   `vectors/manifest.json`; a `manifest.json` in a subdirectory is a vector
+   file), refusing unknown `vectorFormat`/`vectorFormatVersion`.
 2. Dispatch on `kind` and fail the suite for an **unknown kind** — never skip.
 3. Assert the expected outcomes exactly as the Java runner does, including all
-   `expect: reject` vectors.
-4. Cross-check `manifest.json` (file list, per-file `kind` and `vectorCount`).
+   `expect: reject` vectors. Rejection means the operation fails (plus the
+   declared exception contract); `rejectionMessageFragment` pins reference
+   message text and is never portable.
+4. Cross-check `manifest.json` (file list, per-file `kind` and `vectorCount`,
+   per-kind `kinds` counts and the grand total).
 5. Report the number of vectors executed, per kind.
 
 `vectors/README.md` is the normative description of the format: the key
