@@ -253,15 +253,16 @@ final class VectorKinds {
       // Hoisted out of the asserted operation: a malformed vector (e.g. an
       // unknown 'objectType') must fail the suite, never satisfy the rejection.
       String pem = vector.text("pem");
-      // §10.1 mandates that these PEM inputs must not parse; it does not mandate
-      // an exception type, so the check stays at Exception level.
-      // TODO(persona/pem-npe): once the PemService fix of PR #193 lands,
-      // tighten this to IllegalArgumentException — today
-      // identity/pem-reject/certificate-header-only surfaces as a
-      // NullPointerException from PersonaCertificate.of(null), because
-      // PemService.decodeCertificate does not guard
-      // CertificateFactory.generateCertificate returning null.
-      assertRejection(vector, Exception.class, () -> decodePem(objectType, pem));
+      // §10.1 mandates that these PEM inputs must not parse. Certificate
+      // inputs go through PersonaCertificate.parsePem, whose declared contract
+      // is IllegalArgumentException for any invalid certificate PEM (including
+      // the empty-body certificate-header-only case, an IOException inside
+      // PemService since PR #193); the other object types decode via PemService
+      // directly, whose contract is the checked IOException /
+      // GeneralSecurityException pair, so their check stays at Exception level.
+      Class<? extends Throwable> expectedType =
+          "certificate".equals(objectType) ? IllegalArgumentException.class : Exception.class;
+      assertRejection(vector, expectedType, () -> decodePem(objectType, pem));
       return;
     }
     checkPemFacts(vector, objectType);
