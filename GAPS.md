@@ -78,10 +78,15 @@ Status legend: **open** — not addressed; **partial** — addressed in part;
 Bounded and documented, but with residual surface:
 
 - **Request dedup.** `RequestDeduplicator` is a bounded LRU (default
-  10,000 entries) keyed by `(sender, requestId)`: first wins, duplicates
-  rejected (§5.2). Eviction is the safe direction — a re-request after
-  eviction is processed again, never wrongly rejected — which makes replay
-  protection a sliding window, not absolute. The store is also
+  10,000 records per tier) with two tiers that must both pass (§5.2, §11
+  rule 5): tier A — identity uniqueness, `(recipient, requestId, bare
+  signerId)`, rejecting same-requester retries even with changed payloads;
+  tier B — byte-level replay, `(recipient, preimageDigest)`, rejecting any
+  respelling of already-processed authenticated bytes (reordered entries,
+  pinned/unpinned respelling, incremental co-signing supersets,
+  disjoint-quorum splits). Eviction is the safe direction — a re-request
+  after eviction is processed again, never wrongly rejected — which makes
+  replay protection a sliding window, not absolute. The store is also
   per-process: a restart or a second node loses it. Hard exactly-once
   requirements need a persistent/shared dedup store.
 - **Nested-envelope cost.** Verification recurses into every nested
@@ -92,11 +97,13 @@ Bounded and documented, but with residual surface:
   signature verification. Combined with a single-signed payload this is a
   verification-amplification vector against any peer that accepts a schema
   with envelope arrays.
-- **Crypto-sub-result cache growth.** The verifier's positive-only cache
-  grows by one entry per distinct genuine (preimage, signature,
-  certificate) triple. Hostile input cannot grow it (entries require a
-  real successful verification), but legitimate high-volume traffic grows
-  it without bound — there is no eviction.
+- **Crypto-sub-result cache.** The verifier's positive-only cache is a
+  bounded access-order LRU (default 4096 entries), keyed by
+  `algorithm | SHA-256(preimage) | SHA-256(signature) | certificate
+  thumbprint`; hostile input cannot grow it (entries require a real
+  successful verification) and revocation stays effective because only the
+  crypto sub-result is cached. Residual: the bound is per-verifier
+  instance and fixed — high-volume adopters may want a tunable.
 - **Severity.** Medium.
 - **Direction.** A per-envelope budget (max nested envelopes total, max
   signatures per multi-envelope), size-bounded LRU for the crypto cache,
@@ -125,29 +132,43 @@ Bounded and documented, but with residual surface:
 ## 6. Conformance vectors and the §6.4 preimage goldens are not on `master` — open
 
 - **What.** The machine-readable vector suite (schema-digest, binary, JSON,
-  envelope, identity, crypto — 379 vectors with a Java runner and an
+  envelope, identity, crypto — 411 vectors with a Java runner and an
   independent Python reference) lives on `persona/conformance-vectors` and
   is not merged into this line. Within that suite, there are **no
   signing/preimage vectors**: the §6.4 preimage goldens
   (SigningPreimageTest pins them as unit tests) are not promoted into
   `vectors/`, so a foreign implementation has no machine-readable way to
   prove it builds the same signing preimage — exactly the place where
-  cross-language signature divergence would appear first.
+  cross-language signature divergence would appear first. (In flight:
+  `envelope.signing-preimage` vectors are being added on
+  `persona/preimage-vectors`.)
 - **Why it matters.** §6.4 is the type-binding that makes relabeled
   envelopes fail; leaving it untested cross-language weakens the suite's
   core claim.
 - **Severity.** Medium.
-- **Direction.** Merge the vectors branch; add a `envelope.preimage` vector
-  kind with fixed `{messageType, payloadFormat, schemaId, payload}` inputs
-  and expected preimage hex.
+- **Direction.** Merge the vectors branch and the preimage vectors; then
+  add a `crypto.signature` kind (fixed RSA key pair, golden deterministic
+  `SHA256withRSA` signatures over known preimages — verify-side vectors
+  ship public keys only, per this repository's no-private-key-material
+  policy) so signature interop itself is provable.
 
-## 7. `PemService` empty-body handling — fixed-pending-merge
+## 7. The remote tier is reference-only — open
 
-- **What.** Decoding a PEM block with an empty base64 body threw a
-  `NullPointerException` instead of a clean rejection.
-- **Status.** Fixed on branch `persona/pem-npe` (commit `5ed027f`, PR
-  #193): an empty-body CERTIFICATE PEM is rejected properly. Awaiting
-  merge; re-verify on `master` after it lands.
+- **What.** The protocol describes a layered certificate service (§9.1:
+  cache → durable store → remote Registrar), a Registrar HTTP client
+  (§7.1, §14 item 5), and a caching resolver (§14 item 5). The
+  implementation ships in-process references only: `InProcessRegistrar`,
+  `InMemoryPersonaResolver` (deliberately uncached, so revoked personas
+  never resolve), no HTTP transport for registration or resolution.
+- **Why it matters.** §14 tells adopters to build a caching resolver, and
+  §11 rule 11 mandates revocation invalidates cached resolutions — but
+  revocation *propagation* is unspecified (entry 2), so an adopter
+  following the checklist literally builds the exact component the
+  protocol leaves unspecified.
+- **Severity.** Medium for deployability; none for single-process use.
+- **Direction.** Specify registrar/resolver HTTP endpoints and a
+  revocation-propagation channel (push or short-TTL polling), or scope
+  the protocol explicitly to embedded deployments.
 
 ## 8. Payload addresses are routing metadata, not a verified binding (§5.3) — open (design observation)
 
