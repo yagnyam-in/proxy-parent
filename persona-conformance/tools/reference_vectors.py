@@ -1506,6 +1506,31 @@ def supports_signature_algorithm_set(algorithms):
 
 
 # ---------------------------------------------------------------------------
+# Signing preimage (PERSONA-PROTOCOL.md §6.4)
+# ---------------------------------------------------------------------------
+
+
+def signing_preimage(domain, message_type, payload_format, schema_id, payload):
+    """The §6.4 signing preimage, from the protocol text:
+
+        preimage = uvarint(len(domain))         || domain (UTF-8)
+                 || uvarint(len(messageType))   || messageType (UTF-8)
+                 || uvarint(len(payloadFormat)) || payloadFormat (UTF-8)
+                 || uvarint(len(schemaId))      || schemaId (UTF-8; empty if absent)
+                 || uvarint(len(payload))       || payload (raw bytes)
+
+    ``uvarint`` is unsigned LEB128 of the byte length; this module's own
+    ``unsigned_varint`` (derived from SCHEMA.md §3.1) is exactly that encoding.
+    """
+    out = bytearray()
+    for text in (domain, message_type, payload_format, schema_id):
+        encoded = text.encode("utf-8")
+        out += unsigned_varint(len(encoded)) + encoded
+    out += unsigned_varint(len(payload)) + payload
+    return bytes(out)
+
+
+# ---------------------------------------------------------------------------
 # Vector files
 # ---------------------------------------------------------------------------
 
@@ -1521,6 +1546,7 @@ KNOWN_KINDS = {
     "identity.pem",
     "crypto.policy-v0",
     "crypto.signature-algorithm-set",
+    "envelope.signing-preimage",
 }
 
 
@@ -1683,6 +1709,8 @@ def check_vector(report, vector):
         _check_policy(report, vector)
     elif kind == "crypto.signature-algorithm-set":
         _check_algorithm_set(report, vector)
+    elif kind == "envelope.signing-preimage":
+        _check_signing_preimage(report, vector, expects)
     else:
         raise VectorError("%s: unknown kind %r" % (vector, kind))
 
@@ -2011,6 +2039,40 @@ def _check_algorithm_set(report, vector):
         vector,
         supports_signature_algorithm_set(algorithms) == vector.document.get("expected"),
         "signature algorithm set verdict mismatch for %r" % (algorithms,),
+    )
+
+
+def _check_signing_preimage(report, vector, expects):
+    if expects == "reject":
+        raise VectorError(
+            "%s: kind 'envelope.signing-preimage' is accept-only: §6.4 mandates no rejection "
+            "(the preimage builder takes the domain as given)" % vector
+        )
+    document = vector.document
+    for key in ("domain", "messageType", "payloadFormat"):
+        if not isinstance(document.get(key), str):
+            raise VectorError("%s: %r must be a string" % (vector, key))
+    schema_id = document.get("schemaId")
+    if schema_id is None:
+        # Absent schemaId: §6.4 pins the empty string (same as '').
+        schema_id = ""
+    if not isinstance(schema_id, str):
+        raise VectorError("%s: 'schemaId' must be a string or null" % vector)
+    payload_hex = document.get("payloadHex")
+    if not isinstance(payload_hex, str):
+        raise VectorError("%s: 'payloadHex' must be a lowercase hex string" % vector)
+    try:
+        payload = bytes.fromhex(payload_hex)
+    except ValueError:
+        raise VectorError("%s: 'payloadHex' is not valid hex" % vector)
+    actual = signing_preimage(
+        document["domain"], document["messageType"], document["payloadFormat"], schema_id, payload
+    )
+    expected = expect_string(vector, "expectedHex")
+    report.check(
+        vector,
+        actual.hex() == expected,
+        "signing preimage mismatch:\n    expected %s\n    reference %s" % (expected, actual.hex()),
     )
 
 

@@ -10,6 +10,7 @@ import in.yagnyam.persona.Realm;
 import in.yagnyam.persona.crypto.Digests;
 import in.yagnyam.persona.crypto.PemService;
 import in.yagnyam.persona.crypto.PersonaVersion;
+import in.yagnyam.persona.envelope.SigningPreimage;
 import in.yagnyam.persona.schema.ArrayType;
 import in.yagnyam.persona.schema.Field;
 import in.yagnyam.persona.schema.PersonaSchema;
@@ -71,6 +72,7 @@ final class VectorKinds {
   static final String PEM = "identity.pem";
   static final String POLICY_V0 = "crypto.policy-v0";
   static final String ALGORITHM_SET = "crypto.signature-algorithm-set";
+  static final String SIGNING_PREIMAGE = "envelope.signing-preimage";
 
   /** Every kind this runner understands; anything else is a hard failure. */
   static Set<String> knownKinds() {
@@ -85,7 +87,8 @@ final class VectorKinds {
         REALM,
         PEM,
         POLICY_V0,
-        ALGORITHM_SET);
+        ALGORITHM_SET,
+        SIGNING_PREIMAGE);
   }
 
   private VectorKinds() {}
@@ -110,6 +113,7 @@ final class VectorKinds {
       case PEM -> pem(vector);
       case POLICY_V0 -> policy(vector);
       case ALGORITHM_SET -> signatureAlgorithmSet(vector);
+      case SIGNING_PREIMAGE -> signingPreimage(vector);
       default -> throw new VectorFormatException(
           vector.describe() + ": unknown vector kind '" + vector.kind()
               + "'; this runner must be taught the kind instead of skipping it");
@@ -341,6 +345,34 @@ final class VectorKinds {
         .as("%s: acceptance of the signature algorithm set %s (PERSONA-PROTOCOL.md §11 rule 3)",
             vector.describe(), algorithms)
         .isEqualTo(vector.booleanValue("expected"));
+  }
+
+  /**
+   * {@code envelope.signing-preimage}: the §6.4 signing preimage, byte-exact.
+   *
+   * <p>The kind is accept-only: the preimage builder takes the domain as given
+   * (the two protocol domains are pinned by accept vectors), so §6.4 mandates
+   * no rejection a vector could pin — a malformed vector (bad hex, a missing
+   * key) is a bug in the suite and surfaces as {@link VectorFormatException},
+   * never as a protocol rejection. An absent {@code schemaId} is JSON
+   * {@code null} and means the empty string, exactly as §6.4 requires.
+   */
+  private static void signingPreimage(ConformanceVector vector) {
+    if (vector.expectsRejection()) {
+      throw new VectorFormatException(
+          vector.describe() + ": kind " + SIGNING_PREIMAGE + " has no negative form; "
+              + "the preimage builder accepts every well-formed input");
+    }
+    String schemaId = vector.optionalText("schemaId");
+    byte[] preimage = SigningPreimage.of(
+        vector.text("domain"),
+        vector.text("messageType"),
+        vector.text("payloadFormat"),
+        schemaId == null ? "" : schemaId,
+        bytes(vector.text("payloadHex")));
+    assertThat(hex(preimage))
+        .as("%s: §6.4 signing preimage", vector.describe())
+        .isEqualTo(vector.text("expectedHex"));
   }
 
   // -----------------------------------------------------------------------

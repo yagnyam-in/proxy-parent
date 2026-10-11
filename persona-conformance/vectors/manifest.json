@@ -3,8 +3,8 @@
   "vectorFormatVersion": 1,
   "kind": "manifest",
   "description": "Index of every vector file (see vectors/README.md). Regenerate with 'python3 tools/reference_vectors.py manifest' after adding, removing or renaming a vector file; the reference check and the Java runner both fail when this index is stale.",
-  "fileCount": 27,
-  "vectorCount": 411,
+  "fileCount": 28,
+  "vectorCount": 431,
   "kinds": [
     {
       "kind": "crypto.policy-v0",
@@ -13,6 +13,10 @@
     {
       "kind": "crypto.signature-algorithm-set",
       "vectorCount": 9
+    },
+    {
+      "kind": "envelope.signing-preimage",
+      "vectorCount": 20
     },
     {
       "kind": "identity.pem",
@@ -121,6 +125,11 @@
       "path": "envelope/json-encode.json",
       "kind": "payload.json.encode",
       "vectorCount": 9
+    },
+    {
+      "path": "envelope/signing-preimage.json",
+      "kind": "envelope.signing-preimage",
+      "vectorCount": 20
     },
     {
       "path": "identity/pem.json",
