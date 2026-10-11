@@ -189,6 +189,13 @@ python3 tools/reference_vectors.py selftest   # pins the reference itself
 python3 tools/reference_vectors.py manifest    # regenerate manifest.json
 ```
 
+Before executing, it enforces Runner contract rule 2: an entry carrying a key
+outside the common set plus its kind's keys — a misplaced per-kind key such as
+an `expectedHex` on a `schema.digest` vector, or an unknown key — raises
+`VectorError` instead of being silently ignored, and a negative vector carrying
+an expected output is refused. `selftest` pins that contract against synthetic
+entries (never committed) so the check cannot regress.
+
 Every mechanically reproducible golden in this directory was produced by that
 reference implementation, and the digest goldens were cross-checked a third
 time with `shasum -a 1` and `openssl sha1`; the certificate thumbprint with

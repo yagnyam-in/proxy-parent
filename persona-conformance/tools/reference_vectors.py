@@ -46,6 +46,7 @@ import os
 import re
 import struct
 import sys
+import tempfile
 import datetime
 
 # The §3.4 rule 2 nesting-depth vectors nest 1000 collection levels deep,
@@ -502,6 +503,21 @@ def _encodes_to_zero_bytes(node):
     return False
 
 
+def _double_from_json_integer(value):
+    """Converts a JSON integer that overflowed binary64 to an infinity.
+
+    SCHEMA.md §3.4 rule 9: a JSON number beyond the double range overflows to
+    infinity and must be rejected on encode.  Java's ``BigInteger.doubleValue()``
+    performs that overflow silently, so the reference reader preserves such an
+    integer (see :func:`read_vector_value`) and the encoders convert it here,
+    rejecting the non-finite result instead of leaking :class:`OverflowError`.
+    """
+    try:
+        return float(value)
+    except OverflowError:
+        return float("inf") if value > 0 else float("-inf")
+
+
 def encode_binary(node, value, depth=0):
     """Encodes a value of ``node`` into the persona-binary format (§3.1, §3.2)."""
     kind = node["kind"]
@@ -526,6 +542,11 @@ def encode_binary(node, value, depth=0):
                 raise Reject("SCHEMA.md §4.3", "long field given %r" % (value,))
             return unsigned_varint(zigzag64(value))
         if name == "double":
+            if isinstance(value, int) and not isinstance(value, bool):
+                # An integer outside binary64 reaches the encoder only from the
+                # lenient reading of an encode-reject vector; convert it as Java
+                # does so the overflow becomes a rejection (§3.4 rule 9).
+                value = _double_from_json_integer(value)
             if isinstance(value, bool) or not isinstance(value, float):
                 raise Reject("SCHEMA.md §4.3", "double field given %r" % (value,))
             if value != value or value in (float("inf"), float("-inf")):
@@ -937,6 +958,10 @@ def encode_json(node, value, depth=0):
                 raise Reject("SCHEMA.md §4.3", "long field given %r" % (value,))
             return str(value)
         if name == "double":
+            if isinstance(value, int) and not isinstance(value, bool):
+                # See encode_binary: an overflowing JSON integer becomes an
+                # infinity and is rejected by double_literal (§3.4 rule 9).
+                value = _double_from_json_integer(value)
             return double_literal(_require(value, float, "double"))
         if name == "timestamp-millis":
             if not isinstance(value, InstantMillis):
@@ -1286,7 +1311,21 @@ def read_vector_value(node, document, path="v", lenient=False):
                 return float(token)
             if isinstance(document, bool) or not isinstance(document, (int, float)):
                 return document
-            return float(document)
+            try:
+                return float(document)
+            except OverflowError:
+                # A JSON integer outside the binary64 range.  Java's
+                # BigInteger.doubleValue() turns it into an infinity and the
+                # encoder rejects it under SCHEMA.md §3.4 rule 9; preserve the
+                # exact integer so a lenient encode-reject vector reaches that
+                # rejection instead of aborting the whole check.  An accepting
+                # vector must carry a representable double, so the strict path
+                # stays strict.
+                if lenient:
+                    return document
+                raise VectorError(
+                    "%s: integer %s is outside the binary64 range of a double" % (path, document)
+                )
         if name == "timestamp-millis":
             if isinstance(document, str) and document.startswith("@epoch-millis:"):
                 try:
@@ -1656,6 +1695,110 @@ KNOWN_KINDS = {
     "crypto.signature-verify",
 }
 
+# ---------------------------------------------------------------------------
+# Vector entry key contract (vectors/README.md "Runner contract" rule 2)
+#
+# These sets mirror the Java runner (ConformanceVectorSuite.COMMON_KEYS,
+# KEYS_BY_KIND, REJECT_INPUT_KEYS, ACCEPT_REQUIRED_KEYS and
+# VERDICT_ONLY_KINDS): an entry carrying a key outside COMMON_KEYS plus its
+# kind's keys fails the run instead of being silently ignored, so a misplaced
+# per-kind key (say an expectedHex on a schema.digest vector) can never pass.
+# ---------------------------------------------------------------------------
+
+COMMON_KEYS = frozenset((
+    "id", "spec", "description", "expect", "rejectionRule", "rejectionMessageFragment",
+))
+
+KEYS_BY_KIND = {
+    "schema.digest": frozenset((
+        "schema", "schemaRef", "generatedSchema", "expectedCanonicalForm", "expectedSchemaId")),
+    "payload.binary.encode": frozenset((
+        "schema", "schemaRef", "generatedSchema", "value", "expectedHex")),
+    "payload.binary.decode": frozenset((
+        "schema", "schemaRef", "generatedSchema", "inputHex", "expectedValue")),
+    "payload.json.encode": frozenset((
+        "schema", "schemaRef", "generatedSchema", "value", "expectedJson")),
+    # The Java JSON-decode contract deliberately omits schemaRef (there is no
+    # json.decode envelope vector; see the README kind table); mirrored verbatim
+    # so the two runners agree.
+    "payload.json.decode": frozenset((
+        "schema", "generatedSchema", "inputJson", "expectedValue")),
+    "identity.persona-id": frozenset((
+        "input", "expectedId", "expectedThumbprint", "expectedCanonical", "expectedWildcard")),
+    "identity.persona-id-delegation": frozenset(("signer", "signedFor", "expected")),
+    "identity.realm": frozenset(("input", "expected")),
+    "identity.pem": frozenset(("objectType", "pem", "expected")),
+    "crypto.policy-v0": frozenset(("policy", "field", "expected")),
+    "crypto.signature-algorithm-set": frozenset(("signatureAlgorithms", "expected")),
+    # Kinds defined by the stacked preimage/signature phases. This branch's
+    # loader does not execute them (KNOWN_KINDS), but their key contract lives
+    # here so a merged suite is validated by the same rules.
+    "envelope.signing-preimage": frozenset((
+        "domain", "messageType", "payloadFormat", "schemaId", "payloadHex", "expectedHex")),
+    "crypto.signature-verify": frozenset((
+        "publicKeyPem", "algorithm", "preimageHex", "signatureHex", "expected")),
+}
+
+# The input keys a negative vector must carry beyond the common keys.
+REJECT_INPUT_KEYS = {
+    "schema.digest": frozenset(("schema",)),
+    "payload.binary.encode": frozenset(("value",)),
+    "payload.binary.decode": frozenset(("inputHex",)),
+    "payload.json.encode": frozenset(("value",)),
+    "payload.json.decode": frozenset(("inputJson",)),
+    "identity.persona-id": frozenset(("input",)),
+    "identity.pem": frozenset(("objectType", "pem")),
+    "crypto.signature-verify": frozenset((
+        "publicKeyPem", "algorithm", "preimageHex", "signatureHex")),
+}
+
+# The keys an accepting vector must carry beyond the common keys.
+ACCEPT_REQUIRED_KEYS = {
+    "schema.digest": frozenset(("expectedCanonicalForm", "expectedSchemaId")),
+    "payload.binary.encode": frozenset(("value", "expectedHex")),
+    "payload.binary.decode": frozenset(("inputHex", "expectedValue")),
+    "payload.json.encode": frozenset(("value", "expectedJson")),
+    "payload.json.decode": frozenset(("inputJson", "expectedValue")),
+    "identity.persona-id": frozenset((
+        "input", "expectedId", "expectedThumbprint", "expectedCanonical", "expectedWildcard")),
+    "identity.persona-id-delegation": frozenset(("signer", "signedFor", "expected")),
+    "identity.realm": frozenset(("input", "expected")),
+    "identity.pem": frozenset(("objectType", "pem", "expected")),
+    "crypto.policy-v0": frozenset(("policy", "field", "expected")),
+    "crypto.signature-algorithm-set": frozenset(("signatureAlgorithms", "expected")),
+    "envelope.signing-preimage": frozenset((
+        "domain", "messageType", "payloadFormat", "payloadHex", "expectedHex")),
+    "crypto.signature-verify": frozenset((
+        "publicKeyPem", "algorithm", "preimageHex", "signatureHex", "expected")),
+}
+
+# Kinds whose contract admits no negative form: the verdict kinds already carry
+# the negative in their boolean, and §6.4 mandates no rejection for a signing
+# preimage (the builder takes the domain as given).
+VERDICT_ONLY_KINDS = frozenset((
+    "identity.persona-id-delegation",
+    "identity.realm",
+    "crypto.policy-v0",
+    "crypto.signature-algorithm-set",
+    "envelope.signing-preimage",
+))
+
+# The golden-output keys a negative vector must never carry.
+EXPECTED_OUTPUT_KEYS = frozenset((
+    "expectedCanonicalForm", "expectedSchemaId", "expectedHex", "expectedJson",
+    "expectedValue", "expectedId", "expectedThumbprint", "expectedCanonical",
+    "expectedWildcard", "expected",
+))
+
+# Kinds whose schema is named by exactly one of schema / schemaRef / generatedSchema.
+SCHEMA_DRIVEN_KINDS = frozenset((
+    "schema.digest",
+    "payload.binary.encode",
+    "payload.binary.decode",
+    "payload.json.encode",
+    "payload.json.decode",
+))
+
 
 class Vector(object):
     def __init__(self, path, index, kind, document):
@@ -1688,6 +1831,54 @@ class Report(object):
         self.skips.append("%s (%s): %s" % (vector, vector.kind, reason))
 
 
+def validate_vector_entry(path, kind, index, document):
+    """Validates one vector entry against its kind's key contract.
+
+    Mirrors the Java runner's ``ConformanceVectorSuite.validate``: an unknown or
+    misplaced key, a negative vector that carries an expected output or omits a
+    required input, an accepting vector missing a required key, a negative form
+    of a verdict-only kind, and a schema-driven entry without exactly one of
+    ``schema``/``schemaRef``/``generatedSchema`` all raise :class:`VectorError`
+    before the vector is executed.  ``path`` and ``index`` only label a failure.
+    """
+    identifier = document.get("id")
+    what = "%s[%d]: vector %r of kind %s" % (path, index, identifier, kind)
+    if not isinstance(identifier, str) or not identifier:
+        raise VectorError("%s: every vector needs a non-empty 'id'" % path)
+    for key in ("id", "spec", "description"):
+        if key not in document:
+            raise VectorError("%s: missing '%s'" % (what, key))
+    expect = document.get("expect")
+    if expect is not None and expect != "reject":
+        raise VectorError("%s: 'expect' must be \"reject\" or absent, found %r" % (what, expect))
+    rejects = expect == "reject"
+    allowed = COMMON_KEYS | KEYS_BY_KIND.get(kind, frozenset())
+    unknown = sorted(key for key in document if key not in allowed)
+    if unknown:
+        raise VectorError("%s: unknown keys %r for kind %s" % (what, unknown, kind))
+    if rejects:
+        if not isinstance(document.get("rejectionRule"), str):
+            raise VectorError("%s: a negative vector must cite 'rejectionRule'" % what)
+        for key in sorted(REJECT_INPUT_KEYS.get(kind, ())):
+            if key not in document:
+                raise VectorError("%s: a negative vector must carry '%s'" % (what, key))
+        outputs = sorted(key for key in EXPECTED_OUTPUT_KEYS if key in document)
+        if outputs:
+            raise VectorError(
+                "%s: a negative vector must not carry an expected output %r" % (what, outputs))
+        if kind in VERDICT_ONLY_KINDS:
+            raise VectorError("%s: kind %s has no negative form; fix the vector" % (what, kind))
+    else:
+        for key in sorted(ACCEPT_REQUIRED_KEYS.get(kind, ())):
+            if key not in document:
+                raise VectorError("%s: missing '%s'" % (what, key))
+    if kind in SCHEMA_DRIVEN_KINDS:
+        forms = [name for name in ("schema", "schemaRef", "generatedSchema") if name in document]
+        if len(forms) != 1:
+            raise VectorError(
+                "%s: carry exactly one of 'schema', 'schemaRef' and 'generatedSchema'" % what)
+
+
 def load_vector_files(directory):
     """Returns (files, vectors) for every ``*.json`` under ``directory`` except the manifest."""
     files = []
@@ -1713,12 +1904,15 @@ def load_vector_files(directory):
         kind = document.get("kind")
         if kind not in KNOWN_KINDS:
             raise VectorError("%s: unknown kind %r" % (path, kind))
+        relative = os.path.relpath(path, directory)
         for index, entry in enumerate(document.get("vectors", [])):
             entry = dict(entry)
+            # Refuse a misplaced/unknown per-kind key before the entry runs.
+            validate_vector_entry(relative, kind, index, entry)
             entry["_file_schemas"] = document.get("schemas", {})
-            entry["_file"] = os.path.relpath(path, directory)
+            entry["_file"] = relative
             entry["_index"] = index
-            vectors.append(Vector(os.path.relpath(path, directory), index, kind, entry))
+            vectors.append(Vector(relative, index, kind, entry))
     return files, vectors
 
 
@@ -2306,6 +2500,199 @@ SELFTEST_SCHEMA = '{"type":"record","name":"Simple","fields":[{"name":"a","type"
 SELFTEST_CANONICAL = '{"fields":[{"name":"a","type":"string"}],"name":"Simple","type":"record"}'
 
 
+def _synthetic_vector_document(kind, vectors):
+    """A minimal, never-committed vector file for the loader-contract regression."""
+    return {
+        "vectorFormat": VECTOR_FORMAT,
+        "vectorFormatVersion": VECTOR_FORMAT_VERSION,
+        "kind": kind,
+        "description": "synthetic vector file for the loader-contract regression",
+        "spec": "vectors/README.md",
+        "vectors": vectors,
+    }
+
+
+def _selftest_loader_contract():
+    """Pins the entry key contract: a misplaced or unknown per-kind key fails.
+
+    The cases are synthetic (never committed) and run the same validation the
+    committed suite uses, plus one end-to-end :func:`load_vector_files` over a
+    temporary vector file, proving the loader refuses the entry before it runs.
+    """
+    failures = []
+    cases = [
+        (
+            "misplaced per-kind key (expectedHex on schema.digest)",
+            "schema.digest",
+            {
+                "id": "selftest/misplaced-expected-hex",
+                "spec": "docs/SCHEMA.md §2",
+                "description": "synthetic",
+                "schema": '{"type":"record","name":"R","fields":[]}',
+                "expectedCanonicalForm": '{"fields":[],"name":"R","type":"record"}',
+                "expectedSchemaId": "0" * 40,
+                "expectedHex": "00",
+            },
+            True,
+        ),
+        (
+            "unknown key",
+            "identity.realm",
+            {
+                "id": "selftest/unknown-key",
+                "spec": "PERSONA-PROTOCOL.md §3.5",
+                "description": "synthetic",
+                "input": "a.b",
+                "expected": True,
+                "bogus": 1,
+            },
+            True,
+        ),
+        (
+            "negative vector carrying an expected output",
+            "payload.binary.encode",
+            {
+                "id": "selftest/negative-with-output",
+                "spec": "docs/SCHEMA.md §3.4 rule 9",
+                "description": "synthetic",
+                "expect": "reject",
+                "rejectionRule": "docs/SCHEMA.md §3.4 rule 9",
+                "schema": '{"type":"record","name":"R","fields":[{"name":"v","type":"double"}]}',
+                "value": {"v": 1.0},
+                "expectedHex": "00",
+            },
+            True,
+        ),
+        (
+            "accepting vector missing a required key",
+            "identity.realm",
+            {
+                "id": "selftest/missing-required-key",
+                "spec": "PERSONA-PROTOCOL.md §3.5",
+                "description": "synthetic",
+                "input": "a.b",
+            },
+            True,
+        ),
+        (
+            "expect: \"accept\" is not a legal value",
+            "identity.realm",
+            {
+                "id": "selftest/expect-accept",
+                "spec": "PERSONA-PROTOCOL.md §3.5",
+                "description": "synthetic",
+                "expect": "accept",
+                "input": "a.b",
+                "expected": True,
+            },
+            True,
+        ),
+        (
+            "schema-driven vector without a schema form",
+            "payload.binary.encode",
+            {
+                "id": "selftest/no-schema",
+                "spec": "docs/SCHEMA.md §3",
+                "description": "synthetic",
+                "value": {"v": 1},
+                "expectedHex": "02",
+            },
+            True,
+        ),
+        (
+            "negative form of a verdict-only kind",
+            "identity.realm",
+            {
+                "id": "selftest/verdict-only-reject",
+                "spec": "PERSONA-PROTOCOL.md §3.5",
+                "description": "synthetic",
+                "expect": "reject",
+                "rejectionRule": "PERSONA-PROTOCOL.md §3.5",
+                "input": "a.b",
+            },
+            True,
+        ),
+        (
+            "misplaced key on envelope.signing-preimage",
+            "envelope.signing-preimage",
+            {
+                "id": "selftest/preimage-misplaced",
+                "spec": "PERSONA-PROTOCOL.md §6.4",
+                "description": "synthetic",
+                "domain": "d",
+                "messageType": "t",
+                "payloadFormat": "json",
+                "payloadHex": "00",
+                "expectedHex": "00",
+                "expectedValue": "x",
+            },
+            True,
+        ),
+        (
+            "crypto.signature-verify negative missing its inputs",
+            "crypto.signature-verify",
+            {
+                "id": "selftest/verify-missing-input",
+                "spec": "PERSONA-PROTOCOL.md §8",
+                "description": "synthetic",
+                "expect": "reject",
+                "rejectionRule": "PERSONA-PROTOCOL.md §8",
+                "algorithm": "SHA256withRSA",
+            },
+            True,
+        ),
+        (
+            "well-formed accepting entry passes",
+            "identity.realm",
+            {
+                "id": "selftest/valid",
+                "spec": "PERSONA-PROTOCOL.md §3.5",
+                "description": "synthetic",
+                "input": "a.b",
+                "expected": True,
+            },
+            False,
+        ),
+        (
+            "well-formed envelope.signing-preimage entry passes",
+            "envelope.signing-preimage",
+            {
+                "id": "selftest/preimage-valid",
+                "spec": "PERSONA-PROTOCOL.md §6.4",
+                "description": "synthetic",
+                "domain": "d",
+                "messageType": "t",
+                "payloadFormat": "json",
+                "payloadHex": "00",
+                "expectedHex": "00",
+            },
+            False,
+        ),
+    ]
+    for name, kind, entry, should_fail in cases:
+        try:
+            validate_vector_entry("synthetic.json", kind, 0, entry)
+        except VectorError as error:
+            if not should_fail:
+                failures.append("loader contract %s: unexpected VectorError %s" % (name, error))
+        else:
+            if should_fail:
+                failures.append("loader contract %s: the contract accepted an invalid entry" % name)
+    # End to end: the loader refuses a misplaced per-kind key before executing.
+    with tempfile.TemporaryDirectory() as directory:
+        document = _synthetic_vector_document("schema.digest", [cases[0][2]])
+        with open(os.path.join(directory, "synthetic.json"), "w", encoding="utf-8") as handle:
+            json.dump(document, handle)
+        try:
+            load_vector_files(directory)
+        except VectorError:
+            pass
+        else:
+            failures.append(
+                "loader contract: load_vector_files accepted a misplaced per-kind key")
+    return failures
+
+
 def selftest():
     failures = []
     for name, type_json, value, expected_hex in SELFTEST_CASES:
@@ -2320,10 +2707,13 @@ def selftest():
     actual_digest = schema_digest(node)
     if actual_digest != "66cd4cc7f890f80cbda43fa5d69efeccadad0833":
         failures.append("digest: expected 66cd4cc7f890f80cbda43fa5d69efeccadad0833, got %s" % actual_digest)
+    failures.extend(_selftest_loader_contract())
     for message in failures:
         sys.stderr.write("selftest FAIL %s\n" % message)
     if not failures:
-        sys.stdout.write("selftest OK (%d binary cases + canonical form + digest)\n" % len(SELFTEST_CASES))
+        sys.stdout.write(
+            "selftest OK (%d binary cases + canonical form + digest + entry key contract)\n"
+            % len(SELFTEST_CASES))
     return 1 if failures else 0
 
 
