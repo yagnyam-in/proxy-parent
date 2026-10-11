@@ -129,28 +129,27 @@ Bounded and documented, but with residual surface:
   normative grammar, or keep the vectors as the arbiter and say so in
   §3.2/§3.5.
 
-## 6. Conformance vectors and the §6.4 preimage goldens are not on `master` — open
+## 6. Cross-language vectors are not merged to `master` — partial
 
 - **What.** The machine-readable vector suite (schema-digest, binary, JSON,
   envelope, identity, crypto — 411 vectors with a Java runner and an
-  independent Python reference) lives on `persona/conformance-vectors` and
-  is not merged into this line. Within that suite, there are **no
-  signing/preimage vectors**: the §6.4 preimage goldens
-  (SigningPreimageTest pins them as unit tests) are not promoted into
-  `vectors/`, so a foreign implementation has no machine-readable way to
-  prove it builds the same signing preimage — exactly the place where
-  cross-language signature divergence would appear first. (In flight:
-  `envelope.signing-preimage` vectors are being added on
-  `persona/preimage-vectors`.)
-- **Why it matters.** §6.4 is the type-binding that makes relabeled
-  envelopes fail; leaving it untested cross-language weakens the suite's
-  core claim.
+  independent Python reference) is on `persona/conformance-vectors`, not
+  yet merged to `master`. The stacked `persona/preimage-vectors` branch adds
+  20 `envelope.signing-preimage` vectors and 14 `crypto.signature-verify`
+  vectors, for 445 total. The preimage vectors pin §6.4 framing. The
+  signature vectors verify fixed RSA signatures using public keys only;
+  they are deliberately verify-only because repository policy forbids
+  shipping private-key material. Consequently, the suite does not pin the
+  exact output of an implementation's signing operation.
+- **Why it matters.** Without the preimage vectors, a foreign
+  implementation cannot prove that its type-bound signing bytes match.
+  Verify-only signature vectors exercise cross-language verification, but
+  implementations still need an external signing/verification exchange to
+  demonstrate signer interoperability.
 - **Severity.** Medium.
-- **Direction.** Merge the vectors branch and the preimage vectors; then
-  add a `crypto.signature` kind (fixed RSA key pair, golden deterministic
-  `SHA256withRSA` signatures over known preimages — verify-side vectors
-  ship public keys only, per this repository's no-private-key-material
-  policy) so signature interop itself is provable.
+- **Direction.** Merge both vector branches. Keep private keys out of the
+  repository; document a cross-implementation signing/verification
+  exchange for adopters who need to prove their signer as well as verifier.
 
 ## 7. The remote tier is reference-only — open
 
