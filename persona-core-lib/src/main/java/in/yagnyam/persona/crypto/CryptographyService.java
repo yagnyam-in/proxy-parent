@@ -122,8 +122,9 @@ public interface CryptographyService {
   /**
    * Generates a fresh key pair.
    *
-   * @param algorithm key generation algorithm (v0: {@code RSA} only)
-   * @param keySize  key size in bits
+   * @param algorithm key generation algorithm ({@code RSA} in v0;
+   *                  {@code Ed25519} and {@code X25519} in v1)
+   * @param keySize  key size in bits; {@code 0} for curve-typed families
    * @return new key pair
    * @throws GeneralSecurityException if generation fails
    */
@@ -135,9 +136,12 @@ public interface CryptographyService {
    *
    * @param certificate certificate carrying the encryption (public) key
    * @param algorithm   asymmetric encryption algorithm (v0:
-   *                    {@code RSA/NONE/OAEPwithSHA-256andMGF1Padding})
+   *                    {@code RSA/NONE/OAEPwithSHA-256andMGF1Padding}; v1
+   *                    adds {@code X25519/HKDF-SHA256/AES-256-GCM}, which
+   *                    needs an X25519 certificate key)
    * @param input       bytes to encrypt
-   * @return cipher text (no IV for RSA-OAEP)
+   * @return cipher text (no IV for RSA-OAEP; IV and ephemeral public key
+   *     for the X25519 construction)
    * @throws GeneralSecurityException if encryption fails
    */
   CipherText encrypt(X509Certificate certificate, String algorithm, byte[] input)

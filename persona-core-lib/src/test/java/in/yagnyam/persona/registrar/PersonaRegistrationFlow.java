@@ -24,7 +24,8 @@ import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 /**
  * Test helper running the full two-step registration flow (protocol §7.1)
  * against a registrar: issue id, generate key pair, build CSR, hash the
- * revocation passphrase, register.
+ * revocation passphrase, register. The persona is registered under the
+ * latest Persona Version, which matches a default-constructed registrar.
  */
 public final class PersonaRegistrationFlow {
 
@@ -61,15 +62,18 @@ public final class PersonaRegistrationFlow {
    * key — what a man-in-the-middle swapping the CSR public key would
    * produce. Its signature never verifies.
    *
-   * @param personaId     subject CN
-   * @param signingKeyPair key pair whose private part signs the CSR
-   * @param publicKey     public key embedded in the CSR (different from the signer's)
+   * @param version        Persona Version whose certificate signature
+   *                       algorithm signs the CSR
+   * @param personaId      subject CN
+   * @param signingKeyPair key pair (of the version's family) whose private
+   *                       part signs the CSR
+   * @param publicKey      public key embedded in the CSR (different from the signer's)
    * @return CSR PEM whose signature does not verify
    */
-  public static String csrWithSwappedPublicKey(String personaId, KeyPair signingKeyPair,
-      PublicKey publicKey) {
+  public static String csrWithSwappedPublicKey(PersonaVersion version, String personaId,
+      KeyPair signingKeyPair, PublicKey publicKey) {
+    Objects.requireNonNull(version, "version");
     try {
-      PersonaVersion version = PersonaVersion.latestVersion();
       ContentSigner signer = new JcaContentSignerBuilder(version.certificateSignatureAlgorithm())
           .setProvider(BouncyCastle.provider())
           .build(signingKeyPair.getPrivate());
@@ -84,17 +88,19 @@ public final class PersonaRegistrationFlow {
   /**
    * Builds a CSR PEM with an arbitrary subject DN (for adversarial subject
    * tests: multi-valued RDNs, extra attributes, a missing CN), signed with
-   * the active version's certificate signature algorithm, so the CSR
-   * signature itself is valid and only the subject shape is at issue.
+   * {@code version}'s certificate signature algorithm, so the CSR signature
+   * itself is valid and only the subject shape is at issue.
    *
+   * @param version Persona Version whose certificate signature algorithm
+   *                signs the CSR
    * @param subject CSR subject
-   * @param keyPair key pair whose public part is certified and whose private
-   *                part signs the CSR
+   * @param keyPair key pair (of the version's family) whose public part is
+   *                certified and whose private part signs the CSR
    * @return CSR PEM
    */
-  public static String csrWithSubject(X500Name subject, KeyPair keyPair) {
+  public static String csrWithSubject(PersonaVersion version, X500Name subject, KeyPair keyPair) {
+    Objects.requireNonNull(version, "version");
     try {
-      PersonaVersion version = PersonaVersion.latestVersion();
       ContentSigner signer = new JcaContentSignerBuilder(version.certificateSignatureAlgorithm())
           .setProvider(BouncyCastle.provider())
           .build(keyPair.getPrivate());

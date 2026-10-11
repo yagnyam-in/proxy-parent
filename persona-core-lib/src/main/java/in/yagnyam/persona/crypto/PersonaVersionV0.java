@@ -4,7 +4,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Persona Version {@code v0} — the recommended baseline (protocol §8).
+ * Persona Version {@code v0} — the RSA baseline (protocol §8). Superseded by
+ * {@link PersonaVersionV1} as the latest version; kept so v0 envelopes stay
+ * verifiable and v0 Realms remain configurable via
+ * {@link PersonaVersion#of(String) of("v0")}.
  *
  * <p>Algorithm table:
  * <ul>
@@ -41,6 +44,9 @@ public final class PersonaVersionV0 implements PersonaVersion {
       "AES/CTR/NoPadding";
   private static final String CERTIFICATE_SIGNATURE_ALGORITHM = "SHA256withRSA";
   private static final String KEY_GENERATION_ALGORITHM = "RSA";
+  // The RSA key is dual-use — the same key signs (SHA256withRSA) and wraps
+  // (RSA-OAEP) — so the encryption key family is the signing family itself.
+  private static final List<String> ENCRYPTION_KEY_GENERATION_ALGORITHMS = List.of("RSA");
   private static final int KEY_SIZE = 2048;
   private static final String PREFERRED_HASH_ALGORITHM = "SHA-256";
 
@@ -98,6 +104,11 @@ public final class PersonaVersionV0 implements PersonaVersion {
   @Override
   public String keyGenerationAlgorithm() {
     return KEY_GENERATION_ALGORITHM;
+  }
+
+  @Override
+  public List<String> encryptionKeyGenerationAlgorithms() {
+    return ENCRYPTION_KEY_GENERATION_ALGORITHMS;
   }
 
   @Override

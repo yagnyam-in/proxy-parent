@@ -3,16 +3,24 @@
   "vectorFormatVersion": 1,
   "kind": "manifest",
   "description": "Index of every vector file (see vectors/README.md). Regenerate with 'python3 tools/reference_vectors.py manifest' after adding, removing or renaming a vector file; the reference check and the Java runner both fail when this index is stale.",
-  "fileCount": 29,
-  "vectorCount": 448,
+  "fileCount": 31,
+  "vectorCount": 470,
   "kinds": [
     {
       "kind": "crypto.policy-v0",
       "vectorCount": 11
     },
     {
+      "kind": "crypto.policy-v1",
+      "vectorCount": 12
+    },
+    {
       "kind": "crypto.signature-algorithm-set",
       "vectorCount": 9
+    },
+    {
+      "kind": "crypto.signature-algorithm-set-v1",
+      "vectorCount": 10
     },
     {
       "kind": "crypto.signature-verify",
@@ -109,6 +117,16 @@
       "path": "crypto/policy-v0.json",
       "kind": "crypto.policy-v0",
       "vectorCount": 11
+    },
+    {
+      "path": "crypto/policy-v1.json",
+      "kind": "crypto.policy-v1",
+      "vectorCount": 12
+    },
+    {
+      "path": "crypto/signature-algorithm-sets-v1.json",
+      "kind": "crypto.signature-algorithm-set-v1",
+      "vectorCount": 10
     },
     {
       "path": "crypto/signature-algorithm-sets.json",

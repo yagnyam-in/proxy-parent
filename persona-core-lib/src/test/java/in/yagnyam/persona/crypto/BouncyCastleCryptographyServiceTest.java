@@ -241,7 +241,7 @@ class BouncyCastleCryptographyServiceTest {
     void rejectsMissingIvOnDecrypt() {
       SecretKey key = CryptographyService.asAesKey("abcdefghijklmnop");
       CipherText withoutIv = new CipherText(Optional.empty(), SYMMETRIC_ALGORITHM, "AAAA",
-          Optional.empty(), Optional.empty());
+          Optional.empty(), Optional.empty(), Optional.empty());
       assertThatThrownBy(() -> cryptographyService.decrypt(key, withoutIv))
           .isInstanceOf(GeneralSecurityException.class);
     }
@@ -269,7 +269,7 @@ class BouncyCastleCryptographyServiceTest {
     @Test
     void rejectsEmptyCipherTextWithoutIv() {
       CipherText withoutIv = new CipherText(Optional.empty(), SYMMETRIC_ALGORITHM, "",
-          Optional.empty(), Optional.empty());
+          Optional.empty(), Optional.empty(), Optional.empty());
       assertThat(withoutIv.isValid()).isFalse();
       assertThatThrownBy(() -> cryptographyService.decrypt(
           CryptographyService.asAesKey("abcdefghijklmnop"), withoutIv))
@@ -339,61 +339,100 @@ class BouncyCastleCryptographyServiceTest {
   /**
    * Invariant (AGENTS.md: crypto policy lives in PersonaVersion): the
    * derive-or-verify whitelists of {@link BouncyCastleCryptographyService}
-   * must exactly equal the active Persona Version's algorithm tables. If a
-   * future version extends the policy without extending the service (or
-   * vice versa), these tests fail the build.
+   * must exactly equal the union of every known Persona Version's algorithm
+   * tables. If a version extends the policy without extending the service
+   * (or vice versa), these tests fail the build.
    */
   @Nested
   class VersionPolicyConsistency {
 
-    private final PersonaVersion version = PersonaVersion.latestVersion();
-
     @Test
-    void cipherWhitelistEqualsVersionEncryptionAlgorithms() {
+    void cipherWhitelistEqualsUnionOfVersionEncryptionAlgorithms() {
       Set<String> expected = new HashSet<>();
-      expected.addAll(version.validAsymmetricEncryptionAlgorithms());
-      expected.addAll(version.validSymmetricEncryptionAlgorithms());
+      for (PersonaVersion version : PersonaVersion.knownVersions()) {
+        expected.addAll(version.validAsymmetricEncryptionAlgorithms());
+        expected.addAll(version.validSymmetricEncryptionAlgorithms());
+      }
       assertThat(BouncyCastleCryptographyService.supportedCipherAlgorithms())
           .isEqualTo(expected);
     }
 
     @Test
-    void keyGenerationWhitelistEqualsVersionKeyGenerationAlgorithm() {
+    void keyGenerationWhitelistEqualsUnionOfVersionKeyFamilies() {
+      Set<String> expected = new HashSet<>();
+      for (PersonaVersion version : PersonaVersion.knownVersions()) {
+        expected.add(version.keyGenerationAlgorithm());
+        expected.addAll(version.encryptionKeyGenerationAlgorithms());
+      }
       assertThat(BouncyCastleCryptographyService.supportedKeyGenerationAlgorithms())
-          .containsExactlyInAnyOrder(version.keyGenerationAlgorithm());
+          .isEqualTo(expected);
     }
 
-    /** Derive-or-verify: every algorithm in the version policy must actually work. */
+    /** Derive-or-verify: every algorithm of every version policy must actually work. */
     @Test
     void everyVersionAlgorithmActuallyRoundTrips() throws GeneralSecurityException {
-      for (String algorithm : version.validAsymmetricEncryptionAlgorithms()) {
-        CipherText cipherText = cryptographyService.encrypt(certificate, algorithm, payload);
-        assertThat(cryptographyService.decrypt(keyPair.getPrivate(), cipherText))
-            .isEqualTo(payload);
+      KeyPair x25519 = TestSupport.x25519KeyPair();
+      X509Certificate x25519Certificate = TestCertificates.issuedBy(
+          x25519.getPublic(), "p-x25519", keyPair, Duration.ofDays(1));
+      for (PersonaVersion version : PersonaVersion.knownVersions()) {
+        for (String algorithm : version.validAsymmetricEncryptionAlgorithms()) {
+          boolean agreement = algorithm.startsWith("X25519/");
+          CipherText cipherText = cryptographyService.encrypt(
+              agreement ? x25519Certificate : certificate, algorithm, payload);
+          assertThat(cryptographyService.decrypt(
+              agreement ? x25519.getPrivate() : keyPair.getPrivate(), cipherText))
+              .as("%s %s", version.version(), algorithm)
+              .isEqualTo(payload);
+        }
+        for (String algorithm : version.validSymmetricEncryptionAlgorithms()) {
+          SecretKey key = CryptographyService.asAesKey("policy-consistency-key");
+          CipherText cipherText = cryptographyService.encrypt(key, algorithm, payload);
+          assertThat(cryptographyService.decrypt(key, cipherText)).isEqualTo(payload);
+        }
+        for (Set<String> set : version.validSignatureAlgorithmSets()) {
+          for (String algorithm : set) {
+            KeyPair signer = "Ed25519".equals(algorithm)
+                ? TestSupport.signingKeyPair(PersonaVersionV1.instance())
+                : keyPair;
+            byte[] signature = cryptographyService.getSignature(algorithm, signer.getPrivate(), payload);
+            assertThat(cryptographyService.verifySignature(
+                algorithm, signer.getPublic(), payload, signature))
+                .as("%s %s", version.version(), algorithm)
+                .isTrue();
+          }
+        }
+        for (String family : version.encryptionKeyGenerationAlgorithms()) {
+          KeyPair generated = cryptographyService.generateKeyPair(
+              family, "RSA".equals(family) ? 2048 : 0);
+          assertThat(generated.getPublic()).isNotNull();
+        }
       }
-      for (String algorithm : version.validSymmetricEncryptionAlgorithms()) {
-        SecretKey key = CryptographyService.asAesKey("policy-consistency-key");
-        CipherText cipherText = cryptographyService.encrypt(key, algorithm, payload);
-        assertThat(cryptographyService.decrypt(key, cipherText)).isEqualTo(payload);
-      }
-      KeyPair generated = cryptographyService.generateKeyPair(
-          version.keyGenerationAlgorithm(), version.keySize());
-      assertThat(generated.getPrivate()).isNotNull();
-      assertThat(generated.getPublic()).isNotNull();
     }
 
-    /** And an algorithm outside the policy is still rejected. */
+    /** And an algorithm outside every policy is still rejected. */
     @Test
     void rejectsAlgorithmOutsideVersionPolicy() {
       String outsidePolicy = "RSA/ECB/PKCS1Padding";
-      assertThat(version.validAsymmetricEncryptionAlgorithms()).doesNotContain(outsidePolicy);
-      assertThat(version.validSymmetricEncryptionAlgorithms()).doesNotContain(outsidePolicy);
+      for (PersonaVersion version : PersonaVersion.knownVersions()) {
+        assertThat(version.validAsymmetricEncryptionAlgorithms()).doesNotContain(outsidePolicy);
+        assertThat(version.validSymmetricEncryptionAlgorithms()).doesNotContain(outsidePolicy);
+      }
       assertThatThrownBy(() -> cryptographyService.encrypt(certificate, outsidePolicy, payload))
           .isInstanceOf(IllegalArgumentException.class);
-      String outsideKeyGeneration = "DSA";
-      assertThat(version.keyGenerationAlgorithm()).isNotEqualTo(outsideKeyGeneration);
-      assertThatThrownBy(() -> cryptographyService.generateKeyPair(outsideKeyGeneration, 1024))
+      assertThatThrownBy(() -> cryptographyService.generateKeyPair("DSA", 1024))
           .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    /** Asymmetric and symmetric algorithms are not interchangeable. */
+    @Test
+    void rejectsAlgorithmOfTheWrongClass() {
+      assertThatThrownBy(() -> cryptographyService.encrypt(certificate, SYMMETRIC_ALGORITHM, payload))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("asymmetric");
+      assertThatThrownBy(() -> cryptographyService.encrypt(
+          CryptographyService.asAesKey("abcdefghijklmnop"), ASYMMETRIC_ALGORITHM, payload))
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessageContaining("symmetric");
     }
   }
 
@@ -425,7 +464,8 @@ class BouncyCastleCryptographyServiceTest {
 
     @Test
     void rejectsInvalidCipherTextRecords() {
-      CipherText invalid = new CipherText(Optional.empty(), "", "AAA", Optional.empty(), Optional.empty());
+      CipherText invalid = new CipherText(Optional.empty(), "", "AAA", Optional.empty(), Optional.empty(),
+          Optional.empty());
       assertThatThrownBy(() -> cryptographyService.decrypt(keyPair.getPrivate(), invalid))
           .isInstanceOf(IllegalArgumentException.class);
       assertThatThrownBy(() -> cryptographyService.decrypt(keyPair.getPrivate(), null))

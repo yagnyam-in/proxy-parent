@@ -74,6 +74,8 @@ class ConformanceVectorSuite {
       Map.entry(VectorKinds.PEM, Set.of("objectType", "pem", "expected")),
       Map.entry(VectorKinds.POLICY_V0, Set.of("policy", "field", "expected")),
       Map.entry(VectorKinds.ALGORITHM_SET, Set.of("signatureAlgorithms", "expected")),
+      Map.entry(VectorKinds.POLICY_V1, Set.of("policy", "field", "expected")),
+      Map.entry(VectorKinds.ALGORITHM_SET_V1, Set.of("signatureAlgorithms", "expected")),
       Map.entry(VectorKinds.SIGNING_PREIMAGE, Set.of(
           "domain", "messageType", "payloadFormat", "schemaId", "payloadHex", "expectedHex")),
       Map.entry(VectorKinds.SIGNATURE_VERIFY, Set.of(
@@ -112,6 +114,8 @@ class ConformanceVectorSuite {
       Map.entry(VectorKinds.PEM, Set.of("objectType", "pem", "expected")),
       Map.entry(VectorKinds.POLICY_V0, Set.of("policy", "field", "expected")),
       Map.entry(VectorKinds.ALGORITHM_SET, Set.of("signatureAlgorithms", "expected")),
+      Map.entry(VectorKinds.POLICY_V1, Set.of("policy", "field", "expected")),
+      Map.entry(VectorKinds.ALGORITHM_SET_V1, Set.of("signatureAlgorithms", "expected")),
       Map.entry(VectorKinds.SIGNING_PREIMAGE, Set.of(
           "domain", "messageType", "payloadFormat", "payloadHex", "expectedHex")),
       Map.entry(VectorKinds.SIGNATURE_VERIFY, Set.of(
@@ -134,6 +138,8 @@ class ConformanceVectorSuite {
       Map.entry(VectorKinds.PEM, 14),
       Map.entry(VectorKinds.POLICY_V0, 11),
       Map.entry(VectorKinds.ALGORITHM_SET, 9),
+      Map.entry(VectorKinds.POLICY_V1, 12),
+      Map.entry(VectorKinds.ALGORITHM_SET_V1, 10),
       Map.entry(VectorKinds.SIGNING_PREIMAGE, 20),
       Map.entry(VectorKinds.SIGNATURE_VERIFY, 14));
 
@@ -149,6 +155,8 @@ class ConformanceVectorSuite {
       VectorKinds.REALM,
       VectorKinds.POLICY_V0,
       VectorKinds.ALGORITHM_SET,
+      VectorKinds.POLICY_V1,
+      VectorKinds.ALGORITHM_SET_V1,
       VectorKinds.SIGNING_PREIMAGE);
 
   /**

@@ -12,7 +12,7 @@ vectors/               Portable test vectors (JSON). THE cross-language artifact
   json/                §4 canonical JSON payload encode/decode, rejects
   envelope/            §5 built-in envelope schemas over both codecs, §6.4 signing preimage
   identity/            §3.2 persona-id + delegation, §3.5 realm, §10.1 PEM
-  crypto/              §8 Persona Version v0 policy, §11 signature algorithm sets,
+  crypto/              §8 Persona Version policies (v0, v1), §11 signature algorithm sets,
                         RFC 8017 §8.2.2 RSA signature verification
   manifest.json        Index of every vector file (must stay in sync)
   README.md            The vector file format contract (Persona Conformance Vectors v1)

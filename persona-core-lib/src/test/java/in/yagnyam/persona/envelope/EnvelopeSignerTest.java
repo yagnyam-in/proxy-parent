@@ -178,7 +178,7 @@ class EnvelopeSignerTest {
         alice.key().id(),
         null,
         new CipherText(Optional.of("iv"), "AES/CTR/NoPadding", "cipher-text",
-            Optional.empty(), Optional.empty()),
+            Optional.empty(), Optional.empty(), Optional.empty()),
         alice.key().privateKeySha256Thumbprint(),
         alice.key().publicKeyPem(),
         alice.key().publicKeySha256Thumbprint());

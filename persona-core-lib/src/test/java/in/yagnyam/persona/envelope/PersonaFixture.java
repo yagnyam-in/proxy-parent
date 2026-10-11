@@ -43,7 +43,7 @@ final class PersonaFixture {
 
   /**
    * Runs the full registration flow against {@code registrar}: issue id,
-   * generate the key pair per the active version policy, CSR, hash the
+   * generate the key pair per the registrar's version policy, CSR, hash the
    * revocation passphrase, register.
    *
    * @param registrar target registrar
@@ -51,7 +51,7 @@ final class PersonaFixture {
    */
   static PersonaFixture mint(InProcessRegistrar registrar) {
     try {
-      PersonaVersion version = PersonaVersion.latestVersion();
+      PersonaVersion version = registrar.version();
       String requestId = UUID.randomUUID().toString();
       String personaId = registrar.issuePersonaId(requestId);
       KeyPair keyPair =
@@ -59,7 +59,7 @@ final class PersonaFixture {
       Hash passPhraseHash =
           CRYPTO.getHash(version.preferredHashAlgorithm(), "revocation-pass".getBytes(UTF_8));
       String csr = CsrService.instance()
-          .buildCsr(personaId, keyPair, version.certificateSignatureAlgorithm());
+          .buildCsr(personaId, keyPair, version.preferredSignatureAlgorithmSet().iterator().next());
       RegisteredPersona registered =
           registrar.registerPersona(requestId, personaId, passPhraseHash, csr);
       PersonaKey key =
