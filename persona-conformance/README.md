@@ -10,9 +10,10 @@ vectors/               Portable test vectors (JSON). THE cross-language artifact
   schema-digest/       §2 canonical form + SHA-1 digest, and rejected schema documents
   binary/              §3 binary payload encode/decode, kitchen sink, rejects
   json/                §4 canonical JSON payload encode/decode, rejects
-  envelope/            §5 built-in envelope schemas over both codecs
+  envelope/            §5 built-in envelope schemas over both codecs, §6.4 signing preimage
   identity/            §3.2 persona-id + delegation, §3.5 realm, §10.1 PEM
-  crypto/              §8 Persona Version v0 policy, §11 signature algorithm sets
+  crypto/              §8 Persona Version policies (v0, v1), §11 signature algorithm sets,
+                        RFC 8017 §8.2.2 RSA signature verification
   manifest.json        Index of every vector file (must stay in sync)
   README.md            The vector file format contract (Persona Conformance Vectors v1)
 tools/
@@ -52,10 +53,13 @@ reproduction is required.
 
 ## Independent verification
 
-`tools/reference_vectors.py` is a second implementation of the canonical form,
-digest, both codecs and the identity/policy rules, written from
-`docs/SCHEMA.md` and `PERSONA-PROTOCOL.md` with no Java involved. It executes
-every vector and reports any golden it cannot reproduce:
+`tools/reference_vectors.py` independently implements the canonical form,
+digest, both codecs, the §6.4 signing preimage, RSA PKCS#1 v1.5 signature
+verification (SPKI DER parsing, modular exponentiation and DigestInfo comparison
+per RFC 8017 §8.2.2), and the identity/policy rules. It is written from
+`docs/SCHEMA.md`, `PERSONA-PROTOCOL.md` and RFC 8017, with no Java involved.
+It recomputes supported vectors and reports PEM checks that are intentionally
+left to the Java runner:
 
 ```bash
 python3 tools/reference_vectors.py check      # verify all vectors

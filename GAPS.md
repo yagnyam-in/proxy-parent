@@ -129,14 +129,15 @@ Bounded and documented, but with residual surface:
   normative grammar, or keep the vectors as the arbiter and say so in
   §3.2/§3.5.
 
-## 6. Cross-language vectors are not merged to `master` — partial
+## 6. Cross-language vectors are partially merged to `master` — partial
 
 - **What.** The machine-readable vector suite (schema-digest, binary, JSON,
-  envelope, identity, crypto — 411 vectors with a Java runner and an
-  independent Python reference) is on `persona/conformance-vectors`, not
-  yet merged to `master`. The stacked `persona/preimage-vectors` branch adds
+  envelope, identity, crypto — 413 vectors with a Java runner and an
+  independent Python reference) was merged to `master` in PR #192. The
+  stacked `persona/preimage-vectors` branch adds
   20 `envelope.signing-preimage` vectors and 15 `crypto.signature-verify`
-  vectors, for 446 total. The preimage vectors pin §6.4 framing. The
+  vectors, bringing the merged suite to 470 vectors (the base suite grew to
+  435 when the v1 policy vectors landed). The preimage vectors pin §6.4 framing. The
   signature vectors verify fixed RSA signatures using public keys only;
   they are deliberately verify-only because repository policy forbids
   shipping private-key material. Consequently, the suite does not pin the
@@ -147,7 +148,7 @@ Bounded and documented, but with residual surface:
   implementations still need an external signing/verification exchange to
   demonstrate signer interoperability.
 - **Severity.** Medium.
-- **Direction.** Merge both vector branches. Keep private keys out of the
+- **Direction.** Merge the remaining preimage/signature vector branch. Keep private keys out of the
   repository; document a cross-implementation signing/verification
   exchange for adopters who need to prove their signer as well as verifier.
 

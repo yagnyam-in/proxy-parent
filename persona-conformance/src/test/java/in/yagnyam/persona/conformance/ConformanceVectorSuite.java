@@ -75,7 +75,11 @@ class ConformanceVectorSuite {
       Map.entry(VectorKinds.POLICY_V0, Set.of("policy", "field", "expected")),
       Map.entry(VectorKinds.ALGORITHM_SET, Set.of("signatureAlgorithms", "expected")),
       Map.entry(VectorKinds.POLICY_V1, Set.of("policy", "field", "expected")),
-      Map.entry(VectorKinds.ALGORITHM_SET_V1, Set.of("signatureAlgorithms", "expected")));
+      Map.entry(VectorKinds.ALGORITHM_SET_V1, Set.of("signatureAlgorithms", "expected")),
+      Map.entry(VectorKinds.SIGNING_PREIMAGE, Set.of(
+          "domain", "messageType", "payloadFormat", "schemaId", "payloadHex", "expectedHex")),
+      Map.entry(VectorKinds.SIGNATURE_VERIFY, Set.of(
+          "publicKeyPem", "algorithm", "preimageHex", "signatureHex", "expected")));
 
   /**
    * The keys a negative vector must carry beyond the common keys (its inputs);
@@ -90,7 +94,9 @@ class ConformanceVectorSuite {
       Map.entry(VectorKinds.JSON_ENCODE, Set.of("value")),
       Map.entry(VectorKinds.JSON_DECODE, Set.of("inputJson")),
       Map.entry(VectorKinds.PERSONA_ID, Set.of("input")),
-      Map.entry(VectorKinds.PEM, Set.of("objectType", "pem")));
+      Map.entry(VectorKinds.PEM, Set.of("objectType", "pem")),
+      Map.entry(VectorKinds.SIGNATURE_VERIFY, Set.of(
+          "publicKeyPem", "algorithm", "preimageHex", "signatureHex")));
 
   /**
    * The keys an accepting vector must carry beyond the common keys.
@@ -109,7 +115,11 @@ class ConformanceVectorSuite {
       Map.entry(VectorKinds.POLICY_V0, Set.of("policy", "field", "expected")),
       Map.entry(VectorKinds.ALGORITHM_SET, Set.of("signatureAlgorithms", "expected")),
       Map.entry(VectorKinds.POLICY_V1, Set.of("policy", "field", "expected")),
-      Map.entry(VectorKinds.ALGORITHM_SET_V1, Set.of("signatureAlgorithms", "expected")));
+      Map.entry(VectorKinds.ALGORITHM_SET_V1, Set.of("signatureAlgorithms", "expected")),
+      Map.entry(VectorKinds.SIGNING_PREIMAGE, Set.of(
+          "domain", "messageType", "payloadFormat", "payloadHex", "expectedHex")),
+      Map.entry(VectorKinds.SIGNATURE_VERIFY, Set.of(
+          "publicKeyPem", "algorithm", "preimageHex", "signatureHex", "expected")));
 
   /**
    * The minimum number of vectors per kind. Deliberately shrinking a phase is
@@ -129,11 +139,16 @@ class ConformanceVectorSuite {
       Map.entry(VectorKinds.POLICY_V0, 11),
       Map.entry(VectorKinds.ALGORITHM_SET, 9),
       Map.entry(VectorKinds.POLICY_V1, 12),
-      Map.entry(VectorKinds.ALGORITHM_SET_V1, 10));
+      Map.entry(VectorKinds.ALGORITHM_SET_V1, 10),
+      Map.entry(VectorKinds.SIGNING_PREIMAGE, 20),
+      Map.entry(VectorKinds.SIGNATURE_VERIFY, 14));
 
   /**
-   * Kinds whose contract is a boolean verdict over the input, so a negative
-   * vector is a category error: the verdict "false" already is the negative.
+   * Kinds whose contract admits no negative form. For the verdict kinds a
+   * negative vector is a category error (the verdict "false" already is the
+   * negative); for {@code envelope.signing-preimage} §6.4 mandates no
+   * rejection — the preimage builder takes the domain as given, so every
+   * well-formed input has a defined preimage (see vectors/README.md).
    */
   private static final Set<String> VERDICT_ONLY_KINDS = Set.of(
       VectorKinds.PERSONA_ID_DELEGATION,
@@ -141,7 +156,8 @@ class ConformanceVectorSuite {
       VectorKinds.POLICY_V0,
       VectorKinds.ALGORITHM_SET,
       VectorKinds.POLICY_V1,
-      VectorKinds.ALGORITHM_SET_V1);
+      VectorKinds.ALGORITHM_SET_V1,
+      VectorKinds.SIGNING_PREIMAGE);
 
   /**
    * Duplicate-key detection keeps vector files honest while parsing. The

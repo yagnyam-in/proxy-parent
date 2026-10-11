@@ -24,9 +24,11 @@ vectors/
   schema-digest/              §2 canonical form + SHA-1 schema digest, and rejects
   binary/                     §3 binary payload encode/decode + rejects
   json/                       §4 canonical JSON payload encode/decode + rejects
-  envelope/                   §5 built-in envelope schemas over both codecs
+  envelope/                   §5 built-in envelope schemas over both codecs;
+                              §6.4 signing preimage
   identity/                   §3 persona-id / delegation / realm / PEM
-  crypto/                     §8 Persona Version v0 policy + §11 algorithm sets
+  crypto/                     §8 Persona Version v0 policy + §11 algorithm sets;
+                              §6.4/§8 golden signature verification
 ```
 
 ## File format
@@ -114,6 +116,8 @@ codec must produce or consume — not embedded JSON values.
 | `crypto.signature-algorithm-set` | `crypto/` | `signatureAlgorithms`, `expected` | §11 rule 3 exact-match acceptance of an envelope's signature algorithm set against v0's valid sets. |
 | `crypto.policy-v1` | `crypto/` | `policy`, `field`, `expected` | The §8 Persona Version v1 policy (Ed25519, X25519), field by field — including `encryptionKeyGenerationAlgorithms`. |
 | `crypto.signature-algorithm-set-v1` | `crypto/` | `signatureAlgorithms`, `expected` | §11 rule 3 exact-match acceptance under v1: `{Ed25519}` and the retained `{SHA256withRSA}` are accepted; a mixed-family set is not (§7.2). |
+| `crypto.signature-verify` | `crypto/` | `publicKeyPem`, `algorithm`, `preimageHex`, `signatureHex`, `expected` (boolean verdict) | Golden RSASSA-PKCS1-v1_5 signature verification over §6.4 signing preimages (every `preimageHex` is pinned by an `envelope.signing-preimage` vector cited in the description, so payload fields → preimage → signature is provable end-to-end). Accept vectors assert the boolean verdict (`true`/`false`); `expected: false` pins real failure modes without new key material: a valid signature over a different preimage (§11 rule 10 — the bytes verified are not the bytes signed), flipped bytes, truncated/empty/wrong-length signatures, a noncanonical signature representative `s ≥ n` (RFC 8017 §8.2.2: RSAVP1 rejects any representative outside `[0, n-1]` — fed straight to modular exponentiation, `s+n` would reduce back to the golden's representative and wrongly verify; the JCA SunRsaSign and BouncyCastle both return false for it), a signature from a different key pair, and a wrong-digest algorithm. The single `expect: reject` vector pins that an unknown algorithm name MUST error per §8 + §11 rule 3 (§12 downgrade attacks). **Verify-only by policy**: the suite ships **no private-key material** (see `identity.pem`), so the sign side cannot be goldenized portably — the fixture RSA-2048 key pair (§8 key size) was generated once, used to derive the goldens, and destroyed; only the public key (PEM SubjectPublicKeyInfo), the preimages and the golden signature bytes are committed. PKCS#1 v1.5 is deterministic, so the goldens are stable across implementations. |
+| `envelope.signing-preimage` | `envelope/` | `domain`, `messageType`, `payloadFormat`, `schemaId`, `payloadHex`, `expectedHex` | The §6.4 signing preimage, byte-exact: `uvarint(len(domain)) \|\| domain \|\| uvarint(len(messageType)) \|\| messageType \|\| uvarint(len(payloadFormat)) \|\| payloadFormat \|\| uvarint(len(schemaId)) \|\| schemaId \|\| uvarint(len(payload)) \|\| payload`, all strings UTF-8, `uvarint` the unsigned LEB128 encoding of the *byte* length. `payloadHex` is the exact payload as lowercase hex (the suite's byte-input convention). `schemaId` is a string or JSON `null`; `null` (an absent schemaId) and `""` denote the same preimage, pinned by the `schema-id-absent-null` / `schema-id-empty-string` pair. The kind is **accept-only**: the preimage formula takes the domain as given, so §6.4 mandates no rejection a vector could pin (a malformed vector is a suite bug, not a protocol rejection). |
 
 A schema-driven vector names its schema in exactly one of three ways: `schema`
 (inline schema document text), `schemaRef` (a §5 built-in), or
@@ -175,9 +179,11 @@ definition of these rules.
 
 `../tools/reference_vectors.py` is a **second, independent implementation**
 (pure Python 3, standard library only, no Java code involved). It implements
-the canonical form, the digest, the binary and JSON codecs, the persona-id
-grammar, the delegation rule, the realm grammar and the v0 policy from the
-specification text, and it *executes every vector in this directory*:
+the canonical form, the digest, the binary and JSON codecs, the §6.4 signing
+preimage, the persona-id grammar, the delegation rule, the realm grammar, the
+v0 policy and RSASSA-PKCS1-v1_5 signature verification (SPKI DER parsing plus
+modular exponentiation and DigestInfo comparison, per RFC 8017 §8.2.2) from
+the specification text, and it *executes every vector in this directory*:
 
 ```
 python3 tools/reference_vectors.py check      # every vector in manifest.json
@@ -195,7 +201,14 @@ entries (never committed) so the check cannot regress.
 Every mechanically reproducible golden in this directory was produced by that
 reference implementation, and the digest goldens were cross-checked a third
 time with `shasum -a 1` and `openssl sha1`; the certificate thumbprint with
-`openssl x509 -fingerprint -sha256`. The reference deliberately does **not**
+`openssl x509 -fingerprint -sha256`. The signature goldens of
+`crypto/signature-verify.json` are the one exception to "produced by the
+reference": signing needs the deliberately unshipped private key, so they were
+derived once with `openssl dgst -sha256 -sign`, cross-checked byte-identically
+against a pure-Python PKCS#1 v1.5 signing derivation and against the Java
+`CryptographyService.getSignature` (three independent implementations agreeing
+on identical bytes), and are verified at check time by the reference's
+RSASSA-PKCS1-v1_5 verifier. The reference deliberately does **not**
 re-implement X.509/PKCS#8 parsing; for PEM it verifies the thumbprint
 computations it can derive without one — the certificate's SHA-256-over-DER,
 the public key's SHA-256 over the SubjectPublicKeyInfo body, and the CSR's
