@@ -1568,7 +1568,15 @@ def rsa_pkcs1_v15_verify(algorithm, public_key_pem, preimage, signature):
         bytes, equals EM exactly — where DigestInfo carries the algorithm's
         DER prefix over the digest of the preimage.
 
-    A signature whose length differs from k can never verify (verdict False).
+    A signature whose length differs from k can never verify (verdict False),
+    and neither can a noncanonical signature representative: §8.2.2 step 2
+    runs RSAVP1 (§5.2.2), which rejects any representative s outside
+    [0, n-1] ("signature representative out of range"), and §8.2.2 step 2b
+    maps that to an invalid signature.  Without the range check
+    ``pow(s, e, n)`` would silently reduce s modulo n and accept the golden
+    vector's representative shifted by +n — a 256-byte noncanonical
+    representative that the JCA SunRsaSign and BouncyCastle verifiers both
+    reject with a false verdict.
     An ``algorithm`` outside :data:`_DIGESTINFO_PREFIX` is rejected outright:
     PERSONA-PROTOCOL.md §8 sanctions exactly {SHA256withRSA} for v0 and §11
     rule 3 (with §12, downgrade attacks) mandates rejecting anything else.
@@ -1589,7 +1597,14 @@ def rsa_pkcs1_v15_verify(algorithm, public_key_pem, preimage, signature):
     k = (modulus.bit_length() + 7) // 8
     if len(signature) != k:
         return False
-    value = pow(int.from_bytes(signature, "big"), exponent, modulus)
+    representative = int.from_bytes(signature, "big")
+    if representative >= modulus:
+        # RSAVP1 step 1 (RFC 8017 §5.2.2): the signature representative must
+        # lie in [0, n-1]; §8.2.2 step 2b turns "signature representative
+        # out of range" into an invalid signature — a false verdict, never
+        # an error.
+        return False
+    value = pow(representative, exponent, modulus)
     digest = _DIGESTINFO_HASH[algorithm](preimage).digest()
     digest_info = _DIGESTINFO_PREFIX[algorithm] + digest
     expected_em = b"\x00\x01" + b"\xff" * (k - len(digest_info) - 3) + b"\x00" + digest_info

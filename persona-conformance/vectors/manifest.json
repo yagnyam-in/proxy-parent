@@ -4,7 +4,7 @@
   "kind": "manifest",
   "description": "Index of every vector file (see vectors/README.md). Regenerate with 'python3 tools/reference_vectors.py manifest' after adding, removing or renaming a vector file; the reference check and the Java runner both fail when this index is stale.",
   "fileCount": 29,
-  "vectorCount": 445,
+  "vectorCount": 446,
   "kinds": [
     {
       "kind": "crypto.policy-v0",
@@ -16,7 +16,7 @@
     },
     {
       "kind": "crypto.signature-verify",
-      "vectorCount": 14
+      "vectorCount": 15
     },
     {
       "kind": "envelope.signing-preimage",
@@ -118,7 +118,7 @@
     {
       "path": "crypto/signature-verify.json",
       "kind": "crypto.signature-verify",
-      "vectorCount": 14
+      "vectorCount": 15
     },
     {
       "path": "envelope/binary-decode.json",

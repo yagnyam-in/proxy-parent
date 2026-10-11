@@ -7,7 +7,8 @@
     "PERSONA-PROTOCOL.md \u00a76.4",
     "PERSONA-PROTOCOL.md \u00a78",
     "PERSONA-PROTOCOL.md \u00a711 rule 3",
-    "PERSONA-PROTOCOL.md \u00a711 rule 10"
+    "PERSONA-PROTOCOL.md \u00a711 rule 10",
+    "RFC 8017 \u00a78.2.2"
   ],
   "vectors": [
     {
@@ -88,6 +89,16 @@
       "algorithm": "SHA256withRSA",
       "preimageHex": "1a706572736f6e612e7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e0003010203",
       "signatureHex": "11c77d98dd19eb639457b70a04a319036d02168ef40138e9595fe8f8b81821d6a1e7c582a76cf05de825258a14b9fd3862fb0b107447985114ebf6db2c7787e1742de99b6d8084a4538286d156d8f67e35422fa0d00d549add018779abd6e0cfd303fdca41acb6ebcfce3ccc4ccfc380cd06a0bd6f13d0624c1d169888185e3fa6a9b97c63ec99f7bccdd1420d701a3437b2e0f92df898dbc4ec740dee51c6a899fdd3c686a88d3a1549d8aa572e9bd0ff6c07e5e1a54a9d72ae0751a0c4fbc2f929d7d128f9327e71940a65e7c229be81ea8d79a96a8a13d2f27de9b6b36416aa2542f622512f28a9f213ec510997287639d60ae85e2a354c0a9616201c444e",
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-verify/representative-above-modulus",
+      "spec": "RFC 8017 \u00a78.2.2",
+      "description": "The golden-single-small signature integer s replaced by the noncanonical representative s+n (still k=256 bytes: the golden's top byte 0x11 cannot overflow the octet length over the 0xc2-prefixed 2048-bit modulus). RSAVP1 (RFC 8017 \u00a75.2.2 step 1) rejects any signature representative outside [0, n-1], and \u00a78.2.2 step 2b maps \u201csignature representative out of range\u201d to an invalid signature, so verification MUST return false. A verifier that feeds s straight into modular exponentiation would reduce s+n modulo n back to the golden's representative and wrongly accept; the verdict pins the range check as part of RSASSA-PKCS1-v1_5 verification itself \u2014 the JCA SunRsaSign and BouncyCastle verifiers both return false for such representatives.",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "SHA256withRSA",
+      "preimageHex": "1a706572736f6e612e7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e0003010203",
+      "signatureHex": "d3e4d7bad83d49e023e0e8b983288d33cdf69b960c51f2f838cb7c47f888c4a79452125fb878b09980e57599767448b5f404d372b81b434efd09e39efbc555603251629ce3c7e264a8dc54e35f7d92c3d0e4ee74de37fc62e8467783da0026e8605defbdb20709879f5fac580ae757afb788c8bbd81de9cd0d89458b95cf1897b63a262d9aadc2ecf6b0860996872619952fdab42cc73e26bf88609da4bb9e00c55d81ff4f85ce3c8b797368da63d3899ca505e6b1c5b260874b44b92ecb3be46e5ee87de1a515e1cd80566546da8b30e5d17125e439c11bb221f3390ba57f16fcf263617d87b9f080769fc7398a68333b131d927a948d78d8928af69bb8b9c4",
       "expected": false
     },
     {
