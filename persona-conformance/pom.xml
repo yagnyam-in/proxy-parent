@@ -30,7 +30,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <checkstyle.skip>true</checkstyle.skip>
 
-        <jackson.version>2.22.3</jackson.version>
+        <jackson.version>2.18.11</jackson.version>
         <!-- jackson-annotations releases on its own patchless line; 2.22 is
              the release jackson-databind 2.22.3 pairs with. -->
         <jackson-annotations.version>2.22</jackson-annotations.version>
