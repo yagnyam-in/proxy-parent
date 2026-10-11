@@ -34,12 +34,18 @@
         -->
         <checkstyle.skip>true</checkstyle.skip>
 
-        <bouncycastle.version>1.80</bouncycastle.version>
-        <jackson.version>2.17.2</jackson.version>
+        <bouncycastle.version>1.86</bouncycastle.version>
+        <jackson.version>2.22.3</jackson.version>
+        <!--
+          jackson-annotations releases on its own patchless line (2.20, 2.21,
+          2.22): 2.22 is the release jackson-databind 2.22.3 pairs with, so it
+          deliberately lags the core/databind patch version.
+        -->
+        <jackson-annotations.version>2.22</jackson-annotations.version>
         <slf4j.version>2.0.16</slf4j.version>
         <lombok.version>1.18.34</lombok.version>
         <junit-jupiter.version>5.10.3</junit-jupiter.version>
-        <assertj.version>3.26.3</assertj.version>
+        <assertj.version>3.27.7</assertj.version>
 
         <!-- Modern plugin versions for the Java 21 modules (parent pins older ones for legacy) -->
         <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
@@ -52,8 +58,12 @@
             <!--
               Override the parent's legacy Jackson pins (2.10.x with exclusions):
               module-level dependencyManagement wins over the inherited one, so
-              all Jackson artifacts resolve consistently at 2.17.2 and
+              every Jackson artifact resolves on the current 2.22 line — core
+              and databind at 2.22.3, annotations at its own patchless 2.22
+              release (the version jackson-databind 2.22.3 pairs with) — and
               jackson-annotations is no longer excluded from jackson-databind.
+              jackson-datatype-jsr310 needs no override: no persona code
+              registers JavaTimeModule, and core-lib does not declare it.
             -->
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -68,12 +78,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.datatype</groupId>
-                <artifactId>jackson-datatype-jsr310</artifactId>
-                <version>${jackson.version}</version>
+                <version>${jackson-annotations.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -92,12 +97,6 @@
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-
         <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>

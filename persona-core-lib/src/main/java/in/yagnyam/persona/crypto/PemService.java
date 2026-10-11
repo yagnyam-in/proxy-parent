@@ -10,6 +10,7 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -161,7 +162,8 @@ public final class PemService {
    *
    * @param certificatePem PEM string
    * @return decoded certificate
-   * @throws GeneralSecurityException if the certificate cannot be decoded
+   * @throws GeneralSecurityException if the X.509 certificate factory cannot
+   *     be obtained
    * @throws IOException if the input is not a valid PEM certificate
    */
   public X509Certificate decodeCertificate(String certificatePem)
@@ -169,13 +171,22 @@ public final class PemService {
     Objects.requireNonNull(certificatePem, "certificatePem");
     PemObject pemObject = readPem(certificatePem, "CERTIFICATE");
     CertificateFactory factory = CertificateFactory.getInstance("X.509", BouncyCastle.provider());
-    Certificate certificate =
-        factory.generateCertificate(new ByteArrayInputStream(pemObject.getContent()));
+    Certificate certificate;
+    try {
+      certificate = factory.generateCertificate(new ByteArrayInputStream(pemObject.getContent()));
+    } catch (CertificateException e) {
+      // BouncyCastle 1.86+ throws for a PEM body that holds no certificate
+      // (e.g. an empty body); earlier releases returned null instead. Both
+      // behaviors mean the same malformed input (protocol §10.1), so both are
+      // normalized to the same IOException at the decode boundary — the
+      // observable rejection channel must not depend on the provider release.
+      throw new IOException("PEM CERTIFICATE body does not hold a certificate", e);
+    }
     if (certificate == null) {
-      // CertificateFactory returns null (rather than throwing) when the body
-      // holds no certificate — e.g. an empty body. Reject it at the decode
-      // boundary; a silent null would surface as an unrelated failure far
-      // from the malformed input (protocol §9.1).
+      // Providers that return null rather than throwing (BouncyCastle before
+      // 1.86) when the body holds no certificate — e.g. an empty body. Reject
+      // it at the decode boundary; a silent null would surface as an unrelated
+      // failure far from the malformed input (protocol §9.1).
       throw new IOException("PEM CERTIFICATE body does not hold a certificate");
     }
     return (X509Certificate) certificate;

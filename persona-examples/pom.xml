@@ -23,10 +23,42 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <checkstyle.skip>true</checkstyle.skip>
+        <jackson.version>2.22.3</jackson.version>
+        <!-- jackson-annotations releases on its own patchless line; 2.22 is
+             the release jackson-databind 2.22.3 pairs with. -->
+        <jackson-annotations.version>2.22</jackson-annotations.version>
         <lombok.version>1.18.34</lombok.version>
         <slf4j.version>2.0.16</slf4j.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!--
+              The parent's legacy dependencyManagement pins Jackson at 2.10.x
+              and those pins override the versions resolved through
+              persona-core-lib, so the shaded demo jar would bundle the
+              vulnerable 2.10 line. Override them so this module resolves the
+              same current Jackson line as the other persona modules (see the
+              persona-core-lib pom).
+            -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson-annotations.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
         <dependency>
