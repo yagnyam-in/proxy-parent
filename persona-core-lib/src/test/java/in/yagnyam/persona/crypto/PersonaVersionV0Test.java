@@ -37,12 +37,6 @@ class PersonaVersionV0Test {
   }
 
   @Test
-  void latestVersionIsV0() {
-    assertThat(PersonaVersion.latestVersion()).isSameAs(PersonaVersionV0.instance());
-    assertThat(PersonaVersion.latestVersion().version()).isEqualTo("v0");
-  }
-
-  @Test
   void policyCollectionsAreImmutable() {
     assertThatThrownBy(() -> version.validSignatureAlgorithmSets().add(Set.of("SHA512withRSA")))
         .isInstanceOf(UnsupportedOperationException.class);

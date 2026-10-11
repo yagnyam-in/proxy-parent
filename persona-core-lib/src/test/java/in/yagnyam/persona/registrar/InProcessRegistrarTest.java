@@ -42,6 +42,11 @@ import org.junit.jupiter.api.Test;
  * two-step registration, certificate chaining to the root, duplicate
  * requestId rejection, revocation with passphrase verification, and
  * certificate lookup semantics.
+ *
+ * <p>The suite runs against a default-constructed registrar, i.e. the
+ * latest Persona Version; version-specific registrar policy (v0 RSA roots,
+ * dual-use key usage, family refusals) is pinned in
+ * {@link InProcessRegistrarV1Test}.
  */
 class InProcessRegistrarTest {
 
@@ -71,7 +76,9 @@ class InProcessRegistrarTest {
 
   private String validCsrFor(String personaId) {
     try {
-      return CsrService.instance().buildCsr(personaId, TestSupport.rsaKeyPair(), "SHA256withRSA");
+      return CsrService.instance().buildCsr(personaId,
+          TestSupport.signingKeyPair(registrar.version()),
+          registrar.version().certificateSignatureAlgorithm());
     } catch (GeneralSecurityException e) {
       throw new IllegalStateException(e);
     }
@@ -185,8 +192,9 @@ class InProcessRegistrarTest {
     @Test
     void rejectsRegistrationForUnknownRequestId() throws GeneralSecurityException {
       String personaId = registrar.issuePersonaId("req-known");
-      KeyPair keyPair = TestSupport.rsaKeyPair();
-      String csr = CsrService.instance().buildCsr(personaId, keyPair, "SHA256withRSA");
+      KeyPair keyPair = TestSupport.signingKeyPair(registrar.version());
+      String csr = CsrService.instance().buildCsr(personaId, keyPair,
+          registrar.version().certificateSignatureAlgorithm());
       Hash hash = CRYPTO.getHash("SHA-256", "pass".getBytes(StandardCharsets.UTF_8));
       assertThatThrownBy(() -> registrar.registerPersona("req-never-issued", personaId, hash, csr))
           .isInstanceOf(IllegalArgumentException.class)
@@ -255,8 +263,8 @@ class InProcessRegistrarTest {
               new AttributeTypeAndValue(BCStyle.OU, new DERUTF8String("attacker"))})});
 
       for (X500Name adversarialSubject : List.of(smuggledEmail, smuggledOu)) {
-        String csr = PersonaRegistrationFlow.csrWithSubject(adversarialSubject,
-            TestSupport.rsaKeyPair());
+        String csr = PersonaRegistrationFlow.csrWithSubject(registrar.version(),
+            adversarialSubject, TestSupport.signingKeyPair(registrar.version()));
         assertThatThrownBy(() -> registrar.registerPersona(requestId, personaId,
             validHash("pass-phrase"), csr))
             .as("multi-valued RDN %s must be rejected", adversarialSubject)
@@ -271,8 +279,9 @@ class InProcessRegistrarTest {
     void rejectsCsrWithExtraSubjectAttributes() {
       String requestId = "req-extra-subject-attributes";
       String personaId = registrar.issuePersonaId(requestId);
-      String csr = PersonaRegistrationFlow.csrWithSubject(
-          new X500Name("CN=" + personaId + ",OU=attacker"), TestSupport.rsaKeyPair());
+      String csr = PersonaRegistrationFlow.csrWithSubject(registrar.version(),
+          new X500Name("CN=" + personaId + ",OU=attacker"),
+          TestSupport.signingKeyPair(registrar.version()));
 
       assertThatThrownBy(() -> registrar.registerPersona(requestId, personaId,
           validHash("pass-phrase"), csr))
@@ -292,7 +301,8 @@ class InProcessRegistrarTest {
           new X500Name(new RDN[0]));
 
       for (X500Name subject : subjectsWithoutCn) {
-        String csr = PersonaRegistrationFlow.csrWithSubject(subject, TestSupport.rsaKeyPair());
+        String csr = PersonaRegistrationFlow.csrWithSubject(registrar.version(), subject,
+            TestSupport.signingKeyPair(registrar.version()));
         assertThatThrownBy(() -> registrar.registerPersona(requestId, personaId,
             validHash("pass-phrase"), csr))
             .as("subject %s without CN must be rejected", subject)
@@ -325,10 +335,10 @@ class InProcessRegistrarTest {
     @Test
     void rejectsCsrWithInvalidSignature() {
       String personaId = registrar.issuePersonaId("req-bad-signature");
-      KeyPair signingKeyPair = TestSupport.rsaKeyPair();
-      KeyPair otherKeyPair = TestSupport.rsaKeyPair();
+      KeyPair signingKeyPair = TestSupport.signingKeyPair(registrar.version());
+      KeyPair otherKeyPair = TestSupport.signingKeyPair(registrar.version());
       String tamperedCsr = PersonaRegistrationFlow.csrWithSwappedPublicKey(
-          personaId, signingKeyPair, otherKeyPair.getPublic());
+          registrar.version(), personaId, signingKeyPair, otherKeyPair.getPublic());
       assertThatThrownBy(() -> registrar.registerPersona("req-bad-signature", personaId,
           validHash("pass-phrase"), tamperedCsr))
           .isInstanceOf(IllegalArgumentException.class)
@@ -376,7 +386,7 @@ class InProcessRegistrarTest {
      * Protocol §7.1/§8: the CSR must be signed with an algorithm from the
      * active version's preferred signature algorithm set. SHA1withRSA
      * (OID 1.2.840.113549.1.1.5) and SHA512withRSA are both cryptographically
-     * valid but outside v0's set.
+     * valid but outside the active version's set.
      */
     @Test
     void rejectsCsrSignedWithAlgorithmOutsidePreferredSet() throws GeneralSecurityException {
@@ -552,7 +562,7 @@ class InProcessRegistrarTest {
 
     @Test
     void acceptsProvidedSelfSignedRoot() throws Exception {
-      KeyPair rootKeyPair = TestSupport.rsaKeyPair();
+      KeyPair rootKeyPair = TestSupport.signingKeyPair(registrar.version());
       String rootKeyPem = PemService.instance().encodePrivateKey(rootKeyPair.getPrivate());
       String rootCertificatePem = PemService.instance().encodeCertificate(
           TestCertificates.selfSignedWithCommonName(rootKeyPair, "custom-root", Duration.ofDays(1)));
@@ -568,10 +578,11 @@ class InProcessRegistrarTest {
 
     @Test
     void rejectsRootKeyNotMatchingCertificate() throws Exception {
-      KeyPair rootKeyPair = TestSupport.rsaKeyPair();
+      KeyPair rootKeyPair = TestSupport.signingKeyPair(registrar.version());
       String rootCertificatePem = PemService.instance().encodeCertificate(
           TestCertificates.selfSignedWithCommonName(rootKeyPair, "custom-root", Duration.ofDays(1)));
-      String wrongKeyPem = PemService.instance().encodePrivateKey(TestSupport.rsaKeyPair().getPrivate());
+      String wrongKeyPem = PemService.instance().encodePrivateKey(
+          TestSupport.signingKeyPair(registrar.version()).getPrivate());
       assertThatThrownBy(() -> new InProcessRegistrar(wrongKeyPem, rootCertificatePem))
           .isInstanceOf(IllegalArgumentException.class)
           .hasMessageContaining("does not match");
@@ -588,7 +599,7 @@ class InProcessRegistrarTest {
      */
     @Test
     void acceptsProvidedSelfSignedRootWithCaOnlyKeyUsage() throws Exception {
-      KeyPair rootKeyPair = TestSupport.rsaKeyPair();
+      KeyPair rootKeyPair = TestSupport.signingKeyPair(registrar.version());
       String rootKeyPem = PemService.instance().encodePrivateKey(rootKeyPair.getPrivate());
       X509Certificate rootCertificate = TestCertificates.selfSignedCaRoot(
           rootKeyPair, "custom-root", Duration.ofDays(1));
@@ -610,11 +621,11 @@ class InProcessRegistrarTest {
     /** G4 (P1): the CA-only root still rejects a mismatched key. */
     @Test
     void rejectsMismatchedKeyForCaOnlyRoot() throws Exception {
-      KeyPair rootKeyPair = TestSupport.rsaKeyPair();
+      KeyPair rootKeyPair = TestSupport.signingKeyPair(registrar.version());
       String rootCertificatePem = PemService.instance().encodeCertificate(
           TestCertificates.selfSignedCaRoot(rootKeyPair, "custom-root", Duration.ofDays(1)));
       String wrongKeyPem = PemService.instance().encodePrivateKey(
-          TestSupport.rsaKeyPair().getPrivate());
+          TestSupport.signingKeyPair(registrar.version()).getPrivate());
 
       assertThatThrownBy(() -> new InProcessRegistrar(wrongKeyPem, rootCertificatePem))
           .isInstanceOf(IllegalArgumentException.class)
@@ -626,7 +637,7 @@ class InProcessRegistrarTest {
       InProcessRegistrar other = new InProcessRegistrar();
       RegisteredPersona notARoot = registerFreshPersona(other, "pass-phrase");
       String keyPem = PemService.instance().encodePrivateKey(
-          TestSupport.rsaKeyPair().getPrivate());
+          TestSupport.signingKeyPair(registrar.version()).getPrivate());
       String personaCertPem = notARoot.certificate().certificatePem();
       assertThatThrownBy(() -> new InProcessRegistrar(keyPem, personaCertPem))
           .isInstanceOf(IllegalArgumentException.class)

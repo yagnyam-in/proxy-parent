@@ -3,6 +3,7 @@ package in.yagnyam.persona;
 import in.yagnyam.persona.crypto.BouncyCastleCryptographyService;
 import in.yagnyam.persona.crypto.CryptographyService;
 import in.yagnyam.persona.crypto.PersonaVersion;
+import in.yagnyam.persona.crypto.PersonaVersionV0;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.MessageDigest;
@@ -19,17 +20,12 @@ public final class TestSupport {
   private TestSupport() {}
 
   /**
-   * Generates an RSA 2048 key pair per the active persona version policy.
+   * Generates an RSA 2048 key pair per the v0 key generation policy.
    *
    * @return fresh key pair
    */
   public static KeyPair rsaKeyPair() {
-    try {
-      PersonaVersion version = PersonaVersion.latestVersion();
-      return CRYPTO.generateKeyPair(version.keyGenerationAlgorithm(), version.keySize());
-    } catch (GeneralSecurityException e) {
-      throw new IllegalStateException(e);
-    }
+    return signingKeyPair(PersonaVersionV0.instance());
   }
 
   /**

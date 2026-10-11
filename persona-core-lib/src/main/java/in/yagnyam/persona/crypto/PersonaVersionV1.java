@@ -35,9 +35,7 @@ import java.util.Set;
  * pairs; how the second, encryption key is certified is the per-algorithm
  * key-descriptor extension deferred by §7.2.
  *
- * <p>{@link PersonaVersion#latestVersion()} still returns v0 until a
- * deployment opts in — activating v1 as the default flips the preferred
- * signature set and with it the key family of every new persona.
+ * <p>v1 is the latest version ({@link PersonaVersion#latestVersion()}).
  *
  * <p>All returned collections are immutable.
  */

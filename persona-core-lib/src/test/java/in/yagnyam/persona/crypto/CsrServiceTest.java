@@ -22,7 +22,7 @@ class CsrServiceTest {
   void buildsCsrWithSubjectCommonName() throws Exception {
     KeyPair keyPair = TestSupport.rsaKeyPair();
     String csrPem = csrService.buildCsr("p-csr-test", keyPair,
-        PersonaVersion.latestVersion().certificateSignatureAlgorithm());
+        PersonaVersionV0.instance().certificateSignatureAlgorithm());
     assertThat(csrPem).contains("BEGIN CERTIFICATE REQUEST");
     PKCS10CertificationRequest csr = PemService.instance().decodeCertificateRequest(csrPem);
     assertThat(csr.getSubject().getRDNs(BCStyle.CN)[0].getFirst().getValue().toString())

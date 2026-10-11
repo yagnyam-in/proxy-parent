@@ -112,8 +112,8 @@ final class VectorKinds {
       case PERSONA_ID_DELEGATION -> personaIdDelegation(vector);
       case REALM -> realm(vector);
       case PEM -> pem(vector);
-      case POLICY_V0 -> policy(vector, PersonaVersion.latestVersion());
-      case ALGORITHM_SET -> signatureAlgorithmSet(vector, PersonaVersion.latestVersion());
+      case POLICY_V0 -> policy(vector, PersonaVersion.of("v0"));
+      case ALGORITHM_SET -> signatureAlgorithmSet(vector, PersonaVersion.of("v0"));
       case POLICY_V1 -> policy(vector, PersonaVersion.of("v1"));
       case ALGORITHM_SET_V1 -> signatureAlgorithmSet(vector, PersonaVersion.of("v1"));
       default -> throw new VectorFormatException(
@@ -302,8 +302,7 @@ final class VectorKinds {
 
   /**
    * {@code crypto.policy-v0} / {@code crypto.policy-v1}: the §8 policy table
-   * of {@code version}, field by field. For v0 the version is the active
-   * (latest) one, so the v0 vectors also pin that the default stays v0.
+   * of {@code version}, field by field.
    */
   private static void policy(ConformanceVector vector, PersonaVersion version) {
     String field = vector.text("field");
@@ -345,7 +344,7 @@ final class VectorKinds {
   }
 
   /**
-   * {@code crypto.signature-algorithm-set} (active version) /
+   * {@code crypto.signature-algorithm-set} (v0) /
    * {@code crypto.signature-algorithm-set-v1}: §11 rule 3 exact-match
    * membership.
    */

@@ -66,19 +66,15 @@ public interface PersonaVersion {
   String preferredHashAlgorithm();
 
   /**
-   * Returns the latest Persona Version.
-   *
-   * <p>Still {@code v0}, deliberately: {@code v1} (Ed25519 signatures, X25519
-   * key agreement) exists and is complete, but making it the default flips
-   * the preferred signature set — and with it the key family every new
-   * persona must generate — which is a breaking change for existing
-   * deployments. A Realm opts in to v1 by constructing its registrar, signer
-   * and verifier with {@link #of(String) of("v1")}.
+   * Returns the latest Persona Version: {@code v1} (Ed25519 signatures,
+   * X25519 key agreement). New personas therefore generate Ed25519 keys.
+   * {@code v0} stays resolvable through {@link #of(String) of("v0")}, and a
+   * v1 verifier still accepts v0 ({@code SHA256withRSA}) envelopes.
    *
    * @return latest version instance
    */
   static PersonaVersion latestVersion() {
-    return PersonaVersionV0.instance();
+    return PersonaVersionV1.instance();
   }
 
   /**

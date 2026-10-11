@@ -79,9 +79,9 @@ class PersonaVersionV1Test {
         .containsExactly(PersonaVersionV0.instance(), PersonaVersionV1.instance());
   }
 
-  /** v1 is opt-in: making it the default would change every new persona's key family. */
+  /** v1 is the default: new personas sign Ed25519; v0 stays resolvable via {@code of("v0")}. */
   @Test
-  void latestVersionStaysV0() {
-    assertThat(PersonaVersion.latestVersion()).isSameAs(PersonaVersionV0.instance());
+  void latestVersionIsV1() {
+    assertThat(PersonaVersion.latestVersion()).isSameAs(PersonaVersionV1.instance());
   }
 }

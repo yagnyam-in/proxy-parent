@@ -40,6 +40,18 @@ class InProcessRegistrarV1Test {
     root.verify(root.getPublicKey());
   }
 
+  /** Mirror of {@link #generatesAnEd25519Root()}: a v0 registrar generates an RSA root. */
+  @Test
+  void generatesAnRsaRoot() throws Exception {
+    InProcessRegistrar registrar = new InProcessRegistrar(PersonaVersionV0.instance());
+    assertThat(registrar.version()).isSameAs(PersonaVersionV0.instance());
+    X509Certificate root = PemService.instance()
+        .decodeCertificate(registrar.trustedRoots().get(0).certificatePem());
+    assertThat(root.getPublicKey().getAlgorithm()).isEqualTo("RSA");
+    assertThat(root.getSigAlgName()).isIn("SHA256withRSA", "SHA256WITHRSA");
+    root.verify(root.getPublicKey());
+  }
+
   @Test
   void issuesEd25519CertificatesSignedByTheRoot() throws Exception {
     InProcessRegistrar registrar = new InProcessRegistrar(V1);
@@ -77,7 +89,7 @@ class InProcessRegistrarV1Test {
 
   @Test
   void v0RegistrarKeepsDualUseKeyUsageForRsa() throws Exception {
-    InProcessRegistrar registrar = new InProcessRegistrar();
+    InProcessRegistrar registrar = new InProcessRegistrar(PersonaVersionV0.instance());
     RegisteredPersona registered =
         register(registrar, PersonaVersionV0.instance(), TestSupport.rsaKeyPair(), "SHA256withRSA");
     boolean[] keyUsage = PemService.instance()
@@ -89,13 +101,46 @@ class InProcessRegistrarV1Test {
   /** A deterministic root must belong to the bound version's certificate signature family. */
   @Test
   void pemConstructorRejectsRootOfAnotherFamily() throws Exception {
-    InProcessRegistrar rsaRegistrar = new InProcessRegistrar();
-    String rootCertificatePem = rsaRegistrar.trustedRoots().get(0).certificatePem();
-    // Any RSA key: the family check fails before (or together with) the key match.
-    String rsaKeyPem = PemService.instance().encodePrivateKey(TestSupport.rsaKeyPair().getPrivate());
-    assertThatThrownBy(() -> new InProcessRegistrar(V1, Duration.ofDays(1), rsaKeyPem, rootCertificatePem))
+    // A genuine v0-style RSA root: self-signed and key-matched, so only its
+    // family keeps it out of a v1 registrar.
+    KeyPair rootKeyPair = TestSupport.rsaKeyPair();
+    String rootCertificatePem = PemService.instance().encodeCertificate(
+        in.yagnyam.persona.TestCertificates.selfSignedWithCommonName(
+            rootKeyPair, "persona-registrar", Duration.ofDays(30)));
+    String rootKeyPem = PemService.instance().encodePrivateKey(rootKeyPair.getPrivate());
+    assertThatThrownBy(() -> new InProcessRegistrar(V1, Duration.ofDays(1), rootKeyPem, rootCertificatePem))
         .isInstanceOf(IllegalArgumentException.class)
         .hasMessageContaining("v1");
+  }
+
+  /** The mirror direction: a v0 registrar rejects a matching Ed25519 root on its family. */
+  @Test
+  void pemConstructorRejectsEd25519RootUnderV0() throws Exception {
+    KeyPair rootKeyPair = TestSupport.signingKeyPair(V1);
+    String rootCertificatePem = PemService.instance().encodeCertificate(
+        in.yagnyam.persona.TestCertificates.selfSignedWithCommonName(
+            rootKeyPair, "persona-registrar", Duration.ofDays(30)));
+    String rootKeyPem = PemService.instance().encodePrivateKey(rootKeyPair.getPrivate());
+    assertThatThrownBy(() -> new InProcessRegistrar(PersonaVersionV0.instance(), Duration.ofDays(1),
+        rootKeyPem, rootCertificatePem))
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("v0");
+  }
+
+  /** A v0 registrar accepts a deterministic root that matches its policy: RSA, key-matched. */
+  @Test
+  void pemConstructorAcceptsMatchingRsaRootUnderV0() throws Exception {
+    KeyPair rootKeyPair = TestSupport.rsaKeyPair();
+    String rootCertificatePem = PemService.instance().encodeCertificate(
+        in.yagnyam.persona.TestCertificates.selfSignedWithCommonName(
+            rootKeyPair, "persona-registrar", Duration.ofDays(30)));
+    InProcessRegistrar registrar = new InProcessRegistrar(PersonaVersionV0.instance(),
+        Duration.ofDays(1), PemService.instance().encodePrivateKey(rootKeyPair.getPrivate()),
+        rootCertificatePem);
+    RegisteredPersona registered = register(registrar, PersonaVersionV0.instance(),
+        TestSupport.rsaKeyPair(), "SHA256withRSA");
+    PemService.instance().decodeCertificate(registered.certificate().certificatePem())
+        .verify(rootKeyPair.getPublic());
   }
 
   @Test

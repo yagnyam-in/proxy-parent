@@ -449,7 +449,7 @@ A **Persona Version** declares:
 | `keySize`                             | Bit length (or `0` for curve-typed families).                                               |
 | `preferredHashAlgorithm`              | Used for thumbprints and passphrase hashes.                                                 |
 
-Recommended `v0` baseline (from the reference codebase):
+The `v0` baseline (from the reference codebase, retained for backward compatibility):
 
 | Algorithm class          | Value                                    |
 | ------------------------ | ---------------------------------------- |
@@ -479,7 +479,7 @@ Rules for `v1`:
 - A `v1` verifier MUST accept `v0` envelopes, because `{SHA256withRSA}` stays valid. A `v0` verifier rejects `{Ed25519}` envelopes.
 - A `v1` Registrar issues certificates only for CSRs signed with an algorithm of `preferredSignatureAlgorithmSet`. Ed25519 certificates assert `digitalSignature` only (RFC 8410 §5).
 - An Ed25519 key cannot perform key agreement. A `v1` persona that both signs and receives encrypted content therefore holds a separate X25519 key; how that key is certified is the key-descriptor extension deferred by §7.2.
-- `v1` is opt-in. A Realm that binds to `v1` (§3.5) configures its Registrar, signers and verifiers with it; the default Persona Version remains `v0`.
+- `v1` is the default Persona Version. A Realm that wants `v0` (§3.5) configures its Registrar, signers and verifiers with `v0` explicitly.
 
 `X25519/HKDF-SHA256/AES-256-GCM` is constructed exactly as follows. `R` is the recipient's raw 32-byte X25519 public key, taken from its certificate.
 

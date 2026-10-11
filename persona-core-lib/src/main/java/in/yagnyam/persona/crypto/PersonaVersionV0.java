@@ -4,7 +4,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Persona Version {@code v0} — the recommended baseline (protocol §8).
+ * Persona Version {@code v0} — the RSA baseline (protocol §8). Superseded by
+ * {@link PersonaVersionV1} as the latest version; kept so v0 envelopes stay
+ * verifiable and v0 Realms remain configurable via
+ * {@link PersonaVersion#of(String) of("v0")}.
  *
  * <p>Algorithm table:
  * <ul>
