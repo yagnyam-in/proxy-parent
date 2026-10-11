@@ -1,0 +1,126 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "crypto.policy-v1",
+  "description": "The Persona Version v1 crypto policy table of protocol §8, field by field. A runner reports the value its v1 policy exposes for each field and compares it exactly; v1 need not be the runner's default version.",
+  "spec": [
+    "PERSONA-PROTOCOL.md §8",
+    "PERSONA-PROTOCOL.md §7.2",
+    "PERSONA-PROTOCOL.md §11 rule 3"
+  ],
+  "vectors": [
+    {
+      "id": "crypto/policy-v1/version",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The opaque version identifier of the Ed25519/X25519 Persona Version (§8).",
+      "policy": "v1",
+      "field": "version",
+      "expected": "v1"
+    },
+    {
+      "id": "crypto/policy-v1/validSignatureAlgorithmSets",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "Two single-key-family sets (§7.2): Ed25519, and SHA256withRSA retained so v0 envelopes keep verifying (§8).",
+      "policy": "v1",
+      "field": "validSignatureAlgorithmSets",
+      "expected": [
+        [
+          "Ed25519"
+        ],
+        [
+          "SHA256withRSA"
+        ]
+      ]
+    },
+    {
+      "id": "crypto/policy-v1/preferredSignatureAlgorithmSet",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "New signatures SHOULD use Ed25519 (§8).",
+      "policy": "v1",
+      "field": "preferredSignatureAlgorithmSet",
+      "expected": [
+        "Ed25519"
+      ]
+    },
+    {
+      "id": "crypto/policy-v1/validAsymmetricEncryptionAlgorithms",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The X25519 construction of §8 plus the retained v0 RSA-OAEP algorithm.",
+      "policy": "v1",
+      "field": "validAsymmetricEncryptionAlgorithms",
+      "expected": [
+        "X25519/HKDF-SHA256/AES-256-GCM",
+        "RSA/NONE/OAEPwithSHA-256andMGF1Padding"
+      ]
+    },
+    {
+      "id": "crypto/policy-v1/preferredAsymmetricEncryptionAlgorithm",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "Ephemeral-static X25519, HKDF-SHA256, AES-256-GCM, constructed exactly as §8 specifies.",
+      "policy": "v1",
+      "field": "preferredAsymmetricEncryptionAlgorithm",
+      "expected": "X25519/HKDF-SHA256/AES-256-GCM"
+    },
+    {
+      "id": "crypto/policy-v1/validSymmetricEncryptionAlgorithms",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "Unchanged from v0 (§8).",
+      "policy": "v1",
+      "field": "validSymmetricEncryptionAlgorithms",
+      "expected": [
+        "AES/CTR/NoPadding"
+      ]
+    },
+    {
+      "id": "crypto/policy-v1/preferredSymmetricEncryptionAlgorithm",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "Unchanged from v0 (§8).",
+      "policy": "v1",
+      "field": "preferredSymmetricEncryptionAlgorithm",
+      "expected": "AES/CTR/NoPadding"
+    },
+    {
+      "id": "crypto/policy-v1/certificateSignatureAlgorithm",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The Registrar signs certificates with Ed25519 (§8).",
+      "policy": "v1",
+      "field": "certificateSignatureAlgorithm",
+      "expected": "Ed25519"
+    },
+    {
+      "id": "crypto/policy-v1/keyGenerationAlgorithm",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "New personas' signing keys are Ed25519 (§8).",
+      "policy": "v1",
+      "field": "keyGenerationAlgorithm",
+      "expected": "Ed25519"
+    },
+    {
+      "id": "crypto/policy-v1/encryptionKeyGenerationAlgorithms",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "Key families that receive asymmetric encryption: an Ed25519 key cannot perform key agreement, so X25519 is declared separately; RSA stays dual-use (§8).",
+      "policy": "v1",
+      "field": "encryptionKeyGenerationAlgorithms",
+      "expected": [
+        "X25519",
+        "RSA"
+      ]
+    },
+    {
+      "id": "crypto/policy-v1/keySize",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "Curve-typed families carry key size 0 (§8).",
+      "policy": "v1",
+      "field": "keySize",
+      "expected": 0
+    },
+    {
+      "id": "crypto/policy-v1/preferredHashAlgorithm",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "Thumbprints and passphrase hashes use SHA-256 (§8).",
+      "policy": "v1",
+      "field": "preferredHashAlgorithm",
+      "expected": "SHA-256"
+    }
+  ]
+}

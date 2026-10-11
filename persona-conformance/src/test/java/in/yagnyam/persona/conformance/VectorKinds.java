@@ -71,6 +71,8 @@ final class VectorKinds {
   static final String PEM = "identity.pem";
   static final String POLICY_V0 = "crypto.policy-v0";
   static final String ALGORITHM_SET = "crypto.signature-algorithm-set";
+  static final String POLICY_V1 = "crypto.policy-v1";
+  static final String ALGORITHM_SET_V1 = "crypto.signature-algorithm-set-v1";
 
   /** Every kind this runner understands; anything else is a hard failure. */
   static Set<String> knownKinds() {
@@ -85,7 +87,9 @@ final class VectorKinds {
         REALM,
         PEM,
         POLICY_V0,
-        ALGORITHM_SET);
+        ALGORITHM_SET,
+        POLICY_V1,
+        ALGORITHM_SET_V1);
   }
 
   private VectorKinds() {}
@@ -108,8 +112,10 @@ final class VectorKinds {
       case PERSONA_ID_DELEGATION -> personaIdDelegation(vector);
       case REALM -> realm(vector);
       case PEM -> pem(vector);
-      case POLICY_V0 -> policy(vector);
-      case ALGORITHM_SET -> signatureAlgorithmSet(vector);
+      case POLICY_V0 -> policy(vector, PersonaVersion.latestVersion());
+      case ALGORITHM_SET -> signatureAlgorithmSet(vector, PersonaVersion.latestVersion());
+      case POLICY_V1 -> policy(vector, PersonaVersion.of("v1"));
+      case ALGORITHM_SET_V1 -> signatureAlgorithmSet(vector, PersonaVersion.of("v1"));
       default -> throw new VectorFormatException(
           vector.describe() + ": unknown vector kind '" + vector.kind()
               + "'; this runner must be taught the kind instead of skipping it");
@@ -294,13 +300,16 @@ final class VectorKinds {
     }
   }
 
-  /** {@code crypto.policy-v0}: the §8 policy table, field by field. */
-  private static void policy(ConformanceVector vector) {
-    PersonaVersion version = PersonaVersion.latestVersion();
+  /**
+   * {@code crypto.policy-v0} / {@code crypto.policy-v1}: the §8 policy table
+   * of {@code version}, field by field. For v0 the version is the active
+   * (latest) one, so the v0 vectors also pin that the default stays v0.
+   */
+  private static void policy(ConformanceVector vector, PersonaVersion version) {
     String field = vector.text("field");
     JsonNode expected = vector.require("expected");
     assertThat(version.version())
-        .as("%s: the active Persona Version must be %s", vector.describe(), vector.text("policy"))
+        .as("%s: the Persona Version under test must be %s", vector.describe(), vector.text("policy"))
         .isEqualTo(vector.text("policy"));
     switch (field) {
       case "version" -> assertThat(version.version()).isEqualTo(text(expected));
@@ -324,6 +333,9 @@ final class VectorKinds {
           .isEqualTo(text(expected));
       case "keyGenerationAlgorithm" -> assertThat(version.keyGenerationAlgorithm())
           .isEqualTo(text(expected));
+      case "encryptionKeyGenerationAlgorithms" -> assertThat(
+              version.encryptionKeyGenerationAlgorithms())
+          .isEqualTo(texts(expected));
       case "keySize" -> assertThat(version.keySize()).isEqualTo(expected.intValue());
       case "preferredHashAlgorithm" -> assertThat(version.preferredHashAlgorithm())
           .isEqualTo(text(expected));
@@ -332,14 +344,16 @@ final class VectorKinds {
     }
   }
 
-  /** {@code crypto.signature-algorithm-set}: §11 rule 3 exact-match membership. */
-  private static void signatureAlgorithmSet(ConformanceVector vector) {
+  /**
+   * {@code crypto.signature-algorithm-set} (active version) /
+   * {@code crypto.signature-algorithm-set-v1}: §11 rule 3 exact-match
+   * membership.
+   */
+  private static void signatureAlgorithmSet(ConformanceVector vector, PersonaVersion version) {
     List<String> algorithms = texts(vector.require("signatureAlgorithms"));
-    assertThat(
-            PersonaVersion.latestVersion()
-                .supportsSignatureAlgorithmSet(new LinkedHashSet<>(algorithms)))
-        .as("%s: acceptance of the signature algorithm set %s (PERSONA-PROTOCOL.md §11 rule 3)",
-            vector.describe(), algorithms)
+    assertThat(version.supportsSignatureAlgorithmSet(new LinkedHashSet<>(algorithms)))
+        .as("%s: acceptance of the signature algorithm set %s under %s (PERSONA-PROTOCOL.md"
+            + " §11 rule 3)", vector.describe(), algorithms, version.version())
         .isEqualTo(vector.booleanValue("expected"));
   }
 

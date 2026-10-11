@@ -1,0 +1,103 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "crypto.signature-algorithm-set-v1",
+  "description": "Exact-match membership of an envelope's signature algorithm set against the Persona Version v1 valid sets (protocol §11 rule 3, §7.2 key-family constraint). A runner answers whether its v1 policy accepts the given set as-is.",
+  "spec": [
+    "PERSONA-PROTOCOL.md §11 rule 3",
+    "PERSONA-PROTOCOL.md §7.2",
+    "PERSONA-PROTOCOL.md §8"
+  ],
+  "vectors": [
+    {
+      "id": "crypto/signature-algorithm-set-v1/0",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The preferred v1 set.",
+      "signatureAlgorithms": [
+        "Ed25519"
+      ],
+      "expected": true
+    },
+    {
+      "id": "crypto/signature-algorithm-set-v1/1",
+      "spec": "PERSONA-PROTOCOL.md §8",
+      "description": "The v0 set stays valid in v1 for backward compatibility (§8).",
+      "signatureAlgorithms": [
+        "SHA256withRSA"
+      ],
+      "expected": true
+    },
+    {
+      "id": "crypto/signature-algorithm-set-v1/2",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "A signature set is a set: a duplicate algorithm collapses to the sanctioned {Ed25519}.",
+      "signatureAlgorithms": [
+        "Ed25519",
+        "Ed25519"
+      ],
+      "expected": true
+    },
+    {
+      "id": "crypto/signature-algorithm-set-v1/3",
+      "spec": "PERSONA-PROTOCOL.md §7.2",
+      "description": "A mixed-family set: no single certified key can produce both signatures, and it matches neither sanctioned set exactly (§7.2, §11 rule 3).",
+      "signatureAlgorithms": [
+        "Ed25519",
+        "SHA256withRSA"
+      ],
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-algorithm-set-v1/4",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "The empty set matches nothing (§11 rule 3; §12 downgrade defense).",
+      "signatureAlgorithms": [],
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-algorithm-set-v1/5",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "Algorithm identifiers are case-sensitive wire strings.",
+      "signatureAlgorithms": [
+        "ed25519"
+      ],
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-algorithm-set-v1/6",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "The JCA family name is not the wire identifier; only Ed25519 is sanctioned.",
+      "signatureAlgorithms": [
+        "EdDSA"
+      ],
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-algorithm-set-v1/7",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "A curve outside the v1 policy.",
+      "signatureAlgorithms": [
+        "Ed448"
+      ],
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-algorithm-set-v1/8",
+      "spec": "PERSONA-PROTOCOL.md §11 rule 3",
+      "description": "An RSA algorithm v1 does not sanction.",
+      "signatureAlgorithms": [
+        "SHA512withRSA"
+      ],
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-algorithm-set-v1/9",
+      "spec": "PERSONA-PROTOCOL.md §12",
+      "description": "A deprecated digest is never sanctioned (§12 downgrade defense).",
+      "signatureAlgorithms": [
+        "SHA1withRSA"
+      ],
+      "expected": false
+    }
+  ]
+}

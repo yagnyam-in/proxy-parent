@@ -10,7 +10,7 @@ import java.security.NoSuchAlgorithmException;
 
 /**
  * Shared test utilities: independent digest computation (cross-checking the
- * production {@code Digests} code path) and RSA key pairs.
+ * production {@code Digests} code path) and key pairs per Persona Version.
  */
 public final class TestSupport {
 
@@ -27,6 +27,34 @@ public final class TestSupport {
     try {
       PersonaVersion version = PersonaVersion.latestVersion();
       return CRYPTO.generateKeyPair(version.keyGenerationAlgorithm(), version.keySize());
+    } catch (GeneralSecurityException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  /**
+   * Generates a signing key pair per {@code version}'s key generation policy
+   * (RSA 2048 under v0, Ed25519 under v1).
+   *
+   * @param version persona version
+   * @return fresh key pair
+   */
+  public static KeyPair signingKeyPair(PersonaVersion version) {
+    try {
+      return CRYPTO.generateKeyPair(version.keyGenerationAlgorithm(), version.keySize());
+    } catch (GeneralSecurityException e) {
+      throw new IllegalStateException(e);
+    }
+  }
+
+  /**
+   * Generates an X25519 key-agreement key pair (v1 encryption key family).
+   *
+   * @return fresh key pair
+   */
+  public static KeyPair x25519KeyPair() {
+    try {
+      return CRYPTO.generateKeyPair("X25519", 0);
     } catch (GeneralSecurityException e) {
       throw new IllegalStateException(e);
     }

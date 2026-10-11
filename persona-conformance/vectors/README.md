@@ -112,6 +112,8 @@ codec must produce or consume — not embedded JSON values.
 | `identity.pem` | `identity/` | `objectType`, `pem`, `expected` | §10.1 PEM decode of `certificate` / `publicKey` / `privateKey` / `csr`. Accept vectors pin the derived facts (owner, serial, validity window, SHA-256 DER thumbprint, re-encoded PEM byte identity); reject vectors pin §10.1 (malformed input, object-type mismatches). The suite ships **no private-key material** (repository security policy): `privateKey` coverage is reject-only, and a foreign implementation pairs it with a throwaway key of its own. |
 | `crypto.policy-v0` | `crypto/` | `policy`, `field`, `expected` | The §8 Persona Version v0 policy, field by field. |
 | `crypto.signature-algorithm-set` | `crypto/` | `signatureAlgorithms`, `expected` | §11 rule 3 exact-match acceptance of an envelope's signature algorithm set against the version's valid sets. |
+| `crypto.policy-v1` | `crypto/` | `policy`, `field`, `expected` | The §8 Persona Version v1 policy (Ed25519, X25519), field by field — including `encryptionKeyGenerationAlgorithms`. A runner evaluates its v1 policy whether or not v1 is its default. |
+| `crypto.signature-algorithm-set-v1` | `crypto/` | `signatureAlgorithms`, `expected` | §11 rule 3 exact-match acceptance under v1: `{Ed25519}` and the retained `{SHA256withRSA}` are accepted; a mixed-family set is not (§7.2). |
 
 A schema-driven vector names its schema in exactly one of three ways: `schema`
 (inline schema document text), `schemaRef` (a §5 built-in), or

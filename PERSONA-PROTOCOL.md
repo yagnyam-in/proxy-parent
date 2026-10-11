@@ -445,6 +445,7 @@ A **Persona Version** declares:
 | `preferredSymmetricEncryptionAlgorithm` | Default choice.                                                                          |
 | `certificateSignatureAlgorithm`       | Algorithm used by the Registrar to sign certificates.                                       |
 | `keyGenerationAlgorithm`              | Key family (e.g. `RSA`, `Ed25519`).                                                         |
+| `encryptionKeyGenerationAlgorithms`   | Key families that receive asymmetric encryption. Equal to `[keyGenerationAlgorithm]` when that key is dual-use (v0 RSA). |
 | `keySize`                             | Bit length (or `0` for curve-typed families).                                               |
 | `preferredHashAlgorithm`              | Used for thumbprints and passphrase hashes.                                                 |
 
@@ -458,7 +459,35 @@ Recommended `v0` baseline (from the reference codebase):
 | Key generation           | RSA / 2048                               |
 | Hash                     | `SHA-256`                                |
 
-A future `v1` SHOULD add Ed25519 for signatures and X25519 for asymmetric encryption while keeping RSA in `validSignatureAlgorithmSets` for backward compatibility.
+`v1` adds Ed25519 for signatures and X25519 for asymmetric encryption while keeping RSA in `validSignatureAlgorithmSets` for backward compatibility:
+
+| Field                                    | Value                                                          |
+| ---------------------------------------- | -------------------------------------------------------------- |
+| `validSignatureAlgorithmSets`            | `{Ed25519}`, `{SHA256withRSA}`                                 |
+| `preferredSignatureAlgorithmSet`         | `{Ed25519}`                                                    |
+| `validAsymmetricEncryptionAlgorithms`    | `X25519/HKDF-SHA256/AES-256-GCM`, `RSA/NONE/OAEPwithSHA-256andMGF1Padding` |
+| `preferredAsymmetricEncryptionAlgorithm` | `X25519/HKDF-SHA256/AES-256-GCM`                               |
+| Symmetric encryption                     | `AES/CTR/NoPadding` (unchanged)                                |
+| `certificateSignatureAlgorithm`          | `Ed25519`                                                      |
+| `keyGenerationAlgorithm` / `keySize`     | `Ed25519` / `0`                                                |
+| `encryptionKeyGenerationAlgorithms`      | `X25519`, `RSA`                                                |
+| `preferredHashAlgorithm`                 | `SHA-256`                                                      |
+
+Rules for `v1`:
+
+- Each signature set is single-key-family (§7.2). A set mixing `Ed25519` and `SHA256withRSA` MUST be rejected. A persona moves between families by registering a new persona instance.
+- A `v1` verifier MUST accept `v0` envelopes, because `{SHA256withRSA}` stays valid. A `v0` verifier rejects `{Ed25519}` envelopes.
+- A `v1` Registrar issues certificates only for CSRs signed with an algorithm of `preferredSignatureAlgorithmSet`. Ed25519 certificates assert `digitalSignature` only (RFC 8410 §5).
+- An Ed25519 key cannot perform key agreement. A `v1` persona that both signs and receives encrypted content therefore holds a separate X25519 key; how that key is certified is the key-descriptor extension deferred by §7.2.
+- `v1` is opt-in. A Realm that binds to `v1` (§3.5) configures its Registrar, signers and verifiers with it; the default Persona Version remains `v0`.
+
+`X25519/HKDF-SHA256/AES-256-GCM` is constructed exactly as follows. `R` is the recipient's raw 32-byte X25519 public key, taken from its certificate.
+
+1. Generate a fresh ephemeral X25519 key pair `(e, E)` per message.
+2. `Z = X25519(e, R)` (RFC 7748). Both sides MUST reject an all-zero `Z`.
+3. `K = HKDF-SHA256(IKM = Z, salt = empty, info = "persona/v1 X25519/HKDF-SHA256/AES-256-GCM" ‖ E ‖ R, L = 32)` (RFC 5869). The label is ASCII; `E` and `R` are raw 32-byte keys.
+4. `C = AES-256-GCM(K, iv, plaintext)` with a fresh random 12-byte `iv`, a 128-bit tag appended to `C`, and no associated data.
+5. The cipher text carries `iv`, `C`, and `E` encoded as X.509 SubjectPublicKeyInfo DER, each base64. It carries no separate MAC.
 
 ---
 

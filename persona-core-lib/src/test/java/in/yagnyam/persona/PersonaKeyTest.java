@@ -88,7 +88,7 @@ class PersonaKeyTest {
   @Test
   void rejectsBothOrNeitherPrivateMaterial() {
     CipherText encrypted = new CipherText(Optional.of("iv"), "AES/CTR/NoPadding", "abc",
-        Optional.empty(), Optional.empty());
+        Optional.empty(), Optional.empty(), Optional.empty());
     assertThatThrownBy(() -> new PersonaKey(id, key.privateKeyPem(), encrypted, null,
         key.publicKeyPem(), key.publicKeySha256Thumbprint()))
         .isInstanceOf(IllegalArgumentException.class);

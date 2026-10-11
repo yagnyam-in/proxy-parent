@@ -73,7 +73,9 @@ class ConformanceVectorSuite {
       Map.entry(VectorKinds.REALM, Set.of("input", "expected")),
       Map.entry(VectorKinds.PEM, Set.of("objectType", "pem", "expected")),
       Map.entry(VectorKinds.POLICY_V0, Set.of("policy", "field", "expected")),
-      Map.entry(VectorKinds.ALGORITHM_SET, Set.of("signatureAlgorithms", "expected")));
+      Map.entry(VectorKinds.ALGORITHM_SET, Set.of("signatureAlgorithms", "expected")),
+      Map.entry(VectorKinds.POLICY_V1, Set.of("policy", "field", "expected")),
+      Map.entry(VectorKinds.ALGORITHM_SET_V1, Set.of("signatureAlgorithms", "expected")));
 
   /**
    * The keys a negative vector must carry beyond the common keys (its inputs);
@@ -105,7 +107,9 @@ class ConformanceVectorSuite {
       Map.entry(VectorKinds.REALM, Set.of("input", "expected")),
       Map.entry(VectorKinds.PEM, Set.of("objectType", "pem", "expected")),
       Map.entry(VectorKinds.POLICY_V0, Set.of("policy", "field", "expected")),
-      Map.entry(VectorKinds.ALGORITHM_SET, Set.of("signatureAlgorithms", "expected")));
+      Map.entry(VectorKinds.ALGORITHM_SET, Set.of("signatureAlgorithms", "expected")),
+      Map.entry(VectorKinds.POLICY_V1, Set.of("policy", "field", "expected")),
+      Map.entry(VectorKinds.ALGORITHM_SET_V1, Set.of("signatureAlgorithms", "expected")));
 
   /**
    * The minimum number of vectors per kind. Deliberately shrinking a phase is
@@ -123,7 +127,9 @@ class ConformanceVectorSuite {
       Map.entry(VectorKinds.REALM, 20),
       Map.entry(VectorKinds.PEM, 14),
       Map.entry(VectorKinds.POLICY_V0, 11),
-      Map.entry(VectorKinds.ALGORITHM_SET, 9));
+      Map.entry(VectorKinds.ALGORITHM_SET, 9),
+      Map.entry(VectorKinds.POLICY_V1, 12),
+      Map.entry(VectorKinds.ALGORITHM_SET_V1, 10));
 
   /**
    * Kinds whose contract is a boolean verdict over the input, so a negative
@@ -133,7 +139,9 @@ class ConformanceVectorSuite {
       VectorKinds.PERSONA_ID_DELEGATION,
       VectorKinds.REALM,
       VectorKinds.POLICY_V0,
-      VectorKinds.ALGORITHM_SET);
+      VectorKinds.ALGORITHM_SET,
+      VectorKinds.POLICY_V1,
+      VectorKinds.ALGORITHM_SET_V1);
 
   /**
    * Duplicate-key detection keeps vector files honest while parsing. The

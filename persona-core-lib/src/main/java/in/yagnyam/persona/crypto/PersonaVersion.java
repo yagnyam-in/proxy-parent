@@ -43,8 +43,21 @@ public interface PersonaVersion {
   /** @return algorithm the Registrar uses to sign certificates (§8) */
   String certificateSignatureAlgorithm();
 
-  /** @return key family for new personas (e.g. {@code RSA}) */
+  /** @return key family for new personas' signing keys (e.g. {@code RSA},
+   *      {@code Ed25519}) */
   String keyGenerationAlgorithm();
+
+  /**
+   * @return key families of persona keys that receive asymmetric encryption
+   *     under this version (protocol §8). v0's RSA key is dual-use — the same
+   *     key signs and wraps — so its list is the signing family itself; v1's
+   *     Ed25519 signing key cannot perform key agreement, so its X25519
+   *     encryption family is declared separately (a v1 persona that both signs
+   *     and receives encrypted content holds two key pairs; how the second,
+   *     encryption key is certified is the per-algorithm key-descriptor
+   *     extension deferred by protocol §7.2).
+   */
+  List<String> encryptionKeyGenerationAlgorithms();
 
   /** @return key size in bits (0 for curve-typed families) */
   int keySize();
@@ -55,10 +68,43 @@ public interface PersonaVersion {
   /**
    * Returns the latest Persona Version.
    *
+   * <p>Still {@code v0}, deliberately: {@code v1} (Ed25519 signatures, X25519
+   * key agreement) exists and is complete, but making it the default flips
+   * the preferred signature set — and with it the key family every new
+   * persona must generate — which is a breaking change for existing
+   * deployments. A Realm opts in to v1 by constructing its registrar, signer
+   * and verifier with {@link #of(String) of("v1")}.
+   *
    * @return latest version instance
    */
   static PersonaVersion latestVersion() {
     return PersonaVersionV0.instance();
+  }
+
+  /**
+   * Resolves a Persona Version by its opaque identifier (protocol §3.5: a
+   * Realm may bind to a specific Persona Version).
+   *
+   * @param version version identifier ({@code v0} or {@code v1})
+   * @return the version's policy
+   * @throws IllegalArgumentException when {@code version} names no known
+   *     Persona Version
+   */
+  static PersonaVersion of(String version) {
+    Objects.requireNonNull(version, "version");
+    return switch (version) {
+      case PersonaVersionV0.VERSION -> PersonaVersionV0.instance();
+      case PersonaVersionV1.VERSION -> PersonaVersionV1.instance();
+      default -> throw new IllegalArgumentException(
+          "Unknown persona version '" + version + "' (known: v0, v1)");
+    };
+  }
+
+  /**
+   * @return every known Persona Version, oldest first
+   */
+  static List<PersonaVersion> knownVersions() {
+    return List.of(PersonaVersionV0.instance(), PersonaVersionV1.instance());
   }
 
   /**

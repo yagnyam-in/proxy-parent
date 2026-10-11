@@ -31,6 +31,7 @@ class PersonaVersionV0Test {
     assertThat(version.preferredSymmetricEncryptionAlgorithm()).isEqualTo("AES/CTR/NoPadding");
     assertThat(version.certificateSignatureAlgorithm()).isEqualTo("SHA256withRSA");
     assertThat(version.keyGenerationAlgorithm()).isEqualTo("RSA");
+    assertThat(version.encryptionKeyGenerationAlgorithms()).isEqualTo(List.of("RSA"));
     assertThat(version.keySize()).isEqualTo(2048);
     assertThat(version.preferredHashAlgorithm()).isEqualTo("SHA-256");
   }

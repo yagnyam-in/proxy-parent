@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -22,8 +23,10 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 /**
- * Builds self-signed X.509 certificates directly via BouncyCastle for tests
- * that need a certificate without going through the registrar.
+ * Builds X.509 certificates directly via BouncyCastle for tests that need a
+ * certificate without going through the registrar. The certificate signature
+ * algorithm follows the signing key's family ({@code SHA256withRSA} for RSA,
+ * {@code Ed25519} for Ed25519).
  */
 public final class TestCertificates {
 
@@ -42,7 +45,7 @@ public final class TestCertificates {
       X500Name subjectName = new X500Name(subject);
       Date notBefore = Date.from(Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS));
       Date notAfter = Date.from(notBefore.toInstant().plus(validity));
-      ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA")
+      ContentSigner signer = new JcaContentSignerBuilder(signatureAlgorithmFor(keyPair))
           .setProvider(BouncyCastle.provider())
           .build(keyPair.getPrivate());
       X509CertificateHolder holder = new X509v3CertificateBuilder(
@@ -87,7 +90,7 @@ public final class TestCertificates {
       X500Name subjectName = new X500Name("CN=" + commonName);
       Date notBefore = Date.from(Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS));
       Date notAfter = Date.from(notBefore.toInstant().plus(validity));
-      ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA")
+      ContentSigner signer = new JcaContentSignerBuilder(signatureAlgorithmFor(keyPair))
           .setProvider(BouncyCastle.provider())
           .build(keyPair.getPrivate());
       X509CertificateHolder holder = new X509v3CertificateBuilder(
@@ -102,5 +105,48 @@ public final class TestCertificates {
     } catch (GeneralSecurityException | IOException | OperatorCreationException e) {
       throw new IllegalStateException("Unable to build test CA certificate", e);
     }
+  }
+
+  /**
+   * Builds an end-entity certificate {@code CN=<commonName>} for
+   * {@code subjectKey}, signed by {@code issuer} — for subject keys that
+   * cannot sign themselves (X25519).
+   *
+   * @param subjectKey public key to certify
+   * @param commonName subject CN
+   * @param issuer     issuing key pair (RSA or Ed25519)
+   * @param validity   validity window
+   * @return issued X.509 v3 certificate with a critical keyAgreement keyUsage
+   */
+  public static X509Certificate issuedBy(PublicKey subjectKey, String commonName, KeyPair issuer,
+      Duration validity) {
+    try {
+      X500Name issuerName = new X500Name("CN=test-issuer");
+      Date notBefore = Date.from(Instant.now().truncatedTo(java.time.temporal.ChronoUnit.SECONDS));
+      Date notAfter = Date.from(notBefore.toInstant().plus(validity));
+      ContentSigner signer = new JcaContentSignerBuilder(signatureAlgorithmFor(issuer))
+          .setProvider(BouncyCastle.provider())
+          .build(issuer.getPrivate());
+      X509CertificateHolder holder = new X509v3CertificateBuilder(
+              issuerName, BigInteger.valueOf(System.nanoTime()), notBefore, notAfter,
+              new X500Name("CN=" + commonName), SubjectPublicKeyInfo.getInstance(subjectKey.getEncoded()))
+          .addExtension(Extension.basicConstraints, true, new BasicConstraints(false))
+          .addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyAgreement))
+          .build(signer);
+      return new JcaX509CertificateConverter()
+          .setProvider(BouncyCastle.provider())
+          .getCertificate(holder);
+    } catch (GeneralSecurityException | IOException | OperatorCreationException e) {
+      throw new IllegalStateException("Unable to build issued test certificate", e);
+    }
+  }
+
+  private static String signatureAlgorithmFor(KeyPair keyPair) {
+    String family = keyPair.getPrivate().getAlgorithm();
+    return switch (family) {
+      case "RSA" -> "SHA256withRSA";
+      case "Ed25519", "EdDSA" -> "Ed25519";
+      default -> throw new IllegalArgumentException("No test signature algorithm for key family " + family);
+    };
   }
 }
