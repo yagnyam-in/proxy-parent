@@ -135,8 +135,8 @@ Bounded and documented, but with residual surface:
   envelope, identity, crypto — 411 vectors with a Java runner and an
   independent Python reference) is on `persona/conformance-vectors`, not
   yet merged to `master`. The stacked `persona/preimage-vectors` branch adds
-  20 `envelope.signing-preimage` vectors and 14 `crypto.signature-verify`
-  vectors, for 445 total. The preimage vectors pin §6.4 framing. The
+  20 `envelope.signing-preimage` vectors and 15 `crypto.signature-verify`
+  vectors, for 446 total. The preimage vectors pin §6.4 framing. The
   signature vectors verify fixed RSA signatures using public keys only;
   they are deliberately verify-only because repository policy forbids
   shipping private-key material. Consequently, the suite does not pin the
