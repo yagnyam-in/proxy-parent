@@ -10,7 +10,7 @@ vectors/               Portable test vectors (JSON). THE cross-language artifact
   schema-digest/       §2 canonical form + SHA-1 digest, and rejected schema documents
   binary/              §3 binary payload encode/decode, kitchen sink, rejects
   json/                §4 canonical JSON payload encode/decode, rejects
-  envelope/            §5 built-in envelope schemas over both codecs
+  envelope/            §5 built-in envelope schemas over both codecs, §6.4 signing preimage
   identity/            §3.2 persona-id + delegation, §3.5 realm, §10.1 PEM
   crypto/              §8 Persona Version v0 policy, §11 signature algorithm sets
   manifest.json        Index of every vector file (must stay in sync)
@@ -53,8 +53,8 @@ reproduction is required.
 ## Independent verification
 
 `tools/reference_vectors.py` is a second implementation of the canonical form,
-digest, both codecs and the identity/policy rules, written from
-`docs/SCHEMA.md` and `PERSONA-PROTOCOL.md` with no Java involved. It executes
+digest, both codecs, the §6.4 signing preimage and the identity/policy rules,
+written from `docs/SCHEMA.md` and `PERSONA-PROTOCOL.md` with no Java involved. It executes
 every vector and reports any golden it cannot reproduce:
 
 ```bash

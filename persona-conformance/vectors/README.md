@@ -24,7 +24,8 @@ vectors/
   schema-digest/              §2 canonical form + SHA-1 schema digest, and rejects
   binary/                     §3 binary payload encode/decode + rejects
   json/                       §4 canonical JSON payload encode/decode + rejects
-  envelope/                   §5 built-in envelope schemas over both codecs
+  envelope/                   §5 built-in envelope schemas over both codecs;
+                              §6.4 signing preimage
   identity/                   §3 persona-id / delegation / realm / PEM
   crypto/                     §8 Persona Version v0 policy + §11 algorithm sets
 ```
@@ -112,6 +113,7 @@ codec must produce or consume — not embedded JSON values.
 | `identity.pem` | `identity/` | `objectType`, `pem`, `expected` | §10.1 PEM decode of `certificate` / `publicKey` / `privateKey` / `csr`. Accept vectors pin the derived facts (owner, serial, validity window, SHA-256 DER thumbprint, re-encoded PEM byte identity); reject vectors pin §10.1 (malformed input, object-type mismatches). The suite ships **no private-key material** (repository security policy): `privateKey` coverage is reject-only, and a foreign implementation pairs it with a throwaway key of its own. |
 | `crypto.policy-v0` | `crypto/` | `policy`, `field`, `expected` | The §8 Persona Version v0 policy, field by field. |
 | `crypto.signature-algorithm-set` | `crypto/` | `signatureAlgorithms`, `expected` | §11 rule 3 exact-match acceptance of an envelope's signature algorithm set against the version's valid sets. |
+| `envelope.signing-preimage` | `envelope/` | `domain`, `messageType`, `payloadFormat`, `schemaId`, `payloadHex`, `expectedHex` | The §6.4 signing preimage, byte-exact: `uvarint(len(domain)) \|\| domain \|\| uvarint(len(messageType)) \|\| messageType \|\| uvarint(len(payloadFormat)) \|\| payloadFormat \|\| uvarint(len(schemaId)) \|\| schemaId \|\| uvarint(len(payload)) \|\| payload`, all strings UTF-8, `uvarint` the unsigned LEB128 encoding of the *byte* length. `payloadHex` is the exact payload as lowercase hex (the suite's byte-input convention). `schemaId` is a string or JSON `null`; `null` (an absent schemaId) and `""` denote the same preimage, pinned by the `schema-id-absent-null` / `schema-id-empty-string` pair. The kind is **accept-only**: the preimage formula takes the domain as given, so §6.4 mandates no rejection a vector could pin (a malformed vector is a suite bug, not a protocol rejection). |
 
 A schema-driven vector names its schema in exactly one of three ways: `schema`
 (inline schema document text), `schemaRef` (a §5 built-in), or
@@ -173,9 +175,10 @@ definition of these rules.
 
 `../tools/reference_vectors.py` is a **second, independent implementation**
 (pure Python 3, standard library only, no Java code involved). It implements
-the canonical form, the digest, the binary and JSON codecs, the persona-id
-grammar, the delegation rule, the realm grammar and the v0 policy from the
-specification text, and it *executes every vector in this directory*:
+the canonical form, the digest, the binary and JSON codecs, the §6.4 signing
+preimage, the persona-id grammar, the delegation rule, the realm grammar and
+the v0 policy from the specification text, and it *executes every vector in
+this directory*:
 
 ```
 python3 tools/reference_vectors.py check      # every vector in manifest.json
