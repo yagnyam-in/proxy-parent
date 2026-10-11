@@ -10,7 +10,7 @@
 |---|---|---|
 | `proxy-parent` | `master @ aa43733` | Schema layer, identity/crypto/registrar/resolver/trust, envelope layer with §6.4 type binding, PEM empty-body fix (#193) |
 | `proxy-parent-conformance` | `persona/conformance-vectors @ 63fd6d4` | Conformance suite: 27 files, **411 vectors**, Java runner + independent Python reference; spec amendments §10.1 (PEM) and SCHEMA.md §3.3 (duplicate map keys) |
-| `proxy-parent-p2p` | `persona/p2p-messaging @ 77a984c` | `in.yagnyam.persona.p2p` (transport, messenger, two-tier dedup), demo, `GAPS.md` |
+| `proxy-parent-p2p` | `persona/p2p-messaging @ 672fedf` | `in.yagnyam.persona.p2p` (transport, messenger, two-tier dedup), demo, refreshed `GAPS.md` |
 
 Build verification (all green, run during this review):
 - master `./scripts/test.sh`: **452 tests, 0 failures** — BUILD SUCCESS
@@ -23,7 +23,7 @@ Build verification (all green, run during this review):
 
 Every box of the §13 diagram exists and is wired:
 
-- **KeyStore (private)** → `PersonaKey` + `PemService` (passphrase-encrypted PEM; key material excluded from `toString`, `PersonaKey.java:19`).
+- **KeyStore (private)** → `PersonaKey` models plaintext-PEM or encrypted-key material, while `PemService` encodes/decodes plaintext PKCS#8 PEM. `PersonaKey.of()` creates plaintext PEM; secure-enclave placement or encryption before persistence is caller-managed under §3.3. The library excludes key material from `toString()` (`PersonaKey.java:191-195`).
 - **MessageSigner** → `envelope/EnvelopeSigner.java` — implements §7.2 literally: `isValid()` + authorization asserted *before* signing (lines ~115-126), payload serialized once, §6.4 preimage, one signature per algorithm of `preferredSignatureAlgorithmSet`.
 - **MessageVerifier {SchemaRegistry, PersonaResolver, CertificateService}** → `envelope/EnvelopeVerifier.java` + `schema/InMemorySchemaRegistry` + `resolver/InMemoryPersonaResolver` + `resolver/TrustValidator`. The verifier's class javadoc documents a step-by-step §7.3 mapping that matches the code.
 - **Envelope codec** → `SignedEnvelope`/`MultiSignedEnvelope` encode/decode through the schema-driven codecs; payload is opaque bytes end-to-end.
@@ -50,8 +50,8 @@ The vectors README cites `PERSONA-PROTOCOL.md §10.1` (PEM transport) and the su
 - **Entry 6** said "379 vectors"; `manifest.json` says **411**. Stale count.
 - **Entry 7** (PemService NPE) was marked *fixed-pending-merge, PR #193* — but #193 is merged on master (`59bb644`) and master `PemService.java:176` carries the empty-body rejection. Per the file's own rule ("an entry leaves this file only when the fix is merged and covered by a test"), this entry was removed.
 
-**F3 (Medium) — No §6.4 preimage goldens and no signature interop vectors in the conformance suite.**
-Verified: the ten kinds in `manifest.json` are `crypto.policy-v0`, `crypto.signature-algorithm-set`, `identity.{pem,persona-id,persona-id-delegation,realm}`, `payload.{binary,json}.{encode,decode}`, `schema.digest`. Nothing under `vectors/` mentions "preimage"; the §6.4 byte format is pinned only by Java unit tests (`SigningPreimageTest`). And there is **no sign/verify vector kind at all** — no fixed key fixtures, no golden `SHA256withRSA` signatures over known preimages (RSA PKCS#1 v1.5 is deterministic, so goldens are feasible). GAPS #6 records the preimage half of this. For the stated mission — a C++ implementation proven against the suite — this is the single largest hole: a foreign implementation can pass all 411 vectors while computing a *different signing preimage* and producing signatures no Java peer accepts. *(Preimage half addressed on `persona/preimage-vectors`: 20 `envelope.signing-preimage` vectors, byte-identical across spec text, Java goldens, Python reference, and hand derivations. The signature-golden half remains open and is recorded in GAPS.md entry 6.)*
+**F3 (Medium) — Cross-language signing evidence was missing from the conformance suite.**
+At review time, the manifest had eleven kinds and no preimage/signature vectors; §6.4 was pinned only by Java unit tests. This was a major gap for a C++ implementation. *(Addressed on the stacked `persona/preimage-vectors` branch: 20 `envelope.signing-preimage` vectors and 14 `crypto.signature-verify` vectors, for 445 total. The 5 Java preimage goldens match the portable vectors; signature verification is checked with fixed public-key/signature fixtures. The signature-verification vectors are verify-only because private-key material is not shipped, so exact signer-output conformance remains an adopter-level exchange. The branch is not yet merged.)*
 
 **F4 (Medium) — Envelope-array breadth is uncapped (carried from GAPS #4, re-verified).**
 `EnvelopeVerifier.verifyNested` recurses over `List` items with no per-envelope or per-array budget; only *depth* is capped (`MAX_NESTED_ENVELOPE_DEPTH = 100`). A schema declaring `array<envelope>` lets one payload carry thousands of nested envelopes, each costing schema resolution + certificate checks + signature verification. The codec's §3.4 collection cap (2^20) bounds count, not verification cost. This remains the largest practical DoS surface.
@@ -81,7 +81,7 @@ Enforcement is: (a) `TrustValidator.chainsToTrustedRoot` — a foreign realm's c
 | 7 | `PersonaId` equality structural over `(id, thumbprint)` | `PersonaId` record + `canSignOnBehalfOf` implementing §3.2 delegation exactly (wildcard / unpinned-id match / exact equality) | ENFORCED (32 identity vectors) |
 | 8 | Certificates chain to trusted root, within validity window | `TrustValidator.validate`: CA-cert rejection, id↔CN binding, pin match, window at verification-time `Instant`, issuer-DN + signature chain to pinned roots | ENFORCED |
 | 9 | Nested envelopes verified before outer is verified | `EnvelopeVerifier.verifyNested` runs before outer signer-authorization and signature checks; depth cap 100 | ENFORCED (breadth uncapped — F4) |
-| 10 | Exact bytes signed = exact bytes verified; §6.4 preimage | Opaque `payload` bytes end-to-end; `SigningPreimage` implements the length-prefixed format with the two domain constants; verifier recomputes from the envelope's own fields | ENFORCED (cross-language goldens added on `persona/preimage-vectors` — F3) |
+| 10 | Exact bytes signed = exact bytes verified; §6.4 preimage | Opaque `payload` bytes end-to-end; `SigningPreimage` implements the length-prefixed format with the two domain constants; verifier recomputes from the envelope's own fields | ENFORCED (portable preimage vectors staged on `persona/preimage-vectors`, pending merge — F3) |
 | 11 | Revocation invalidates cached resolutions | Reference wiring never caches resolutions (`InMemoryPersonaResolver`: revoked never resolve); `TrustValidator.RevocationCheck` runs per verification; verifier crypto-cache is revocation-safe by construction. **Distributed propagation unspecified** | PARTIAL (GAPS #2, F5) |
 | 12 | Realm boundary not crossed | Implicit: trusted-root pinning (`TrustValidator.chainsToTrustedRoot`) + realm grammar on alerts. No envelope realm field | ENFORCED-BY-CONFIGURATION (F6) |
 
@@ -90,7 +90,7 @@ Enforcement is: (a) `TrustValidator.chainsToTrustedRoot` — a foreign realm's c
 | Consideration | Treatment | Status |
 |---|---|---|
 | Registrar compromise | Protocol non-goal (§4); single-root `InProcessRegistrar`; pinning is the adopter's trust decision (documented in `TrustValidator` javadoc) | DOCUMENTED |
-| Private-key exfiltration | Passphrase-encrypted PEM storage (`PersonaKey`), revocation passphrase hash registered at creation (`InProcessRegistrar:116`), key material excluded from `toString` | ENFORCED |
+| Private-key exfiltration | `PersonaKey.of()` and `PemService.encodePrivateKey()` produce plaintext PEM; `PersonaKey` can also carry caller-encrypted `CipherText` (`PersonaKey.java:52-69, 110-113`) and omits key material from `toString()` (`PersonaKey.java:187-195`). Secure-enclave placement, encryption before persistence, and storage protection are caller-managed per §3.3. Revocation passphrase hash is registered at creation (`InProcessRegistrar:116`). | PARTIAL (storage protection is caller-managed) |
 | Downgrade on algorithm sets | Exact-set match, empty set rejected (`rejectInvalidSignatureSet`); all algorithm names live only in `PersonaVersionV0` (convention verified — no hard-coded algorithm strings elsewhere in policy paths) | ENFORCED |
 | Replay on requests | Two-tier dedup (p2p branch), including disjoint-quorum-split replay — a class most implementations miss | ENFORCED (pending merge) |
 | Signature malleability (low-s) | N/A under v0 (RSA-only, `PersonaVersionV0.java:28-29`); must be revisited when Ed25519/ECDSA lands in v1 | NOTED for v1 |
@@ -113,7 +113,7 @@ Checked: `PERSONA-PROTOCOL.md` (master) vs `docs/SCHEMA.md` (master + branch) vs
 
 The mission: a C++ implementation proven against the conformance suite.
 
-1. **Signature interop is unprovable today.** No preimage goldens (F3 — addressed on `persona/preimage-vectors`), no key fixtures, no golden signatures. A C++ implementation can pass all vectors and still produce signatures Java rejects. Add a `crypto.signature` kind with a fixed RSA-2048 key pair, fixed envelopes, and golden `SHA256withRSA` signatures (deterministic, so goldens are stable; verify-side vectors ship public keys only, per the repository's no-private-key-material policy). This is the top priority — it is the protocol's core promise.
+1. **Signing output is not pinned by a portable fixture.** The `persona/preimage-vectors` branch adds 20 preimage vectors and 14 verify-only RSA signature vectors, covering cross-language preimage construction and verification. Because the repository ships no private-key material, a foreign signer still needs an external signing/verification exchange to prove its output is accepted by another implementation. This is the remaining evidence gap for signer interoperability.
 2. **Merge the two branches and converge the normative docs** (F1): the suite, §10.1, and the §3.3 amendment must land on master together; until then the "source of truth" is split across branches.
 3. **GAPS.md cleanup** (F2): cheap, and prerequisite to trusting the document that foreign implementers will read first. *(Done.)*
 4. **Remote tier absence** (F5 + unlisted registrar HTTP client): not needed for conformance, but needed before the protocol can claim deployability beyond one process. *(Recorded in GAPS.md entry 7.)*
@@ -124,6 +124,6 @@ The mission: a C++ implementation proven against the conformance suite.
 
 **The architecture is sound and the assembled system genuinely implements the protocol it specifies.** The §13 component model is fully present in-process; every §11 rule has named, tested enforcement code (or an honest, verified GAPS entry); the §6.4 type-binding, the resolver identity-binding check, and the two-tier dedup are *stronger* than the spec's letter. Module boundaries are clean (no wire logic in examples, all crypto policy in `PersonaVersion`, package-info everywhere, zero legacy vocabulary leakage). All three build lines are green.
 
-What stands between this and the stated mission is not design but **evidence packaging**: the conformance suite cannot yet prove signing interop (no preimage/signature goldens — preimage half landed on `persona/preimage-vectors` during this review cycle), the normative texts are temporarily split across branches, and GAPS.md needed the cleanup its own maintenance rule demands (done). None of these require redesign; all are closable in one merge-and-document cycle.
+What stands between this and the stated mission is not design but **evidence packaging**: the `persona/preimage-vectors` branch now adds portable preimage and verify-only signature vectors, but signer-output conformance still needs an adopter-level signing/verification exchange because private keys are not shipped. The normative texts are temporarily split across branches, and GAPS.md needed the cleanup its own maintenance rule demands (done). None of these require redesign; the remaining items are closable in one merge-and-document cycle.
 
-**Recommendation: PASS, conditional on (a) landing preimage + signature-golden vectors, (b) merging both branches with the §10.1/§3.3 doc amendments, (c) refreshing GAPS.md entries 4, 6, 7 and adding the remote-registrar entry (done with this review).**
+**Recommendation: PASS, conditional on (a) merging the conformance and preimage/signature-verification vectors with the §10.1/§3.3 doc amendments, and (b) refreshing GAPS.md entries 4 and 6, removing the stale PemService entry, and recording the remote-registrar gap (done on the P2P branch). The portable preimage and verification vectors are implemented but remain pending merge; signer-output conformance remains an adopter-level exchange because the repository does not ship private keys.**
