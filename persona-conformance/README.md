@@ -63,6 +63,11 @@ python3 tools/reference_vectors.py selftest   # pin the reference itself
 python3 tools/reference_vectors.py manifest    # regenerate manifest.json
 ```
 
+The reference also enforces the entry key contract of `vectors/README.md`
+(Runner contract rule 2): a misplaced or unknown per-kind key, or a negative
+vector carrying an expected output, fails the run instead of being silently
+ignored. `selftest` pins that behavior against synthetic entries.
+
 Digest goldens were additionally cross-checked with `shasum -a 1` and
 `openssl sha1`, and the certificate thumbprint with `openssl x509
 -fingerprint -sha256`.

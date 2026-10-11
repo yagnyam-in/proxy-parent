@@ -236,6 +236,17 @@
       "value": {
         "v": 42
       }
+    },
+    {
+      "id": "binary/encode-reject/double-integer-beyond-binary64",
+      "spec": "docs/SCHEMA.md §3.4 rule 9",
+      "description": "A JSON integer beyond the binary64 range (here 10^309, above the maximum 1.7976931348623157e308) overflows to infinity — Java's BigInteger.doubleValue() converts it silently — and the writer must reject the resulting non-finite double (§4.3) instead of crashing or wrapping the value. The reference reader keeps the exact integer so the encoder performs that conversion.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 9",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": 1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+      }
     }
   ]
 }
