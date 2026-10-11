@@ -125,7 +125,7 @@ class EnvelopeVerifierTest {
     // set like that is not among the version's valid sets, so §7.3 step 1
     // rejects it before any cryptography runs.
     List<Signature> mixedFamily = new ArrayList<>(envelope.signatures());
-    mixedFamily.add(new Signature("Ed25519", new byte[] {1}));
+    mixedFamily.add(new Signature("SHA256withRSA", new byte[] {1}));
     SignedEnvelope mixed = relabel(envelope, null, null, null, mixedFamily);
 
     VerificationResult result = world.verifier().verify(mixed);

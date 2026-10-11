@@ -200,6 +200,27 @@ Bounded and documented, but with residual surface:
 - **Direction.** State the structural-disambiguation rule in §6, or add an
   explicit `envelopeKind` field in a future envelope version.
 
+## 10. Persona Version v1's encryption key is uncertified (§7.2, §8) — partial
+
+- **What.** v1 (Ed25519 signatures, `X25519/HKDF-SHA256/AES-256-GCM`
+  encryption) is implemented, covered by unit tests and the
+  `crypto.policy-v1` / `crypto.signature-algorithm-set-v1` vectors, and is
+  the default (`PersonaVersion.latestVersion()`), but:
+  (a) an Ed25519 signing key cannot agree, so a v1 persona
+  that receives encrypted content needs a second X25519 key, and the
+  Registrar has no way to certify it (the key-descriptor extension §7.2
+  defers); (b) the X25519 construction is pinned by a Java known-answer test
+  only. The stdlib-only Python reference has no X25519 or AES-GCM, so no
+  cross-language encryption vector exists yet.
+- **Why it matters.** Until (a) is solved, v1 encryption works only with
+  X25519 certificates issued outside the registration flow. Until (b) is
+  solved, a foreign implementation of the §8 construction can only be
+  checked against the protocol text.
+- **Severity.** Medium for (a), low for (b).
+- **Direction.** Define a certified encryption-key descriptor (a second
+  certificate or a certificate extension) in §7.2. Add encryption vectors
+  generated from pure-Python RFC 7748 X25519 and AES-GCM implementations.
+
 ---
 
 *Maintenance rule: an entry leaves this file only when the fix is merged

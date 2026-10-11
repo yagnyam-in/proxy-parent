@@ -9,7 +9,6 @@ import in.yagnyam.persona.crypto.CryptographyService;
 import in.yagnyam.persona.crypto.Hash;
 import in.yagnyam.persona.crypto.PemService;
 import in.yagnyam.persona.crypto.PersonaVersion;
-import in.yagnyam.persona.crypto.PersonaVersionV0;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -31,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -45,6 +45,7 @@ import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifierProvider;
+import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
@@ -72,10 +73,18 @@ import org.slf4j.LoggerFactory;
  * </ol>
  * The same {@code requestId} can never be reused for either step.
  *
- * <p>The default constructor generates a self-signed root (RSA 2048,
- * {@code CN=persona-registrar}, 10-year validity, signed with the active
- * Persona Version's certificate algorithm). The PEM constructors accept a
- * deterministic root for reproducible tests. Issued persona certificates are
+ * <p>Every constructor binds the registrar to one Persona Version (protocol
+ * §3.5: a Realm binds to a Registrar and a Persona Version); the overloads
+ * without a version use {@link PersonaVersion#latestVersion()}. The version
+ * decides the root key family, the certificate signature algorithm, the
+ * accepted CSR signature algorithms and the passphrase hash algorithm.
+ *
+ * <p>The generating constructors create a self-signed root
+ * ({@code CN=persona-registrar}, 10-year validity) with the version's key
+ * family — RSA 2048 under v0, Ed25519 under v1 — signed with the version's
+ * certificate algorithm. The PEM constructors accept a deterministic root
+ * for reproducible tests; its key must belong to the version's certificate
+ * signature family. Issued persona certificates are
  * valid 1 year by default, configurable for tests.
  *
  * <p>Thread safety: request bookkeeping is a {@link ConcurrentHashMap} with
@@ -99,7 +108,7 @@ public final class InProcessRegistrar implements PersonaRegistrar {
   /** Persona ids: {@code p-} + 24 lowercase hex chars from SecureRandom. */
   private static final int PERSONA_ID_RANDOM_BYTES = 12;
 
-  private final PersonaVersion version = PersonaVersionV0.instance();
+  private final PersonaVersion version;
   private final CryptographyService cryptographyService = BouncyCastleCryptographyService.instance();
   private final PemService pemService = PemService.instance();
 
@@ -126,29 +135,53 @@ public final class InProcessRegistrar implements PersonaRegistrar {
   private final Set<String> issuedPersonaIds = ConcurrentHashMap.newKeySet();
 
   /** Acceptable CSR signature algorithm OIDs, derived from the active
-   *      version's preferred signature algorithm set (protocol §8); computed once. */
-  private volatile Set<String> csrSignatureAlgorithmIds;
+   *      version's preferred signature algorithm set (protocol §8). */
+  private final Set<String> csrSignatureAlgorithmIds;
 
   private final AtomicLong serialCounter = new AtomicLong(1);
   private final Object issuanceLock = new Object();
   private final SecureRandom secureRandom = new SecureRandom();
 
   /**
-   * Creates a registrar with a freshly generated root CA and the default
-   * (1 year) persona certificate validity.
+   * Creates a registrar with a freshly generated root CA, the default
+   * (1 year) persona certificate validity and the latest Persona Version.
    */
   public InProcessRegistrar() {
-    this(DEFAULT_PERSONA_CERTIFICATE_VALIDITY);
+    this(PersonaVersion.latestVersion(), DEFAULT_PERSONA_CERTIFICATE_VALIDITY);
+  }
+
+  /**
+   * Creates a registrar with a freshly generated root CA bound to
+   * {@code version}, with the default persona certificate validity.
+   *
+   * @param version Persona Version of the Realm this registrar serves
+   */
+  public InProcessRegistrar(PersonaVersion version) {
+    this(version, DEFAULT_PERSONA_CERTIFICATE_VALIDITY);
   }
 
   /**
    * Creates a registrar with a freshly generated root CA and a configurable
-   * persona certificate validity (for expiry tests).
+   * persona certificate validity (for expiry tests), under the latest
+   * Persona Version.
    *
    * @param personaCertificateValidity validity window of issued certificates
    */
   public InProcessRegistrar(Duration personaCertificateValidity) {
+    this(PersonaVersion.latestVersion(), personaCertificateValidity);
+  }
+
+  /**
+   * Creates a registrar with a freshly generated root CA bound to
+   * {@code version} and a configurable persona certificate validity.
+   *
+   * @param version                    Persona Version of the Realm
+   * @param personaCertificateValidity validity window of issued certificates
+   */
+  public InProcessRegistrar(PersonaVersion version, Duration personaCertificateValidity) {
+    this.version = Objects.requireNonNull(version, "version");
     this.personaCertificateValidity = requireValidity(personaCertificateValidity);
+    this.csrSignatureAlgorithmIds = csrSignatureAlgorithmIdsOf(version);
     try {
       KeyPair rootKeyPair =
           cryptographyService.generateKeyPair(version.keyGenerationAlgorithm(), version.keySize());
@@ -164,26 +197,46 @@ public final class InProcessRegistrar implements PersonaRegistrar {
 
   /**
    * Creates a registrar around a deterministic root (for reproducible
-   * tests), with the default persona certificate validity. The root must be
-   * self-signed and the key must match the certificate.
+   * tests), with the default persona certificate validity, under the latest
+   * Persona Version. The root must be self-signed and the key must match the
+   * certificate.
    *
    * @param rootKeyPem         PEM encoded root private key
    * @param rootCertificatePem PEM encoded self-signed root certificate
    */
   public InProcessRegistrar(String rootKeyPem, String rootCertificatePem) {
-    this(DEFAULT_PERSONA_CERTIFICATE_VALIDITY, rootKeyPem, rootCertificatePem);
+    this(PersonaVersion.latestVersion(), DEFAULT_PERSONA_CERTIFICATE_VALIDITY, rootKeyPem,
+        rootCertificatePem);
   }
 
   /**
    * Creates a registrar around a deterministic root and a configurable
-   * persona certificate validity.
+   * persona certificate validity, under the latest Persona Version.
    *
    * @param personaCertificateValidity validity window of issued certificates
    * @param rootKeyPem                 PEM encoded root private key
    * @param rootCertificatePem         PEM encoded self-signed root certificate
    */
   public InProcessRegistrar(Duration personaCertificateValidity, String rootKeyPem, String rootCertificatePem) {
+    this(PersonaVersion.latestVersion(), personaCertificateValidity, rootKeyPem, rootCertificatePem);
+  }
+
+  /**
+   * Creates a registrar around a deterministic root, bound to
+   * {@code version}. The root must be self-signed and its key must both
+   * match the certificate and sign with the version's certificate signature
+   * algorithm.
+   *
+   * @param version                    Persona Version of the Realm
+   * @param personaCertificateValidity validity window of issued certificates
+   * @param rootKeyPem                 PEM encoded root private key
+   * @param rootCertificatePem         PEM encoded self-signed root certificate
+   */
+  public InProcessRegistrar(PersonaVersion version, Duration personaCertificateValidity, String rootKeyPem,
+      String rootCertificatePem) {
+    this.version = Objects.requireNonNull(version, "version");
     this.personaCertificateValidity = requireValidity(personaCertificateValidity);
+    this.csrSignatureAlgorithmIds = csrSignatureAlgorithmIdsOf(version);
     try {
       PrivateKey rootKey = pemService.decodePrivateKey(Objects.requireNonNull(rootKeyPem, "rootKeyPem"));
       X509Certificate root = pemService.decodeCertificate(Objects.requireNonNull(rootCertificatePem, "rootCertificatePem"));
@@ -191,7 +244,9 @@ public final class InProcessRegistrar implements PersonaRegistrar {
         throw new IllegalArgumentException("Root certificate is not self-signed");
       }
       if (!matchesRootKey(root, rootKey)) {
-        throw new IllegalArgumentException("Root private key does not match the root certificate");
+        throw new IllegalArgumentException("Root private key does not match the root certificate, or"
+            + " cannot sign with persona version " + version.version() + "'s certificate signature"
+            + " algorithm " + version.certificateSignatureAlgorithm());
       }
       this.rootPrivateKey = rootKey;
       this.rootCertificate = PersonaCertificate.of(root);
@@ -200,6 +255,13 @@ public final class InProcessRegistrar implements PersonaRegistrar {
     } catch (GeneralSecurityException | IOException e) {
       throw new IllegalArgumentException("Invalid root key/certificate material", e);
     }
+  }
+
+  /**
+   * @return the Persona Version this registrar is bound to
+   */
+  public PersonaVersion version() {
+    return version;
   }
 
   @Override
@@ -416,56 +478,46 @@ public final class InProcessRegistrar implements PersonaRegistrar {
    * (e.g. SHA-1) must not result in a certificate that peers might then
    * treat as sanctioned.
    *
-   * <p>Mapping choice: the acceptable OIDs are derived from the policy's
-   * JCA algorithm names by building a probe {@link ContentSigner} for each
-   * name and reading its {@code AlgorithmIdentifier} OID — no OID↔JCA-name
-   * string table is maintained, so the accepted set always follows
-   * {@link PersonaVersion#preferredSignatureAlgorithmSet()} exactly.
+   * <p>The accepted OIDs come from {@link #csrSignatureAlgorithmIdsOf}, so
+   * they always follow {@link PersonaVersion#preferredSignatureAlgorithmSet()}
+   * exactly.
    *
    * @param csr parsed CSR
    * @throws IllegalArgumentException when the CSR's signature algorithm is
    *     outside the active version's preferred set
    */
-  private void requireCsrSignatureAlgorithmInPolicy(PKCS10CertificationRequest csr)
-      throws GeneralSecurityException {
+  private void requireCsrSignatureAlgorithmInPolicy(PKCS10CertificationRequest csr) {
     String csrAlgorithmId = csr.getSignatureAlgorithm().getAlgorithm().getId();
-    Set<String> allowedAlgorithmIds = allowedCsrSignatureAlgorithmIds();
-    if (!allowedAlgorithmIds.contains(csrAlgorithmId)) {
+    if (!csrSignatureAlgorithmIds.contains(csrAlgorithmId)) {
       throw new IllegalArgumentException("CSR signature algorithm is not in the active"
           + " persona version's preferred signature algorithm set (protocol §7.1, §8):"
           + " CSR is signed with OID " + csrAlgorithmId + ", accepted algorithms "
-          + version.preferredSignatureAlgorithmSet() + " (OIDs " + allowedAlgorithmIds + ")");
+          + version.preferredSignatureAlgorithmSet() + " (OIDs " + csrSignatureAlgorithmIds + ")");
     }
   }
 
   /**
-   * Acceptable CSR signature algorithm OIDs, derived once from the active
-   * version's preferred signature algorithm set (see
-   * {@link #requireCsrSignatureAlgorithmInPolicy}).
+   * Acceptable CSR signature algorithm OIDs of {@code version}: each JCA name
+   * of its preferred signature set mapped through BouncyCastle's own
+   * name-to-{@code AlgorithmIdentifier} table, so no key of the matching
+   * family is needed and no OID table is maintained here.
    */
-  private Set<String> allowedCsrSignatureAlgorithmIds() throws GeneralSecurityException {
-    Set<String> cached = csrSignatureAlgorithmIds;
-    if (cached != null) {
-      return cached;
-    }
+  private static Set<String> csrSignatureAlgorithmIdsOf(PersonaVersion version) {
+    DefaultSignatureAlgorithmIdentifierFinder finder = new DefaultSignatureAlgorithmIdentifierFinder();
     Set<String> derived = new HashSet<>();
-    try {
-      for (String algorithm : version.preferredSignatureAlgorithmSet()) {
-        ContentSigner probe = new JcaContentSignerBuilder(algorithm)
-            .setProvider(BouncyCastle.provider())
-            .build(rootPrivateKey);
-        derived.add(probe.getAlgorithmIdentifier().getAlgorithm().getId());
+    for (String algorithm : version.preferredSignatureAlgorithmSet()) {
+      try {
+        derived.add(finder.find(algorithm).getAlgorithm().getId());
+      } catch (IllegalArgumentException e) {
+        throw new IllegalStateException("Persona version " + version.version()
+            + " names an unknown signature algorithm '" + algorithm + "'", e);
       }
-    } catch (OperatorCreationException e) {
-      throw new GeneralSecurityException("Unable to derive CSR signature algorithm policy", e);
     }
     if (derived.isEmpty()) {
-      throw new GeneralSecurityException(
-          "Active persona version declares no preferred signature algorithms");
+      throw new IllegalStateException(
+          "Persona version " + version.version() + " declares no preferred signature algorithms");
     }
-    Set<String> immutable = Set.copyOf(derived);
-    csrSignatureAlgorithmIds = immutable;
-    return immutable;
+    return Set.copyOf(derived);
   }
 
   /**
@@ -539,8 +591,7 @@ public final class InProcessRegistrar implements PersonaRegistrar {
       X509CertificateHolder holder = new X509v3CertificateBuilder(
               rootSubject, serial, notBefore, notAfter, subject, csr.getSubjectPublicKeyInfo())
           .addExtension(Extension.basicConstraints, true, new BasicConstraints(false))
-          .addExtension(Extension.keyUsage, true,
-              new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment))
+          .addExtension(Extension.keyUsage, true, personaKeyUsage(csr.getSubjectPublicKeyInfo()))
           .build(rootSigner());
       X509Certificate certificate = new JcaX509CertificateConverter()
           .setProvider(BouncyCastle.provider())
@@ -549,6 +600,20 @@ public final class InProcessRegistrar implements PersonaRegistrar {
     } catch (IOException | OperatorCreationException e) {
       throw new GeneralSecurityException("Unable to issue certificate", e);
     }
+  }
+
+  /**
+   * Key usage of an issued persona certificate. An RSA key is dual-use — it
+   * signs and wraps (v0, protocol §8) — so it keeps
+   * {@code digitalSignature | keyEncipherment}; an Ed25519 key can only sign
+   * (RFC 8410 §5 forbids {@code keyEncipherment} for it), so it gets
+   * {@code digitalSignature} alone.
+   */
+  private static KeyUsage personaKeyUsage(SubjectPublicKeyInfo subjectPublicKeyInfo) {
+    if (PKCSObjectIdentifiers.rsaEncryption.equals(subjectPublicKeyInfo.getAlgorithm().getAlgorithm())) {
+      return new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment);
+    }
+    return new KeyUsage(KeyUsage.digitalSignature);
   }
 
   private ContentSigner rootSigner() throws OperatorCreationException {

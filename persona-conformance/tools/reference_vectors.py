@@ -1539,9 +1539,32 @@ POLICY_V0 = {
 }
 
 
-def supports_signature_algorithm_set(algorithms):
+POLICY_V1 = {
+    "version": "v1",
+    "validSignatureAlgorithmSets": [["Ed25519"], ["SHA256withRSA"]],
+    "preferredSignatureAlgorithmSet": ["Ed25519"],
+    "validAsymmetricEncryptionAlgorithms": [
+        "X25519/HKDF-SHA256/AES-256-GCM", "RSA/NONE/OAEPwithSHA-256andMGF1Padding"],
+    "preferredAsymmetricEncryptionAlgorithm": "X25519/HKDF-SHA256/AES-256-GCM",
+    "validSymmetricEncryptionAlgorithms": ["AES/CTR/NoPadding"],
+    "preferredSymmetricEncryptionAlgorithm": "AES/CTR/NoPadding",
+    "certificateSignatureAlgorithm": "Ed25519",
+    "keyGenerationAlgorithm": "Ed25519",
+    "encryptionKeyGenerationAlgorithms": ["X25519", "RSA"],
+    "keySize": 0,
+    "preferredHashAlgorithm": "SHA-256",
+}
+
+POLICIES = {"crypto.policy-v0": POLICY_V0, "crypto.policy-v1": POLICY_V1}
+ALGORITHM_SET_POLICIES = {
+    "crypto.signature-algorithm-set": POLICY_V0,
+    "crypto.signature-algorithm-set-v1": POLICY_V1,
+}
+
+
+def supports_signature_algorithm_set(algorithms, policy=POLICY_V0):
     candidate = set(algorithms)
-    return any(candidate == set(sanctioned) for sanctioned in POLICY_V0["validSignatureAlgorithmSets"])
+    return any(candidate == set(sanctioned) for sanctioned in policy["validSignatureAlgorithmSets"])
 
 
 # ---------------------------------------------------------------------------
@@ -1560,6 +1583,8 @@ KNOWN_KINDS = {
     "identity.pem",
     "crypto.policy-v0",
     "crypto.signature-algorithm-set",
+    "crypto.policy-v1",
+    "crypto.signature-algorithm-set-v1",
 }
 
 # ---------------------------------------------------------------------------
@@ -1597,6 +1622,8 @@ KEYS_BY_KIND = {
     "identity.pem": frozenset(("objectType", "pem", "expected")),
     "crypto.policy-v0": frozenset(("policy", "field", "expected")),
     "crypto.signature-algorithm-set": frozenset(("signatureAlgorithms", "expected")),
+    "crypto.policy-v1": frozenset(("policy", "field", "expected")),
+    "crypto.signature-algorithm-set-v1": frozenset(("signatureAlgorithms", "expected")),
     # Kinds defined by the stacked preimage/signature phases. This branch's
     # loader does not execute them (KNOWN_KINDS), but their key contract lives
     # here so a merged suite is validated by the same rules.
@@ -1633,6 +1660,8 @@ ACCEPT_REQUIRED_KEYS = {
     "identity.pem": frozenset(("objectType", "pem", "expected")),
     "crypto.policy-v0": frozenset(("policy", "field", "expected")),
     "crypto.signature-algorithm-set": frozenset(("signatureAlgorithms", "expected")),
+    "crypto.policy-v1": frozenset(("policy", "field", "expected")),
+    "crypto.signature-algorithm-set-v1": frozenset(("signatureAlgorithms", "expected")),
     "envelope.signing-preimage": frozenset((
         "domain", "messageType", "payloadFormat", "payloadHex", "expectedHex")),
     "crypto.signature-verify": frozenset((
@@ -1647,6 +1676,8 @@ VERDICT_ONLY_KINDS = frozenset((
     "identity.realm",
     "crypto.policy-v0",
     "crypto.signature-algorithm-set",
+    "crypto.policy-v1",
+    "crypto.signature-algorithm-set-v1",
     "envelope.signing-preimage",
 ))
 
@@ -1873,10 +1904,10 @@ def check_vector(report, vector):
         _check_realm(report, vector)
     elif kind == "identity.pem":
         _check_pem(report, vector, expects)
-    elif kind == "crypto.policy-v0":
-        _check_policy(report, vector)
-    elif kind == "crypto.signature-algorithm-set":
-        _check_algorithm_set(report, vector)
+    elif kind in POLICIES:
+        _check_policy(report, vector, POLICIES[kind])
+    elif kind in ALGORITHM_SET_POLICIES:
+        _check_algorithm_set(report, vector, ALGORITHM_SET_POLICIES[kind])
     else:
         raise VectorError("%s: unknown kind %r" % (vector, kind))
 
@@ -2170,12 +2201,14 @@ def _check_pem(report, vector, expects):
     report.skip(vector, "no pure-Python X.509/PKCS#8/PKCS#10 model")
 
 
-def _check_policy(report, vector):
+def _check_policy(report, vector, policy):
+    if vector.document.get("policy") != policy["version"]:
+        raise VectorError("%s: 'policy' must be %r for this kind" % (vector, policy["version"]))
     field = expect_string(vector, "field")
-    if field not in POLICY_V0:
+    if field not in policy:
         raise VectorError("%s: unknown policy field %r" % (vector, field))
     expected = vector.document.get("expected")
-    reference = POLICY_V0[field]
+    reference = policy[field]
     if isinstance(expected, list) and reference and isinstance(reference[0], list):
         normalised = [sorted(item) for item in expected]
         report.check(
@@ -2197,13 +2230,13 @@ def _check_policy(report, vector):
         )
 
 
-def _check_algorithm_set(report, vector):
+def _check_algorithm_set(report, vector, policy):
     algorithms = vector.document.get("signatureAlgorithms")
     if not isinstance(algorithms, list):
         raise VectorError("%s: 'signatureAlgorithms' must be a list" % vector)
     report.check(
         vector,
-        supports_signature_algorithm_set(algorithms) == vector.document.get("expected"),
+        supports_signature_algorithm_set(algorithms, policy) == vector.document.get("expected"),
         "signature algorithm set verdict mismatch for %r" % (algorithms,),
     )
 

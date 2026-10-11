@@ -94,6 +94,7 @@ final class EnvelopeWorld {
 
   private static final CryptographyService CRYPTO = BouncyCastleCryptographyService.instance();
 
+  private final PersonaVersion version;
   private final InProcessRegistrar registrar;
   private final InMemorySchemaRegistry schemaRegistry;
   private final MessageBindings bindings;
@@ -112,13 +113,21 @@ final class EnvelopeWorld {
     this(new InProcessRegistrar(personaCertificateValidity));
   }
 
+  /**
+   * @param version Persona Version of the whole world: registrar, minted
+   *                keys, signer and verifiers
+   */
+  EnvelopeWorld(PersonaVersion version) {
+    this(new InProcessRegistrar(version));
+  }
+
   EnvelopeWorld(InProcessRegistrar registrar) {
+    this.version = registrar.version();
     this.registrar = registrar;
     this.schemaRegistry = new InMemorySchemaRegistry();
     registerTestSchemas(schemaRegistry);
     this.bindings = TestMessages.bindings();
-    this.signer = new EnvelopeSigner(
-        CRYPTO, PersonaVersion.latestVersion(), schemaRegistry, bindings);
+    this.signer = new EnvelopeSigner(CRYPTO, version, schemaRegistry, bindings);
   }
 
   private static void registerTestSchemas(SchemaRegistry registry) {
@@ -172,14 +181,28 @@ final class EnvelopeWorld {
   /** A verifier with custom resolution and trust (wrong-root, blind-resolver tests). */
   EnvelopeVerifier verifier(PersonaResolver resolver, TrustValidator trustValidator, Clock clock) {
     return new EnvelopeVerifier(
-        PersonaVersion.latestVersion(), CRYPTO, schemaRegistry, bindings, resolver,
-        trustValidator, clock);
+        version, CRYPTO, schemaRegistry, bindings, resolver, trustValidator, clock);
+  }
+
+  /**
+   * A verifier of this world's registrar and roots that enforces a different
+   * Persona Version's policy — for cross-version interoperability tests.
+   */
+  EnvelopeVerifier verifierUnder(PersonaVersion verifierVersion) {
+    return new EnvelopeVerifier(
+        verifierVersion, CRYPTO, schemaRegistry, bindings,
+        new InMemoryPersonaResolver(registrar), trust(), Clock.systemUTC());
+  }
+
+  /** @return the Persona Version of this world */
+  PersonaVersion version() {
+    return version;
   }
 
   /** A verifier of this world with a different schema registry. */
   EnvelopeVerifier verifierWithSchemaRegistry(SchemaRegistry registry) {
     return new EnvelopeVerifier(
-        PersonaVersion.latestVersion(), CRYPTO, registry, bindings,
+        version, CRYPTO, registry, bindings,
         new InMemoryPersonaResolver(registrar), trust(), Clock.systemUTC());
   }
 

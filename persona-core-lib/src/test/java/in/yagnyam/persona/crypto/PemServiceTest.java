@@ -61,7 +61,7 @@ class PemServiceTest {
   @Test
   void encodesAndDecodesCertificateRequest() throws Exception {
     String csrPem = CsrService.instance().buildCsr("p-pem-csr-test", keyPair,
-        PersonaVersion.latestVersion().certificateSignatureAlgorithm());
+        PersonaVersionV0.instance().certificateSignatureAlgorithm());
     assertThat(csrPem).contains("BEGIN CERTIFICATE REQUEST");
     PKCS10CertificationRequest decoded = pemService.decodeCertificateRequest(csrPem);
     PKCS10CertificationRequest reEncoded = pemService.decodeCertificateRequest(

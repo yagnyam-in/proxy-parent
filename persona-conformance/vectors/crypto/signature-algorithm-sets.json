@@ -2,7 +2,7 @@
   "vectorFormat": "persona-conformance-vectors",
   "vectorFormatVersion": 1,
   "kind": "crypto.signature-algorithm-set",
-  "description": "Exact-match membership of an envelope's signature algorithm set against the Persona Version's valid sets (protocol §11 rule 3, §7.2 key-family constraint). A runner answers whether its active Persona Version accepts the given set as-is.",
+  "description": "Exact-match membership of an envelope's signature algorithm set against the Persona Version's valid sets (protocol §11 rule 3, §7.2 key-family constraint). A runner answers whether its v0 Persona Version accepts the given set as-is.",
   "spec": [
     "PERSONA-PROTOCOL.md §11 rule 3",
     "PERSONA-PROTOCOL.md §7.2"
