@@ -1,0 +1,313 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "schema.digest",
+  "description": "Schema documents that MUST be rejected (docs/SCHEMA.md §1.1, §1.3, §3.4 rule 8). A conforming implementation MUST NOT parse these documents at all: the digest covers only the parsed model, so an ignored key or a duplicate field would let two different documents share a digest.",
+  "spec": ["docs/SCHEMA.md §1.3", "docs/SCHEMA.md §3.4 rule 8", "docs/SCHEMA.md §6.1"],
+  "vectors": [
+    {
+      "id": "schema-reject/duplicate-field-names",
+      "spec": "docs/SCHEMA.md §1.3 rule 4",
+      "description": "A record declaring field 'a' twice.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 4 (field names MUST be unique)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"a\",\"type\":\"int\"}]}"
+    },
+    {
+      "id": "schema-reject/duplicate-json-object-key",
+      "spec": "docs/SCHEMA.md §3.4 rule 8",
+      "description": "The record node spells 'name' twice; the two spellings disagree, so the document must not parse.",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 8 (JSON parsing rejects duplicate object keys)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"name\":\"S\",\"fields\":[]}"
+    },
+    {
+      "id": "schema-reject/malformed-json-trailing-comma",
+      "spec": "RFC 8259",
+      "description": "A trailing comma inside the 'fields' array is not valid JSON.",
+      "rejectionRule": "docs/SCHEMA.md §1 (a schema is a JSON document, so malformed JSON is rejected)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[],}"
+    },
+    {
+      "id": "schema-reject/malformed-json-truncated",
+      "spec": "RFC 8259",
+      "description": "Truncated document: the 'fields' array is never closed.",
+      "rejectionRule": "docs/SCHEMA.md §1 (a schema is a JSON document, so malformed JSON is rejected)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":["
+    },
+    {
+      "id": "schema-reject/empty-document",
+      "spec": "docs/SCHEMA.md §1",
+      "description": "The empty string is not a JSON document.",
+      "rejectionRule": "docs/SCHEMA.md §1 (the root node MUST be a record, so a missing document is rejected)",
+      "expect": "reject",
+      "schema": ""
+    },
+    {
+      "id": "schema-reject/trailing-json-content",
+      "spec": "docs/SCHEMA.md §1",
+      "description": "Two JSON values in one document: the parser must not silently ignore the second.",
+      "rejectionRule": "docs/SCHEMA.md §1 (a schema document holds exactly one JSON value)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[]} {\"type\":\"record\",\"name\":\"S\",\"fields\":[]}"
+    },
+    {
+      "id": "schema-reject/root-is-array",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "The root node is an array, not a record.",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (the root MUST be a record)",
+      "expect": "reject",
+      "schema": "{\"type\":\"array\",\"items\":\"string\"}"
+    },
+    {
+      "id": "schema-reject/root-is-primitive",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "The root node is the bare string \"string\".",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (the root MUST be a record)",
+      "expect": "reject",
+      "schema": "\"string\""
+    },
+    {
+      "id": "schema-reject/unknown-type-name",
+      "spec": "docs/SCHEMA.md §1.3 rule 6",
+      "description": "A bare type name that is not a primitive, envelope or multi-envelope: named type references are not supported in this version of the model.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 6 (no named type references; nested records and enums must be declared inline)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"a\",\"type\":\"Missing\"}]}"
+    },
+    {
+      "id": "schema-reject/bare-node-kind-as-object",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "A primitive written as an object instead of the bare JSON string of §1.2.",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (primitives are JSON strings, not objects)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"string\"}}]}"
+    },
+    {
+      "id": "schema-reject/node-object-missing-type",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "An object type node without the required 'type' key.",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (every object node carries a 'type' key)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"a\",\"type\":{\"items\":\"string\"}}]}"
+    },
+    {
+      "id": "schema-reject/invalid-record-name",
+      "spec": "docs/SCHEMA.md §1.3 rule 1",
+      "description": "A record name starting with a digit.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 1 (^[A-Za-z_][A-Za-z0-9_]*$)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"1bad\",\"fields\":[]}"
+    },
+    {
+      "id": "schema-reject/invalid-field-name",
+      "spec": "docs/SCHEMA.md §1.3 rule 1",
+      "description": "A field name containing '$'.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 1 (^[A-Za-z_][A-Za-z0-9_]*$)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"$bad\",\"type\":\"string\"}]}"
+    },
+    {
+      "id": "schema-reject/invalid-namespace",
+      "spec": "docs/SCHEMA.md §1.3 rule 2",
+      "description": "A namespace segment with a hyphen, which the §1.3 rule 2 grammar does not allow.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 2 (dot-separated ^[A-Za-z_][A-Za-z0-9_]*$ segments)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"namespace\":\"bad-ns\",\"fields\":[]}"
+    },
+    {
+      "id": "schema-reject/empty-namespace",
+      "spec": "docs/SCHEMA.md §1.3 rule 2",
+      "description": "An explicitly present but empty namespace does not match the §1.3 rule 2 grammar.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 2 (namespace, if present, MUST match the namespace grammar)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"namespace\":\"\",\"fields\":[]}"
+    },
+    {
+      "id": "schema-reject/message-type-without-version",
+      "spec": "docs/SCHEMA.md §1.3 rule 3",
+      "description": "A messageType with no '@'.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 3 (messageType MUST match the §1.3 rule 3 grammar)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"messageType\":\"example.R\",\"fields\":[]}"
+    },
+    {
+      "id": "schema-reject/message-type-empty-version",
+      "spec": "docs/SCHEMA.md §1.3 rule 3",
+      "description": "A messageType whose version part is empty: the grammar requires at least one character after '@'.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 3 (messageType MUST match the §1.3 rule 3 grammar)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"messageType\":\"persona.R@\",\"fields\":[]}"
+    },
+    {
+      "id": "schema-reject/nested-message-type",
+      "spec": "docs/SCHEMA.md §1.3 rule 7",
+      "description": "A nested record declares a messageType; only the root record may.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 7 (at most one messageType declaration, on the root record only)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"inner\",\"type\":{\"type\":\"record\",\"name\":\"Inner\",\"messageType\":\"test.Inner@v1\",\"fields\":[]}}]}"
+    },
+    {
+      "id": "schema-reject/record-unknown-key",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "A record node carrying a key that is not part of the node shape. Ignoring it would let two documents with different content share a digest.",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (a record node has exactly the keys type/name/namespace/messageType/fields)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[],\"extra\":1}"
+    },
+    {
+      "id": "schema-reject/record-missing-fields",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "A record without the required 'fields' key.",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (a record node has the required 'fields' array)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\"}"
+    },
+    {
+      "id": "schema-reject/record-missing-name",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "A record without the required 'name' key.",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (a record node has the required 'name')",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"fields\":[]}"
+    },
+    {
+      "id": "schema-reject/fields-not-an-array",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "'fields' is a JSON object rather than an array.",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (a record's 'fields' is an array of field objects)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":{}}"
+    },
+    {
+      "id": "schema-reject/field-entry-not-an-object",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "A field entry that is an array rather than an object with name and type.",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (every entry of 'fields' is a field object)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[[\"a\",\"string\"]]}"
+    },
+    {
+      "id": "schema-reject/field-missing-type",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "A field entry without the required 'type' (there are no optional fields in this model, §1.3 rule 5).",
+      "rejectionRule": "docs/SCHEMA.md §1.1 / §1.3 rule 5 (all fields are required and carry a type)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"a\"}]}"
+    },
+    {
+      "id": "schema-reject/field-unknown-key",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "A field entry carrying an 'optional' key, which the model does not have (§1.3 rule 5).",
+      "rejectionRule": "docs/SCHEMA.md §1.1 / §1.3 rule 5 (a field entry has exactly name and type)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"a\",\"type\":\"string\",\"optional\":true}]}"
+    },
+    {
+      "id": "schema-reject/array-missing-items",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "An array node without the required 'items' type.",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (an array node has the required 'items')",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"array\"}}]}"
+    },
+    {
+      "id": "schema-reject/map-missing-values",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "A map node without the required 'values' type.",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (a map node has the required 'values')",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"map\"}}]}"
+    },
+    {
+      "id": "schema-reject/enum-empty-symbols",
+      "spec": "docs/SCHEMA.md §1.3 rule 4",
+      "description": "An enum with no symbols.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 4 (an enum's symbols MUST be unique and non-empty)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"e\",\"type\":{\"type\":\"enum\",\"name\":\"E\",\"symbols\":[]}}]}"
+    },
+    {
+      "id": "schema-reject/enum-duplicate-symbols",
+      "spec": "docs/SCHEMA.md §1.3 rule 4",
+      "description": "An enum declaring 'A' twice.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 4 (an enum's symbols MUST be unique and non-empty)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"e\",\"type\":{\"type\":\"enum\",\"name\":\"E\",\"symbols\":[\"A\",\"A\"]}}]}"
+    },
+    {
+      "id": "schema-reject/enum-invalid-symbol",
+      "spec": "docs/SCHEMA.md §1.3 rule 1",
+      "description": "An enum symbol that is not an identifier (§1.3 rule 1 applies to symbols too).",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 1 (enum symbols match ^[A-Za-z_][A-Za-z0-9_]*$)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"e\",\"type\":{\"type\":\"enum\",\"name\":\"E\",\"symbols\":[\"BAD!\"]}}]}"
+    },
+    {
+      "id": "schema-reject/enum-symbol-not-a-string",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "An enum symbol that is a JSON number.",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (every symbol is a JSON string)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"e\",\"type\":{\"type\":\"enum\",\"name\":\"E\",\"symbols\":[1]}}]}"
+    },
+    {
+      "id": "schema-reject/enum-symbols-not-an-array",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "'symbols' is a JSON string rather than an array.",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (an enum's 'symbols' is an array of strings)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"e\",\"type\":{\"type\":\"enum\",\"name\":\"E\",\"symbols\":\"AB\"}}]}"
+    },
+    {
+      "id": "schema-reject/enum-missing-symbols",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "An enum node without the required 'symbols' array.",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (an enum node has the required 'symbols')",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"e\",\"type\":{\"type\":\"enum\",\"name\":\"E\"}}]}"
+    },
+    {
+      "id": "schema-reject/unknown-node-type",
+      "spec": "docs/SCHEMA.md §1.1",
+      "description": "An object node with an unrecognized 'type' keyword.",
+      "rejectionRule": "docs/SCHEMA.md §1.1 (the node kinds are record/enum/array/map plus the bare-string kinds)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"union\",\"branches\":[\"string\"]}}]}"
+    },
+    {
+      "id": "schema-reject/union-field",
+      "spec": "docs/SCHEMA.md §1.3 rule 5",
+      "description": "An Avro-style union (an array of types) as a field type: there are no unions or optional fields in this model.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 5 (no unions and no optional fields; every field carries exactly one type)",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"a\",\"type\":[\"null\",\"string\"]}]}"
+    },
+    {
+      "id": "schema-reject/null-namespace",
+      "spec": "docs/SCHEMA.md §1.3 rule 2",
+      "description": "An explicitly null namespace is malformed, not absent: present attributes must match their grammars.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 2",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"namespace\":null,\"fields\":[]}"
+    },
+    {
+      "id": "schema-reject/null-message-type",
+      "spec": "docs/SCHEMA.md §1.3 rule 3",
+      "description": "An explicitly null messageType is malformed, not absent.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 3",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"messageType\":null,\"fields\":[]}"
+    },
+    {
+      "id": "schema-reject/null-enum-namespace",
+      "spec": "docs/SCHEMA.md §1.3 rule 2",
+      "description": "The null-attribute rule applies to enum namespaces as well.",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 2",
+      "expect": "reject",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"enum\",\"name\":\"E\",\"namespace\":null,\"symbols\":[\"A\"]}}]}"
+    }
+  ]
+}

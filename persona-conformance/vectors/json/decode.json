@@ -1,0 +1,255 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "payload.json.decode",
+  "description": "Canonical JSON payloads decoded against a schema. Non-canonical but parseable inputs are included where the specification does not require a rejection; each such vector says so in its description.",
+  "spec": [
+    "docs/SCHEMA.md §4",
+    "docs/SCHEMA.md §3.4"
+  ],
+  "vectors": [
+    {
+      "id": "json/decode/bytes-base64",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Padded standard base64.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputJson": "{\"v\":\"AAEC/w==\"}",
+      "expectedValue": {
+        "v": "AAEC/w=="
+      }
+    },
+    {
+      "id": "json/decode/bytes-empty",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "The empty base64 string is zero bytes.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputJson": "{\"v\":\"\"}",
+      "expectedValue": {
+        "v": ""
+      }
+    },
+    {
+      "id": "json/decode/bytes-two-bytes-one-pad-char",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Standard base64: a four-character quantum may end in a single '=' and then carries two bytes.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputJson": "{\"v\":\"AQI=\"}",
+      "expectedValue": {
+        "v": "AQI="
+      }
+    },
+    {
+      "id": "json/decode/bytes-non-canonical-trailing-bits",
+      "spec": "docs/SCHEMA.md §3.4 rule 10",
+      "description": "Documented leniency: 'AB==' and 'AA==' both decode to the single byte 0x00 because neither decoder checks the unused trailing bits of the last base64 quantum. The expected value is the decoded byte, rendered back as canonical base64.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputJson": "{\"v\":\"AB==\"}",
+      "expectedValue": {
+        "v": "AA=="
+      }
+    },
+    {
+      "id": "json/decode/boolean-true",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "JSON boolean.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"boolean\"}]}",
+      "inputJson": "{\"v\":true}",
+      "expectedValue": {
+        "v": true
+      }
+    },
+    {
+      "id": "json/decode/int-negative",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Signed decimal JSON integer.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputJson": "{\"v\":-42}",
+      "expectedValue": {
+        "v": -42
+      }
+    },
+    {
+      "id": "json/decode/long-max",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "The full signed 64-bit range is available to a long field.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "inputJson": "{\"v\":9223372036854775807}",
+      "expectedValue": {
+        "v": 9223372036854775807
+      }
+    },
+    {
+      "id": "json/decode/double-whole-number",
+      "spec": "docs/SCHEMA.md §4.4",
+      "description": "A double field accepts an integral JSON number and renders it back with a fraction.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "inputJson": "{\"v\":1}",
+      "expectedValue": {
+        "v": 1.0
+      }
+    },
+    {
+      "id": "json/decode/double-exponent",
+      "spec": "docs/SCHEMA.md §4.4",
+      "description": "JSON exponent notation is accepted and re-rendered in canonical form.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "inputJson": "{\"v\":1.5e2}",
+      "expectedValue": {
+        "v": 150.0
+      }
+    },
+    {
+      "id": "json/decode/timestamp-canonical",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "The canonical three-digit form.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"2026-10-10T12:00:00.000Z\"}",
+      "expectedValue": {
+        "v": "@epoch-millis:1791633600000"
+      }
+    },
+    {
+      "id": "json/decode/timestamp-without-fraction",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Documented leniency: the encoder always writes three fractional digits, but the decoder also accepts an ISO-8601 instant without them.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"2026-10-10T12:00:00Z\"}",
+      "expectedValue": {
+        "v": "@epoch-millis:1791633600000"
+      }
+    },
+    {
+      "id": "json/decode/timestamp-lowercase-t",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Documented leniency: the ISO-8601 'T' separator is accepted in lower case.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"2026-10-10t12:00:00.000Z\"}",
+      "expectedValue": {
+        "v": "@epoch-millis:1791633600000"
+      }
+    },
+    {
+      "id": "json/decode/timestamp-with-offset",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Documented leniency: a numeric UTC offset is accepted and normalized to UTC (12:00+02:00 is 10:00Z).",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"2026-10-10T12:00:00.000+02:00\"}",
+      "expectedValue": {
+        "v": "@epoch-millis:1791626400000"
+      }
+    },
+    {
+      "id": "json/decode/enum-symbol",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "An enum decodes to its symbol.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"enum\",\"name\":\"M\",\"symbols\":[\"A\",\"B\",\"C\"]}}]}",
+      "inputJson": "{\"v\":\"C\"}",
+      "expectedValue": {
+        "v": "C"
+      }
+    },
+    {
+      "id": "json/decode/record-unsorted-keys",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "The decoder accepts any key order; the encoder re-canonicalizes.",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"z\",\"type\":\"string\"},{\"name\":\"a\",\"type\":\"int\"}]}",
+      "inputJson": "{\"z\":\"x\",\"a\":1}",
+      "expectedValue": {
+        "z": "x",
+        "a": 1
+      }
+    },
+    {
+      "id": "json/decode/map-key-order-irrelevant",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Map key order in the input does not matter.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
+      "inputJson": "{\"v\":{\"z\":\"1\",\"a\":\"3\"}}",
+      "expectedValue": {
+        "v": {
+          "z": "1",
+          "a": "3"
+        }
+      }
+    },
+    {
+      "id": "json/decode/array-nested-in-map",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Structural nesting.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"array\",\"items\":\"string\"}}}]}",
+      "inputJson": "{\"v\":{\"k\":[\"a\"]}}",
+      "expectedValue": {
+        "v": {
+          "k": [
+            "a"
+          ]
+        }
+      }
+    },
+    {
+      "id": "json/decode/empty-array-and-map",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "An empty array and an empty map are distinct renderings.",
+      "schema": "{\"type\":\"record\",\"name\":\"E\",\"fields\":[{\"name\":\"a\",\"type\":{\"type\":\"array\",\"items\":\"int\"}},{\"name\":\"m\",\"type\":{\"type\":\"map\",\"values\":\"int\"}}]}",
+      "inputJson": "{\"a\":[],\"m\":{}}",
+      "expectedValue": {
+        "a": [],
+        "m": {}
+      }
+    },
+    {
+      "id": "json/decode/kitchen-sink",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "The full kitchen-sink document, which the encoder must reproduce byte for byte.",
+      "schema": "{\"type\":\"record\",\"name\":\"Kitchen\",\"namespace\":\"test\",\"messageType\":\"test.Kitchen@v1\",\"fields\":[{\"name\":\"greetingId\",\"type\":\"string\"},{\"name\":\"from\",\"type\":\"string\"},{\"name\":\"to\",\"type\":\"string\"},{\"name\":\"body\",\"type\":\"string\"},{\"name\":\"issuedAt\",\"type\":\"timestamp-millis\"},{\"name\":\"count\",\"type\":\"int\"},{\"name\":\"score\",\"type\":\"double\"},{\"name\":\"verified\",\"type\":\"boolean\"},{\"name\":\"attachment\",\"type\":\"bytes\"},{\"name\":\"tags\",\"type\":{\"type\":\"array\",\"items\":\"string\"}},{\"name\":\"attributes\",\"type\":{\"type\":\"map\",\"values\":\"string\"}},{\"name\":\"mood\",\"type\":{\"type\":\"enum\",\"name\":\"Mood\",\"symbols\":[\"HAPPY\",\"NEUTRAL\",\"SAD\"]}},{\"name\":\"inner\",\"type\":{\"type\":\"record\",\"name\":\"Inner\",\"fields\":[{\"name\":\"x\",\"type\":\"long\"}]}},{\"name\":\"forwarded\",\"type\":\"envelope\"}]}",
+      "inputJson": "{\"attachment\":\"AAEC/w==\",\"attributes\":{\"a\":\"3\",\"z\":\"1\",\"é\":\"2\"},\"body\":\"hello\",\"count\":42,\"forwarded\":{\"messageType\":\"example.Greeting@v1\",\"payload\":\"AQID\",\"payloadFormat\":\"json\",\"schemaId\":\"66cd4cc7f890f80cbda43fa5d69efeccadad0833\",\"signatures\":[{\"algorithm\":\"SHA256withRSA\",\"value\":\"CQg=\"}],\"signedBy\":\"alice\"},\"from\":\"alice\",\"greetingId\":\"g-1\",\"inner\":{\"x\":7},\"issuedAt\":\"2026-10-10T12:00:00.000Z\",\"mood\":\"NEUTRAL\",\"score\":1.5,\"tags\":[\"a\",\"b\"],\"to\":\"bob\",\"verified\":true}",
+      "expectedValue": {
+        "greetingId": "g-1",
+        "from": "alice",
+        "to": "bob",
+        "body": "hello",
+        "issuedAt": "2026-10-10T12:00:00.000Z",
+        "count": 42,
+        "score": 1.5,
+        "verified": true,
+        "attachment": "AAEC/w==",
+        "tags": [
+          "a",
+          "b"
+        ],
+        "attributes": {
+          "z": "1",
+          "é": "2",
+          "a": "3"
+        },
+        "mood": "NEUTRAL",
+        "inner": {
+          "x": 7
+        },
+        "forwarded": {
+          "messageType": "example.Greeting@v1",
+          "payloadFormat": "json",
+          "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+          "payload": "AQID",
+          "signedBy": "alice",
+          "signatures": [
+            {
+              "algorithm": "SHA256withRSA",
+              "value": "CQg="
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "json/decode/timestamp-expanded-year-at-floor",
+      "spec": "docs/SCHEMA.md §3.4 rule 7",
+      "description": "The lowest decodable timestamp-millis value (-9223372036854775000 epoch millis, inclusive per §3.4 rule 7), written in the expanded-year ISO-8601 rendering that §4.1 itself names for it: -292275055-05-16T16:47:05.000Z. The @epoch-millis token is used for the expected value because the instant lies outside the years 1-9999 an ISO-8601 formatter renders canonically.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"-292275055-05-16T16:47:05.000Z\"}",
+      "expectedValue": {
+        "v": "@epoch-millis:-9223372036854775000"
+      }
+    }
+  ]
+}

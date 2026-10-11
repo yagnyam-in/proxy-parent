@@ -516,6 +516,10 @@ Recommended path:
 - Move to Avro or Protobuf domain-by-domain, starting with high-volume, low-value traffic (alerts, status polls).
 - Never mix encodings within a single signed envelope: `payloadFormat` on the envelope defines exactly one encoding.
 
+### 10.1 PEM Transport Encoding
+
+Certificates, public keys, private keys and certificate signing requests are stored and exchanged as PEM (RFC 7468) text. A PEM document MAY carry several objects (e.g. a certificate chain); parsing a PEM document for a single object means parsing its **first** object, and that object's type MUST match the expected type (a `CERTIFICATE` lookup MUST NOT accept a `PUBLIC KEY` object, and so on). Malformed PEM — no object of any type, a non-base64 body, or a body that does not parse as the expected object — MUST be rejected.
+
 ---
 
 ## 11. Rules and Invariants (Normative)

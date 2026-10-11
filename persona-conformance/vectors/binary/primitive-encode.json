@@ -1,0 +1,352 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "payload.binary.encode",
+  "description": "Byte-exact persona-binary encodings of the §3.1 primitives. A runner encodes the given value against the given schema and compares the bytes exactly; expected bytes are lowercase hex.",
+  "spec": [
+    "docs/SCHEMA.md §3.1",
+    "docs/SCHEMA.md §3.4 rule 7"
+  ],
+  "vectors": [
+    {
+      "id": "binary/primitive-encode/int-zero",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": 0
+      },
+      "expectedHex": "00"
+    },
+    {
+      "id": "binary/primitive-encode/int-one",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": 1
+      },
+      "expectedHex": "02"
+    },
+    {
+      "id": "binary/primitive-encode/int-minus-one",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "zigzag(-1) = 1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": -1
+      },
+      "expectedHex": "01"
+    },
+    {
+      "id": "binary/primitive-encode/int-64",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "zigzag(64) = 128, LEB128 two bytes: 0x80 0x01 (the low group carries the continuation bit).",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": 64
+      },
+      "expectedHex": "8001"
+    },
+    {
+      "id": "binary/primitive-encode/int-minus-64",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "zigzag(-64) = 127 = 0x7f, one byte.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": -64
+      },
+      "expectedHex": "7f"
+    },
+    {
+      "id": "binary/primitive-encode/int-150",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": 150
+      },
+      "expectedHex": "ac02"
+    },
+    {
+      "id": "binary/primitive-encode/int-max",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "zigzag(2^31-1) = 2^32-2, five LEB128 bytes.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": 2147483647
+      },
+      "expectedHex": "feffffff0f"
+    },
+    {
+      "id": "binary/primitive-encode/int-min",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "zigzag(-2^31) = 2^32-1, five LEB128 bytes.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "value": {
+        "v": -2147483648
+      },
+      "expectedHex": "ffffffff0f"
+    },
+    {
+      "id": "binary/primitive-encode/long-zero",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "value": {
+        "v": 0
+      },
+      "expectedHex": "00"
+    },
+    {
+      "id": "binary/primitive-encode/long-minus-one",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "value": {
+        "v": -1
+      },
+      "expectedHex": "01"
+    },
+    {
+      "id": "binary/primitive-encode/long-150",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "value": {
+        "v": 150
+      },
+      "expectedHex": "ac02"
+    },
+    {
+      "id": "binary/primitive-encode/long-max",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "zigzag(2^63-1) = 2^64-2, ten LEB128 bytes.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "value": {
+        "v": 9223372036854775807
+      },
+      "expectedHex": "feffffffffffffffff01"
+    },
+    {
+      "id": "binary/primitive-encode/long-min",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "zigzag(-2^63) = 2^64-1, ten LEB128 bytes.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "value": {
+        "v": -9223372036854775808
+      },
+      "expectedHex": "ffffffffffffffffff01"
+    },
+    {
+      "id": "binary/primitive-encode/boolean-true",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"boolean\"}]}",
+      "value": {
+        "v": true
+      },
+      "expectedHex": "01"
+    },
+    {
+      "id": "binary/primitive-encode/boolean-false",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"boolean\"}]}",
+      "value": {
+        "v": false
+      },
+      "expectedHex": "00"
+    },
+    {
+      "id": "binary/primitive-encode/double-zero",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": 0.0
+      },
+      "expectedHex": "0000000000000000"
+    },
+    {
+      "id": "binary/primitive-encode/double-negative-zero",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": -0.0
+      },
+      "expectedHex": "0000000000000080"
+    },
+    {
+      "id": "binary/primitive-encode/double-one",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": 1.0
+      },
+      "expectedHex": "000000000000f03f"
+    },
+    {
+      "id": "binary/primitive-encode/double-one-and-a-half",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": 1.5
+      },
+      "expectedHex": "000000000000f83f"
+    },
+    {
+      "id": "binary/primitive-encode/double-negative-2-point-25",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "IEEE 754 binary64, little-endian byte order.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": -2.25
+      },
+      "expectedHex": "00000000000002c0"
+    },
+    {
+      "id": "binary/primitive-encode/double-smallest-vector-value",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "0.001 is one of the §4.4 values whose shortest representation is implementation-independent.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "value": {
+        "v": 0.001
+      },
+      "expectedHex": "fca9f1d24d62503f"
+    },
+    {
+      "id": "binary/primitive-encode/string-empty",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "value": {
+        "v": ""
+      },
+      "expectedHex": "00"
+    },
+    {
+      "id": "binary/primitive-encode/string-foo",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "value": {
+        "v": "foo"
+      },
+      "expectedHex": "06666f6f"
+    },
+    {
+      "id": "binary/primitive-encode/string-two-byte-utf8",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "The length prefix counts UTF-8 bytes, not characters: U+00E9 is two bytes.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "value": {
+        "v": "é"
+      },
+      "expectedHex": "04c3a9"
+    },
+    {
+      "id": "binary/primitive-encode/string-escapes",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "The length prefix counts the six raw bytes; no escaping happens in the binary format.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "value": {
+        "v": "a\"b\\c\n"
+      },
+      "expectedHex": "0c6122625c630a"
+    },
+    {
+      "id": "binary/primitive-encode/string-astral-plane",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "U+1F600 is four UTF-8 bytes.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "value": {
+        "v": "😀"
+      },
+      "expectedHex": "08f09f9880"
+    },
+    {
+      "id": "binary/primitive-encode/bytes-empty",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "value": {
+        "v": ""
+      },
+      "expectedHex": "00"
+    },
+    {
+      "id": "binary/primitive-encode/bytes-three",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "value": {
+        "v": "AQID"
+      },
+      "expectedHex": "06010203"
+    },
+    {
+      "id": "binary/primitive-encode/bytes-with-high-byte",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "bytes carry raw octets and are never UTF-8 validated.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "value": {
+        "v": "AAEC/w=="
+      },
+      "expectedHex": "08000102ff"
+    },
+    {
+      "id": "binary/primitive-encode/timestamp-epoch",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "1970-01-01T00:00:00.000Z"
+      },
+      "expectedHex": "00"
+    },
+    {
+      "id": "binary/primitive-encode/timestamp-150-millis",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "Primitive encoding of §3.1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "1970-01-01T00:00:00.150Z"
+      },
+      "expectedHex": "ac02"
+    },
+    {
+      "id": "binary/primitive-encode/timestamp-minus-one-millis",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "One millisecond before the epoch: zigzag(-1) = 1.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "1969-12-31T23:59:59.999Z"
+      },
+      "expectedHex": "01"
+    },
+    {
+      "id": "binary/primitive-encode/timestamp-2026-10-10T12:00:00Z",
+      "spec": "docs/SCHEMA.md §3.1",
+      "description": "A typical domain timestamp: 1791633600000 epoch milliseconds.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "2026-10-10T12:00:00.000Z"
+      },
+      "expectedHex": "80b8f9daa468"
+    },
+    {
+      "id": "binary/primitive-encode/timestamp-floor",
+      "spec": "docs/SCHEMA.md §3.4 rule 7",
+      "description": "The lowest timestamp-millis value of §3.4 rule 7 is encodable; values below it are not.",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "value": {
+        "v": "@epoch-millis:-9223372036854775000"
+      },
+      "expectedHex": "aff3ffffffffffffff01"
+    }
+  ]
+}

@@ -1,0 +1,345 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "payload.json.decode",
+  "description": "Canonical JSON payloads that MUST be rejected (docs/SCHEMA.md §3.4 decoder strictness, §4.3 encoder strictness).",
+  "spec": [
+    "docs/SCHEMA.md §3.4",
+    "docs/SCHEMA.md §4.3"
+  ],
+  "vectors": [
+    {
+      "id": "json/decode-reject/duplicate-object-keys",
+      "spec": "docs/SCHEMA.md §3.4 rule 8",
+      "description": "JSON parsing rejects duplicate keys rather than keeping the last spelling.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 8",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputJson": "{\"v\":1,\"v\":2}"
+    },
+    {
+      "id": "json/decode-reject/duplicate-map-keys",
+      "spec": "docs/SCHEMA.md §3.4 rule 8",
+      "description": "A map payload with a duplicate key is not parseable.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 8",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
+      "inputJson": "{\"v\":{\"a\":\"1\",\"a\":\"2\"}}"
+    },
+    {
+      "id": "json/decode-reject/unknown-field",
+      "spec": "docs/SCHEMA.md §4.3",
+      "description": "Unknown fields are rejected.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputJson": "{\"v\":1,\"w\":2}"
+    },
+    {
+      "id": "json/decode-reject/missing-field",
+      "spec": "docs/SCHEMA.md §1.3 rule 5",
+      "description": "All fields are required.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §1.3 rule 5",
+      "schema": "{\"type\":\"record\",\"name\":\"R\",\"fields\":[{\"name\":\"a\",\"type\":\"int\"},{\"name\":\"b\",\"type\":\"int\"}]}",
+      "inputJson": "{\"a\":1}"
+    },
+    {
+      "id": "json/decode-reject/null-value",
+      "spec": "docs/SCHEMA.md §4.3",
+      "description": "There are no optional fields, so null is never a valid value.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.3",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputJson": "{\"v\":null}"
+    },
+    {
+      "id": "json/decode-reject/string-field-given-a-number",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Type mismatch.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "inputJson": "{\"v\":1}"
+    },
+    {
+      "id": "json/decode-reject/boolean-field-given-a-string",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Type mismatch.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"boolean\"}]}",
+      "inputJson": "{\"v\":\"true\"}"
+    },
+    {
+      "id": "json/decode-reject/int-field-given-a-string",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Type mismatch.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputJson": "{\"v\":\"5\"}"
+    },
+    {
+      "id": "json/decode-reject/int-out-of-32-bit-range",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "The int range is signed 32-bit.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputJson": "{\"v\":2147483648}"
+    },
+    {
+      "id": "json/decode-reject/int-field-given-a-fraction",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "A fractional number is not an int.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputJson": "{\"v\":1.5}"
+    },
+    {
+      "id": "json/decode-reject/long-out-of-64-bit-range",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "The long range is signed 64-bit.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"long\"}]}",
+      "inputJson": "{\"v\":9223372036854775808}"
+    },
+    {
+      "id": "json/decode-reject/double-overflows-to-infinity",
+      "spec": "docs/SCHEMA.md §3.4 rule 9",
+      "description": "A JSON number beyond the double range overflows to infinity, which is not decodable.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 9",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "inputJson": "{\"v\":1e999}"
+    },
+    {
+      "id": "json/decode-reject/base64-unpadded",
+      "spec": "docs/SCHEMA.md §3.4 rule 10",
+      "description": "The length must be a multiple of 4.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 10",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputJson": "{\"v\":\"AQI\"}"
+    },
+    {
+      "id": "json/decode-reject/base64-three-padding-characters",
+      "spec": "docs/SCHEMA.md §3.4 rule 10",
+      "description": "One data character plus three '=' is not a valid final quantum.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 10",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputJson": "{\"v\":\"A===\"}"
+    },
+    {
+      "id": "json/decode-reject/base64-only-padding",
+      "spec": "docs/SCHEMA.md §3.4 rule 10",
+      "description": "A quantum of pure padding.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 10",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputJson": "{\"v\":\"====\"}"
+    },
+    {
+      "id": "json/decode-reject/base64-excess-padding",
+      "spec": "docs/SCHEMA.md §3.4 rule 10",
+      "description": "Padding may only complete the final quantum; '=' after a complete quantum is excess padding, which java.util.Base64 rejects with 'wrong 4-byte ending unit'.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 10",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputJson": "{\"v\":\"AAAA====\"}"
+    },
+    {
+      "id": "json/decode-reject/base64-two-padding-after-complete-quantum",
+      "spec": "docs/SCHEMA.md §3.4 rule 10",
+      "description": "Even the legal padding count is excess when the data quantum it follows is already complete.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 10",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputJson": "{\"v\":\"AAAA==\"}"
+    },
+    {
+      "id": "json/decode-reject/base64-padding-in-the-middle",
+      "spec": "docs/SCHEMA.md §3.4 rule 10",
+      "description": "Data after a padding character.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 10",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputJson": "{\"v\":\"AA=A\"}"
+    },
+    {
+      "id": "json/decode-reject/base64-url-safe-alphabet",
+      "spec": "docs/SCHEMA.md §3.4 rule 10",
+      "description": "The URL-safe alphabet is not the standard one.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 10",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputJson": "{\"v\":\"AA-_\"}"
+    },
+    {
+      "id": "json/decode-reject/base64-invalid-character",
+      "spec": "docs/SCHEMA.md §3.4 rule 10",
+      "description": "Only the standard base64 alphabet is accepted.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 10",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"bytes\"}]}",
+      "inputJson": "{\"v\":\"AA*=\"}"
+    },
+    {
+      "id": "json/decode-reject/string-with-unpaired-surrogate",
+      "spec": "docs/SCHEMA.md §3.4 rule 6",
+      "description": "A JSON escape can spell an unpaired surrogate; no encoding can carry it as UTF-8.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 6",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"string\"}]}",
+      "inputJson": "{\"v\":\"\\ud800\"}"
+    },
+    {
+      "id": "json/decode-reject/map-key-with-unpaired-surrogate",
+      "spec": "docs/SCHEMA.md §3.4 rule 6",
+      "description": "Map keys are validated like any other string.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 6",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"map\",\"values\":\"string\"}}]}",
+      "inputJson": "{\"v\":{\"\\udfff\":\"x\"}}"
+    },
+    {
+      "id": "json/decode-reject/timestamp-not-iso-8601",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "A date without a time is not an instant.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"2026-10-10\"}"
+    },
+    {
+      "id": "json/decode-reject/timestamp-hour-out-of-range",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "The hour component is 0-23 (T24:00:00 end-of-day aside); 25:00:00 is not an ISO-8601 instant.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"2026-10-10T25:00:00.000Z\"}"
+    },
+    {
+      "id": "json/decode-reject/timestamp-offset-out-of-range",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "The numeric UTC offset is at most ±18:00 (java.time.ZoneOffset); +25:00 is not an ISO-8601 instant.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"2026-10-10T00:00:00.000+25:00\"}"
+    },
+    {
+      "id": "json/decode-reject/timestamp-sub-millisecond-precision",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "timestamp-millis has millisecond precision only.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"2026-10-10T12:00:00.000000001Z\"}"
+    },
+    {
+      "id": "json/decode-reject/timestamp-below-floor",
+      "spec": "docs/SCHEMA.md §3.4 rule 7",
+      "description": "One second below the inclusive floor of the timestamp-millis range, written in the expanded-year rendering §4.1 itself uses for Instant.MIN: the value cannot round-trip the Instant re-encoding of §4.1 and is rejected on decode in both codecs.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 7",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"-292275055-05-16T16:47:04.000Z\"}"
+    },
+    {
+      "id": "json/decode-reject/enum-symbol-not-declared",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "The symbol must be declared by the schema.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":{\"type\":\"enum\",\"name\":\"M\",\"symbols\":[\"A\",\"B\",\"C\"]}}]}",
+      "inputJson": "{\"v\":\"D\"}"
+    },
+    {
+      "id": "json/decode-reject/root-not-an-object",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "A payload's root must be a JSON object describing the root record.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputJson": "[]"
+    },
+    {
+      "id": "json/decode-reject/trailing-content",
+      "spec": "docs/SCHEMA.md §4",
+      "description": "A payload holds exactly one JSON value.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputJson": "{\"v\":1} {\"v\":2}"
+    },
+    {
+      "id": "json/decode-reject/malformed-json",
+      "spec": "docs/SCHEMA.md §4",
+      "description": "Malformed JSON is rejected.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputJson": "{\"v\":}"
+    },
+    {
+      "id": "json/decode-reject/array-where-object-expected",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Type mismatch.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"int\"}]}",
+      "inputJson": "{\"v\":[]}"
+    },
+    {
+      "id": "json/decode-reject/timestamp-trailing-newline",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "A trailing newline is not part of the ISO-8601 instant grammar; parsing must consume the string to its true end.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"2026-10-10T12:00:00.000Z\\n\"}"
+    },
+    {
+      "id": "json/decode-reject/timestamp-year-not-four-digits",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "Ordinary years are exactly four unsigned digits; '1' is not a valid year spelling (mirrors java.time.Instant.parse).",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"1-01-01T00:00:00.000Z\"}"
+    },
+    {
+      "id": "json/decode-reject/timestamp-signed-four-digit-year",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "A leading plus is valid only on expanded years of five or more digits; '+2026' is rejected (mirrors java.time.Instant.parse).",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"+2026-01-01T00:00:00.000Z\"}"
+    },
+    {
+      "id": "json/decode-reject/timestamp-leap-second-outside-23-59",
+      "spec": "docs/SCHEMA.md §4.1",
+      "description": "A leap second (:60) is accepted only at 23:59 (mirrors java.time.Instant.parse); at any other hour the instant is invalid.",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §4.1",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"timestamp-millis\"}]}",
+      "inputJson": "{\"v\":\"2026-10-10T12:59:60.000Z\"}"
+    },
+    {
+      "id": "json/decode-reject/double-overflowing-json-integer",
+      "spec": "docs/SCHEMA.md §3.4 rule 9",
+      "description": "A JSON integer literal too large for a double converts to infinity; non-finite doubles are rejected (the decoder must not crash on the conversion).",
+      "expect": "reject",
+      "rejectionRule": "docs/SCHEMA.md §3.4 rule 9",
+      "schema": "{\"type\":\"record\",\"name\":\"Single\",\"fields\":[{\"name\":\"v\",\"type\":\"double\"}]}",
+      "inputJson": "{\"v\":1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000}"
+    }
+  ]
+}

@@ -106,6 +106,12 @@
                         <systemPropertyVariables>
                             <conformance.vectors.dir>${conformance.vectors.dir}</conformance.vectors.dir>
                         </systemPropertyVariables>
+                        <!-- The runner is a suite (one dynamic test per vector), so it is
+                             named *Suite, which surefire's default includes would skip. -->
+                        <includes>
+                            <include>**/*Test.java</include>
+                            <include>**/*Suite.java</include>
+                        </includes>
                     </configuration>
                 </plugin>
                 <plugin>

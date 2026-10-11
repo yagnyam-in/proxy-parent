@@ -1,0 +1,158 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "identity.realm",
+  "description": "Realm identifier validity (protocol §3.5). NOTE: §3.5 defines what a Realm IS but no grammar for its identifier; the truth table below is the reference implementation's grammar (dot-separated lower-case alphanumeric segments with optional internal hyphens) and is therefore a reference-implementation contract rather than a strictly normative one. It exists so that Realms agree across language bindings.",
+  "spec": [
+    "PERSONA-PROTOCOL.md §3.5"
+  ],
+  "vectors": [
+    {
+      "id": "identity/realm/production",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "The protocol's own example realm.",
+      "input": "production",
+      "expected": true
+    },
+    {
+      "id": "identity/realm/staging",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "A single lowercase segment.",
+      "input": "staging",
+      "expected": true
+    },
+    {
+      "id": "identity/realm/dev-alice",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "§3.5 lists dev-alice as an example realm: hyphen-separated segments are valid.",
+      "input": "dev-alice",
+      "expected": true
+    },
+    {
+      "id": "identity/realm/dev-alice.eu-west",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "Dot-separated realm segments.",
+      "input": "dev-alice.eu-west",
+      "expected": true
+    },
+    {
+      "id": "identity/realm/1abc",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "A segment may start with a digit (the reference realm grammar is [a-z0-9]+(-[a-z0-9]+)* per dot-separated segment).",
+      "input": "1abc",
+      "expected": true
+    },
+    {
+      "id": "identity/realm/",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "An empty realm is not a realm.",
+      "input": "",
+      "expected": false
+    },
+    {
+      "id": "identity/realm/null",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "A missing realm (JSON null) is rejected.",
+      "input": null,
+      "expected": false
+    },
+    {
+      "id": "identity/realm/Production",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "Realm segments are lowercase in the reference grammar.",
+      "input": "Production",
+      "expected": false
+    },
+    {
+      "id": "identity/realm/dev_alice",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "Underscores are not part of the reference realm grammar (unlike schema names, §1.3 rule 1).",
+      "input": "dev_alice",
+      "expected": false
+    },
+    {
+      "id": "identity/realm/a..b",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "An empty segment.",
+      "input": "a..b",
+      "expected": false
+    },
+    {
+      "id": "identity/realm/.a",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "A leading empty segment.",
+      "input": ".a",
+      "expected": false
+    },
+    {
+      "id": "identity/realm/a.",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "A trailing empty segment.",
+      "input": "a.",
+      "expected": false
+    },
+    {
+      "id": "identity/realm/-a",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "A leading hyphen.",
+      "input": "-a",
+      "expected": false
+    },
+    {
+      "id": "identity/realm/a-",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "A trailing hyphen.",
+      "input": "a-",
+      "expected": false
+    },
+    {
+      "id": "identity/realm/a--b",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "An empty hyphen-separated part.",
+      "input": "a--b",
+      "expected": false
+    },
+    {
+      "id": "identity/realm/a b",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "Whitespace is not allowed.",
+      "input": "a b",
+      "expected": false
+    },
+    {
+      "id": "identity/realm/a",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "A single character is a segment.",
+      "input": "a",
+      "expected": true
+    },
+    {
+      "id": "identity/realm/a-b-c-d",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "Many hyphen-separated parts.",
+      "input": "a-b-c-d",
+      "expected": true
+    },
+    {
+      "id": "identity/realm/a.b-c.d",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "Dots and hyphens combined.",
+      "input": "a.b-c.d",
+      "expected": true
+    },
+    {
+      "id": "identity/realm/dev-alice.eu-west-1",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "Segments may contain digits after the first character.",
+      "input": "dev-alice.eu-west-1",
+      "expected": true
+    },
+    {
+      "id": "identity/realm/trailing-newline",
+      "spec": "PERSONA-PROTOCOL.md §3.5",
+      "description": "A trailing newline is not part of the segment grammar; full-string matching must reject the whole identifier.",
+      "input": "example.org\n",
+      "expected": false
+    }
+  ]
+}

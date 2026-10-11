@@ -1,0 +1,55 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "payload.binary.encode",
+  "description": "One schema exercising every node kind and primitive of §1, in binary. The schema and value are the ones used by the persona-core-lib unit tests, so this vector cross-checks the implementation's own golden bytes independently.",
+  "spec": [
+    "docs/SCHEMA.md §3"
+  ],
+  "vectors": [
+    {
+      "id": "binary/compound-encode/kitchen-sink",
+      "spec": "docs/SCHEMA.md §3.2",
+      "description": "Every node kind in one record: string, timestamp-millis, int, double, boolean, bytes, array of strings, map of strings (the vector deliberately lists the map keys out of UTF-8 order), enum, nested record, and a nested SignedEnvelope.",
+      "schema": "{\"type\":\"record\",\"name\":\"Kitchen\",\"namespace\":\"test\",\"messageType\":\"test.Kitchen@v1\",\"fields\":[{\"name\":\"greetingId\",\"type\":\"string\"},{\"name\":\"from\",\"type\":\"string\"},{\"name\":\"to\",\"type\":\"string\"},{\"name\":\"body\",\"type\":\"string\"},{\"name\":\"issuedAt\",\"type\":\"timestamp-millis\"},{\"name\":\"count\",\"type\":\"int\"},{\"name\":\"score\",\"type\":\"double\"},{\"name\":\"verified\",\"type\":\"boolean\"},{\"name\":\"attachment\",\"type\":\"bytes\"},{\"name\":\"tags\",\"type\":{\"type\":\"array\",\"items\":\"string\"}},{\"name\":\"attributes\",\"type\":{\"type\":\"map\",\"values\":\"string\"}},{\"name\":\"mood\",\"type\":{\"type\":\"enum\",\"name\":\"Mood\",\"symbols\":[\"HAPPY\",\"NEUTRAL\",\"SAD\"]}},{\"name\":\"inner\",\"type\":{\"type\":\"record\",\"name\":\"Inner\",\"fields\":[{\"name\":\"x\",\"type\":\"long\"}]}},{\"name\":\"forwarded\",\"type\":\"envelope\"}]}",
+      "value": {
+        "greetingId": "g-1",
+        "from": "alice",
+        "to": "bob",
+        "body": "hello",
+        "issuedAt": "2026-10-10T12:00:00.000Z",
+        "count": 42,
+        "score": 1.5,
+        "verified": true,
+        "attachment": "AAEC/w==",
+        "tags": [
+          "a",
+          "b"
+        ],
+        "attributes": {
+          "z": "1",
+          "é": "2",
+          "a": "3"
+        },
+        "mood": "NEUTRAL",
+        "inner": {
+          "x": 7
+        },
+        "forwarded": {
+          "messageType": "example.Greeting@v1",
+          "payloadFormat": "json",
+          "schemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833",
+          "payload": "AQID",
+          "signedBy": "alice",
+          "signatures": [
+            {
+              "algorithm": "SHA256withRSA",
+              "value": "CQg="
+            }
+          ]
+        }
+      },
+      "expectedHex": "06672d310a616c69636506626f620a68656c6c6f80b8f9daa46854000000000000f83f0108000102ff0402610262000602610233027a023104c3a9023200020e266578616d706c652e4772656574696e67407631086a736f6e5036366364346363376638393066383063626461343366613564363965666563636164616430383333060102030a616c696365021a5348413235367769746852534104090800"
+    }
+  ]
+}

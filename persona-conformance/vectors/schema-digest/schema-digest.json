@@ -1,0 +1,137 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "schema.digest",
+  "description": "Canonical schema form and SHA-1 schema digest (docs/SCHEMA.md §2). A runner parses the schema document, canonicalizes the parsed model (§2.2) and hashes the UTF-8 bytes of the canonical form with SHA-1, rendering 40 lowercase hex characters.",
+  "spec": ["docs/SCHEMA.md §2.1", "docs/SCHEMA.md §2.2", "docs/SCHEMA.md §6.1"],
+  "vectors": [
+    {
+      "id": "schema-digest/simple",
+      "spec": "docs/SCHEMA.md §2.2",
+      "description": "The worked example of §2.2: canonicalizing the parsed model, not the source text.",
+      "schema": "{\"type\":\"record\",\"name\":\"Simple\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"}]}",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"a\",\"type\":\"string\"}],\"name\":\"Simple\",\"type\":\"record\"}",
+      "expectedSchemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833"
+    },
+    {
+      "id": "schema-digest/simple-reformatted",
+      "spec": "docs/SCHEMA.md §6.1",
+      "description": "The same model as schema-digest/simple with different whitespace, key order and field-key order: source formatting MUST NOT change the canonical form or the digest.",
+      "schema": "{\n  \"fields\" : [ {\n      \"type\" : \"string\",\n      \"name\" : \"a\"\n  } ],\n  \"type\" : \"record\",\n  \"name\" : \"Simple\"\n}",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"a\",\"type\":\"string\"}],\"name\":\"Simple\",\"type\":\"record\"}",
+      "expectedSchemaId": "66cd4cc7f890f80cbda43fa5d69efeccadad0833"
+    },
+    {
+      "id": "schema-digest/greeting-all-node-kinds",
+      "spec": "docs/SCHEMA.md §1",
+      "description": "The example record of SCHEMA.md §1 in one line: string, timestamp-millis, int, double, boolean, bytes, array, map, enum, nested record and envelope.",
+      "schema": "{\"type\":\"record\",\"name\":\"Greeting\",\"namespace\":\"example\",\"messageType\":\"example.Greeting@v1\",\"fields\":[{\"name\":\"greetingId\",\"type\":\"string\"},{\"name\":\"from\",\"type\":\"string\"},{\"name\":\"to\",\"type\":\"string\"},{\"name\":\"body\",\"type\":\"string\"},{\"name\":\"issuedAt\",\"type\":\"timestamp-millis\"},{\"name\":\"count\",\"type\":\"int\"},{\"name\":\"score\",\"type\":\"double\"},{\"name\":\"verified\",\"type\":\"boolean\"},{\"name\":\"attachment\",\"type\":\"bytes\"},{\"name\":\"tags\",\"type\":{\"type\":\"array\",\"items\":\"string\"}},{\"name\":\"attributes\",\"type\":{\"type\":\"map\",\"values\":\"string\"}},{\"name\":\"mood\",\"type\":{\"type\":\"enum\",\"name\":\"Mood\",\"symbols\":[\"HAPPY\",\"NEUTRAL\",\"SAD\"]}},{\"name\":\"inner\",\"type\":{\"type\":\"record\",\"name\":\"Inner\",\"fields\":[{\"name\":\"x\",\"type\":\"long\"}]}},{\"name\":\"forwarded\",\"type\":\"envelope\"}]}",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"greetingId\",\"type\":\"string\"},{\"name\":\"from\",\"type\":\"string\"},{\"name\":\"to\",\"type\":\"string\"},{\"name\":\"body\",\"type\":\"string\"},{\"name\":\"issuedAt\",\"type\":\"timestamp-millis\"},{\"name\":\"count\",\"type\":\"int\"},{\"name\":\"score\",\"type\":\"double\"},{\"name\":\"verified\",\"type\":\"boolean\"},{\"name\":\"attachment\",\"type\":\"bytes\"},{\"name\":\"tags\",\"type\":{\"items\":\"string\",\"type\":\"array\"}},{\"name\":\"attributes\",\"type\":{\"type\":\"map\",\"values\":\"string\"}},{\"name\":\"mood\",\"type\":{\"name\":\"Mood\",\"symbols\":[\"HAPPY\",\"NEUTRAL\",\"SAD\"],\"type\":\"enum\"}},{\"name\":\"inner\",\"type\":{\"fields\":[{\"name\":\"x\",\"type\":\"long\"}],\"name\":\"Inner\",\"type\":\"record\"}},{\"name\":\"forwarded\",\"type\":\"envelope\"}],\"messageType\":\"example.Greeting@v1\",\"name\":\"Greeting\",\"namespace\":\"example\",\"type\":\"record\"}",
+      "expectedSchemaId": "8323e55c17fbbe462f811fa7842d81082263bacd"
+    },
+    {
+      "id": "schema-digest/all-primitives",
+      "spec": "docs/SCHEMA.md §1.2",
+      "description": "Every primitive of §1.2 as a bare JSON string in canonical form.",
+      "schema": "{\"type\":\"record\",\"name\":\"Primitives\",\"namespace\":\"test\",\"messageType\":\"test.Primitives@v1\",\"fields\":[{\"name\":\"s\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"boolean\"},{\"name\":\"i\",\"type\":\"int\"},{\"name\":\"l\",\"type\":\"long\"},{\"name\":\"d\",\"type\":\"double\"},{\"name\":\"by\",\"type\":\"bytes\"},{\"name\":\"t\",\"type\":\"timestamp-millis\"}]}",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"s\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"boolean\"},{\"name\":\"i\",\"type\":\"int\"},{\"name\":\"l\",\"type\":\"long\"},{\"name\":\"d\",\"type\":\"double\"},{\"name\":\"by\",\"type\":\"bytes\"},{\"name\":\"t\",\"type\":\"timestamp-millis\"}],\"messageType\":\"test.Primitives@v1\",\"name\":\"Primitives\",\"namespace\":\"test\",\"type\":\"record\"}",
+      "expectedSchemaId": "60e1f91e14bc33b9c45bd00fb81633124998c1e3"
+    },
+    {
+      "id": "schema-digest/enum-with-namespace",
+      "spec": "docs/SCHEMA.md §2.2",
+      "description": "An enum node with a namespace: the namespace key is emitted, and symbol order (which is semantic) is preserved.",
+      "schema": "{\"type\":\"record\",\"name\":\"Mood\",\"namespace\":\"test.moods\",\"fields\":[{\"name\":\"mood\",\"type\":{\"type\":\"enum\",\"name\":\"Mood\",\"namespace\":\"test.moods\",\"symbols\":[\"HAPPY\",\"SAD\"]}}]}",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"mood\",\"type\":{\"name\":\"Mood\",\"namespace\":\"test.moods\",\"symbols\":[\"HAPPY\",\"SAD\"],\"type\":\"enum\"}}],\"name\":\"Mood\",\"namespace\":\"test.moods\",\"type\":\"record\"}",
+      "expectedSchemaId": "f7df2cca2a78b88152319fae1045364ad06aead6"
+    },
+    {
+      "id": "schema-digest/array-of-inline-record",
+      "spec": "docs/SCHEMA.md §2.2",
+      "description": "An array node whose items are an inline record: {\"items\":<node>,\"type\":\"array\"}.",
+      "schema": "{\"type\":\"record\",\"name\":\"Batch\",\"fields\":[{\"name\":\"items\",\"type\":{\"type\":\"array\",\"items\":{\"type\":\"record\",\"name\":\"Item\",\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"qty\",\"type\":\"int\"}]}}}]}",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"items\",\"type\":{\"items\":{\"fields\":[{\"name\":\"id\",\"type\":\"string\"},{\"name\":\"qty\",\"type\":\"int\"}],\"name\":\"Item\",\"type\":\"record\"},\"type\":\"array\"}}],\"name\":\"Batch\",\"type\":\"record\"}",
+      "expectedSchemaId": "5656c1e89583a744f99d315f6d908c6b56b2e045"
+    },
+    {
+      "id": "schema-digest/map-of-inline-enum",
+      "spec": "docs/SCHEMA.md §2.2",
+      "description": "A map node whose values are an inline enum: {\"type\":\"map\",\"values\":<node>}.",
+      "schema": "{\"type\":\"record\",\"name\":\"Flags\",\"fields\":[{\"name\":\"flags\",\"type\":{\"type\":\"map\",\"values\":{\"type\":\"enum\",\"name\":\"Flag\",\"symbols\":[\"ON\",\"OFF\"]}}}]}",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"flags\",\"type\":{\"type\":\"map\",\"values\":{\"name\":\"Flag\",\"symbols\":[\"ON\",\"OFF\"],\"type\":\"enum\"}}}],\"name\":\"Flags\",\"type\":\"record\"}",
+      "expectedSchemaId": "579ce163cfebbae7b3750a08476c466eab4f556a"
+    },
+    {
+      "id": "schema-digest/envelope-and-multi-envelope",
+      "spec": "docs/SCHEMA.md §2.2",
+      "description": "The envelope and multi-envelope node kinds canonicalize to the bare JSON strings \"envelope\" and \"multi-envelope\".",
+      "schema": "{\"type\":\"record\",\"name\":\"Wrapped\",\"fields\":[{\"name\":\"one\",\"type\":\"envelope\"},{\"name\":\"many\",\"type\":{\"type\":\"array\",\"items\":\"multi-envelope\"}}]}",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"one\",\"type\":\"envelope\"},{\"name\":\"many\",\"type\":{\"items\":\"multi-envelope\",\"type\":\"array\"}}],\"name\":\"Wrapped\",\"type\":\"record\"}",
+      "expectedSchemaId": "371818524fb979081e098ac2bc904cf774bb9d82"
+    },
+    {
+      "id": "schema-digest/record-with-no-fields",
+      "spec": "docs/SCHEMA.md §1",
+      "description": "§1.3 rule 4 forbids duplicate field names but does not require any field, so an empty fields array parses and canonicalizes to an empty array.",
+      "schema": "{\"type\":\"record\",\"name\":\"Empty\",\"fields\":[]}",
+      "expectedCanonicalForm": "{\"fields\":[],\"name\":\"Empty\",\"type\":\"record\"}",
+      "expectedSchemaId": "f86ce633391f80d6602111fd99e961a755cda227"
+    },
+    {
+      "id": "schema-digest/underscore-identifiers",
+      "spec": "docs/SCHEMA.md §1.3 rule 1",
+      "description": "§1.3 rule 1 allows a leading underscore in names and namespace segments: _A, _b._c, _x1.",
+      "schema": "{\"type\":\"record\",\"name\":\"_A\",\"namespace\":\"_b._c\",\"fields\":[{\"name\":\"_x1\",\"type\":\"string\"}]}",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"_x1\",\"type\":\"string\"}],\"name\":\"_A\",\"namespace\":\"_b._c\",\"type\":\"record\"}",
+      "expectedSchemaId": "5d3014fdbe2062b035f735c13d2f6137eda5272e"
+    },
+    {
+      "id": "schema-digest/field-order-matters-a",
+      "spec": "docs/SCHEMA.md §2.2",
+      "description": "Field order is semantic, so reordering two fields changes the digest. Compare with field-order-matters-b.",
+      "schema": "{\"type\":\"record\",\"name\":\"Order\",\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"int\"}]}",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"a\",\"type\":\"string\"},{\"name\":\"b\",\"type\":\"int\"}],\"name\":\"Order\",\"type\":\"record\"}",
+      "expectedSchemaId": "0a0d95dfd58ef46a39dbb2be4f19e7e1e60ea66e"
+    },
+    {
+      "id": "schema-digest/field-order-matters-b",
+      "spec": "docs/SCHEMA.md §2.2",
+      "description": "The same fields as field-order-matters-a in the opposite order: the canonical form keeps the declared order, so the digest differs (0a0d95df... vs 9fbb3d8f...).",
+      "schema": "{\"type\":\"record\",\"name\":\"Order\",\"fields\":[{\"name\":\"b\",\"type\":\"int\"},{\"name\":\"a\",\"type\":\"string\"}]}",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"b\",\"type\":\"int\"},{\"name\":\"a\",\"type\":\"string\"}],\"name\":\"Order\",\"type\":\"record\"}",
+      "expectedSchemaId": "9fbb3d8fcedecdddfc4c84c219aee2f7b8563714"
+    },
+    {
+      "id": "schema-digest/builtin-signature",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "The built-in persona.Signature@v1 schema of §5 as registered by every registry; the runner resolves the reference from its own built-in registration.",
+      "schemaRef": "persona.Signature@v1",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"algorithm\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"bytes\"}],\"messageType\":\"persona.Signature@v1\",\"name\":\"Signature\",\"namespace\":\"persona\",\"type\":\"record\"}",
+      "expectedSchemaId": "adca64c4a0622b25cc1ef3b0d28d3364a751a048"
+    },
+    {
+      "id": "schema-digest/builtin-multi-signature",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "The built-in persona.MultiSignature@v1 schema of §5 (its Signature items are declared inline).",
+      "schemaRef": "persona.MultiSignature@v1",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"signedBy\",\"type\":\"string\"},{\"name\":\"signatures\",\"type\":{\"items\":{\"fields\":[{\"name\":\"algorithm\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"bytes\"}],\"name\":\"Signature\",\"type\":\"record\"},\"type\":\"array\"}}],\"messageType\":\"persona.MultiSignature@v1\",\"name\":\"MultiSignature\",\"namespace\":\"persona\",\"type\":\"record\"}",
+      "expectedSchemaId": "9af008663023932746dbef42c7d10c03fc675b5d"
+    },
+    {
+      "id": "schema-digest/builtin-signed-envelope",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "The built-in persona.SignedEnvelope@v1 schema of §5.",
+      "schemaRef": "persona.SignedEnvelope@v1",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"messageType\",\"type\":\"string\"},{\"name\":\"payloadFormat\",\"type\":\"string\"},{\"name\":\"schemaId\",\"type\":\"string\"},{\"name\":\"payload\",\"type\":\"bytes\"},{\"name\":\"signedBy\",\"type\":\"string\"},{\"name\":\"signatures\",\"type\":{\"items\":{\"fields\":[{\"name\":\"algorithm\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"bytes\"}],\"name\":\"Signature\",\"type\":\"record\"},\"type\":\"array\"}}],\"messageType\":\"persona.SignedEnvelope@v1\",\"name\":\"SignedEnvelope\",\"namespace\":\"persona\",\"type\":\"record\"}",
+      "expectedSchemaId": "e898ca9bf6c41e10402f92b6a88c226a0475cf61"
+    },
+    {
+      "id": "schema-digest/builtin-multi-signed-envelope",
+      "spec": "docs/SCHEMA.md §5",
+      "description": "The built-in persona.MultiSignedEnvelope@v1 schema of §5.",
+      "schemaRef": "persona.MultiSignedEnvelope@v1",
+      "expectedCanonicalForm": "{\"fields\":[{\"name\":\"messageType\",\"type\":\"string\"},{\"name\":\"payloadFormat\",\"type\":\"string\"},{\"name\":\"schemaId\",\"type\":\"string\"},{\"name\":\"payload\",\"type\":\"bytes\"},{\"name\":\"signatures\",\"type\":{\"items\":{\"fields\":[{\"name\":\"signedBy\",\"type\":\"string\"},{\"name\":\"signatures\",\"type\":{\"items\":{\"fields\":[{\"name\":\"algorithm\",\"type\":\"string\"},{\"name\":\"value\",\"type\":\"bytes\"}],\"name\":\"Signature\",\"type\":\"record\"},\"type\":\"array\"}}],\"name\":\"MultiSignature\",\"type\":\"record\"},\"type\":\"array\"}}],\"messageType\":\"persona.MultiSignedEnvelope@v1\",\"name\":\"MultiSignedEnvelope\",\"namespace\":\"persona\",\"type\":\"record\"}",
+      "expectedSchemaId": "fb6a5aba28a95703d152c9620f939db3eebd0508"
+    }
+  ]
+}

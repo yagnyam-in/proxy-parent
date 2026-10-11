@@ -154,7 +154,9 @@ least-significant group first, 7 bits per byte, high bit = continuation.
 ### 3.3 Decoder strictness
 
 Decoders MUST reject: trailing bytes after the root record; truncated input;
-an enum index outside `symbols`; a negative block count; UTF-8 decode
+an enum index outside `symbols`; a negative block count; a map block in which
+the same key appears twice (a duplicate key has ambiguous value semantics —
+the second entry would silently overwrite the first); UTF-8 decode
 failures. Errors are hard rejections.
 
 ### 3.4 Reference implementation strictness (normative)
