@@ -1506,6 +1506,97 @@ def supports_signature_algorithm_set(algorithms):
 
 
 # ---------------------------------------------------------------------------
+# RSASSA-PKCS1-v1_5 verification (PERSONA-PROTOCOL.md §8, §11 rules 3 and 10)
+# ---------------------------------------------------------------------------
+
+# DER DigestInfo prefixes (RFC 8017 §9.2): the DigestInfo SEQUENCE that wraps
+# the digest inside the PKCS#1 v1.5 encoded message, for the digest of every
+# JCA "SHA*withRSA" algorithm name that a plausible verifier maps. The v0
+# policy sanctions exactly SHA256withRSA; the others exist here only so that
+# the "wrong digest" vectors compute an honest verdict instead of an error.
+_DIGESTINFO_PREFIX = {
+    "SHA256withRSA": bytes.fromhex("3031300d060960864801650304020105000420"),
+    "SHA512withRSA": bytes.fromhex("3051300d060960864801650304020305000440"),
+}
+_DIGESTINFO_HASH = {
+    "SHA256withRSA": hashlib.sha256,
+    "SHA512withRSA": hashlib.sha512,
+}
+
+
+def _parse_spki_rsa_public_key(der):
+    """Parses an X.509 SubjectPublicKeyInfo (RFC 5280) into (modulus, exponent)
+    for an RSA key, without a full X.509 model:
+
+        SubjectPublicKeyInfo ::= SEQUENCE {
+            algorithm         SEQUENCE { OID rsaEncryption, NULL },
+            subjectPublicKey  BIT STRING (RSAPublicKey) }
+        RSAPublicKey ::= SEQUENCE { modulus INTEGER, publicExponent INTEGER }
+    """
+    outer = _der_tlvs(der, 0, len(der))
+    if len(outer) != 1 or outer[0][0] != 0x30 or outer[0][1] != 0 or outer[0][3] != len(der):
+        raise VectorError("public key PEM body is not a single SubjectPublicKeyInfo SEQUENCE")
+    fields = _der_tlvs(der, outer[0][2], outer[0][3])
+    if len(fields) != 2 or fields[0][0] != 0x30 or fields[1][0] != 0x03:
+        raise VectorError("SubjectPublicKeyInfo must be {algorithm SEQUENCE, BIT STRING}")
+    algorithm = _der_tlvs(der, fields[0][2], fields[0][3])
+    if not algorithm or algorithm[0][0] != 0x06:
+        raise VectorError("SubjectPublicKeyInfo.algorithm has no OID")
+    # rsaEncryption OID: 1.2.840.113549.1.1.1
+    if der[algorithm[0][2] : algorithm[0][3]] != bytes.fromhex("2a864886f70d010101"):
+        raise VectorError("SubjectPublicKeyInfo is not an RSA key (algorithm OID mismatch)")
+    bit_string = der[fields[1][2] : fields[1][3]]
+    if not bit_string or bit_string[0] != 0x00:
+        raise VectorError("subjectPublicKey BIT STRING must have zero unused bits")
+    key_der = bit_string[1:]
+    key_seq = _der_tlvs(key_der, 0, len(key_der))
+    if len(key_seq) != 1 or key_seq[0][0] != 0x30:
+        raise VectorError("RSAPublicKey is not a SEQUENCE")
+    integers = _der_tlvs(key_der, key_seq[0][2], key_seq[0][3])
+    if len(integers) != 2 or any(tag != 0x02 for tag, _s, _c, _e in integers):
+        raise VectorError("RSAPublicKey must be {modulus INTEGER, publicExponent INTEGER}")
+    modulus = int.from_bytes(key_der[integers[0][2] : integers[0][3]], "big")
+    exponent = int.from_bytes(key_der[integers[1][2] : integers[1][3]], "big")
+    return modulus, exponent
+
+
+def rsa_pkcs1_v15_verify(algorithm, public_key_pem, preimage, signature):
+    """RSASSA-PKCS1-v1_5 verification (RFC 8017 §8.2.2), from the standard text:
+
+        EM = 0x00 || 0x01 || PS (0xFF, at least 8 bytes) || 0x00 || DigestInfo
+        valid iff signature^e mod n, rendered as k = ceil(modulus bits / 8)
+        bytes, equals EM exactly — where DigestInfo carries the algorithm's
+        DER prefix over the digest of the preimage.
+
+    A signature whose length differs from k can never verify (verdict False).
+    An ``algorithm`` outside :data:`_DIGESTINFO_PREFIX` is rejected outright:
+    PERSONA-PROTOCOL.md §8 sanctions exactly {SHA256withRSA} for v0 and §11
+    rule 3 (with §12, downgrade attacks) mandates rejecting anything else.
+    """
+    if algorithm not in _DIGESTINFO_PREFIX:
+        raise Reject(
+            "PERSONA-PROTOCOL.md §8 + §11 rule 3",
+            "signature algorithm %r is not in the v0 policy set {SHA256withRSA}" % algorithm,
+        )
+    body = first_pem_body(public_key_pem)
+    if body is None:
+        raise VectorError("publicKeyPem has no parsable PEM object")
+    try:
+        der = base64.b64decode(body, validate=True)
+    except (binascii.Error, ValueError):
+        raise VectorError("publicKeyPem has a malformed base64 body")
+    modulus, exponent = _parse_spki_rsa_public_key(der)
+    k = (modulus.bit_length() + 7) // 8
+    if len(signature) != k:
+        return False
+    value = pow(int.from_bytes(signature, "big"), exponent, modulus)
+    digest = _DIGESTINFO_HASH[algorithm](preimage).digest()
+    digest_info = _DIGESTINFO_PREFIX[algorithm] + digest
+    expected_em = b"\x00\x01" + b"\xff" * (k - len(digest_info) - 3) + b"\x00" + digest_info
+    return value.to_bytes(k, "big") == expected_em
+
+
+# ---------------------------------------------------------------------------
 # Signing preimage (PERSONA-PROTOCOL.md §6.4)
 # ---------------------------------------------------------------------------
 
@@ -1547,6 +1638,7 @@ KNOWN_KINDS = {
     "crypto.policy-v0",
     "crypto.signature-algorithm-set",
     "envelope.signing-preimage",
+    "crypto.signature-verify",
 }
 
 
@@ -1711,6 +1803,8 @@ def check_vector(report, vector):
         _check_algorithm_set(report, vector)
     elif kind == "envelope.signing-preimage":
         _check_signing_preimage(report, vector, expects)
+    elif kind == "crypto.signature-verify":
+        _check_signature_verify(report, vector, expects)
     else:
         raise VectorError("%s: unknown kind %r" % (vector, kind))
 
@@ -2073,6 +2167,35 @@ def _check_signing_preimage(report, vector, expects):
         vector,
         actual.hex() == expected,
         "signing preimage mismatch:\n    expected %s\n    reference %s" % (expected, actual.hex()),
+    )
+
+
+def _check_signature_verify(report, vector, expects):
+    document = vector.document
+    public_key_pem = expect_string(vector, "publicKeyPem")
+    algorithm = expect_string(vector, "algorithm")
+    preimage_hex = expect_string(vector, "preimageHex")
+    signature_hex = document.get("signatureHex")
+    if not isinstance(signature_hex, str):
+        raise VectorError("%s: 'signatureHex' must be a lowercase hex string" % vector)
+    try:
+        preimage = bytes.fromhex(preimage_hex)
+        signature = bytes.fromhex(signature_hex)
+    except ValueError:
+        raise VectorError("%s: 'preimageHex'/'signatureHex' is not valid hex" % vector)
+    verdict = _recompute(
+        report,
+        vector,
+        expects,
+        lambda: rsa_pkcs1_v15_verify(algorithm, public_key_pem, preimage, signature),
+        "reference verified the signature",
+    )
+    if verdict is None:
+        return
+    report.check(
+        vector,
+        verdict == document.get("expected"),
+        "signature verdict mismatch: expected %r, reference %r" % (document.get("expected"), verdict),
     )
 
 

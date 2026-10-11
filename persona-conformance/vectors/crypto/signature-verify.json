@@ -1,0 +1,155 @@
+{
+  "vectorFormat": "persona-conformance-vectors",
+  "vectorFormatVersion": 1,
+  "kind": "crypto.signature-verify",
+  "description": "Golden RSA PKCS#1 v1.5 signature-verification vectors over \u00a76.4 signing preimages, under the Persona Version v0 signature algorithm SHA256withRSA (\u00a78; the algorithm name comes from the v0 policy, never hard-coded prose). Every 'preimageHex' is pinned byte-exact by an envelope.signing-preimage vector cited in the vector's description, so the chain payload fields -> preimage -> signature is provable end-to-end across languages. RSA PKCS#1 v1.5 is deterministic, so the goldens are stable and portable. This kind is VERIFY-ONLY by deliberate policy: the suite ships no private-key material (repository security policy, see the identity.pem kind), so the sign side cannot be goldenized portably \u2014 the fixture RSA-2048 private key (and the second key pair used for the different-key vector) were generated once, used to derive these goldens, and destroyed; only the public key (PEM, X.509 SubjectPublicKeyInfo), the preimage inputs and the golden signature bytes are committed. Accept vectors assert the boolean verdict of verification (expected true/false); the single reject vector pins that an unknown algorithm name must be rejected with an error per \u00a78 + \u00a711 rule 3.",
+  "spec": [
+    "PERSONA-PROTOCOL.md \u00a76.4",
+    "PERSONA-PROTOCOL.md \u00a78",
+    "PERSONA-PROTOCOL.md \u00a711 rule 3",
+    "PERSONA-PROTOCOL.md \u00a711 rule 10"
+  ],
+  "vectors": [
+    {
+      "id": "crypto/signature-verify/golden-single-small",
+      "spec": "PERSONA-PROTOCOL.md \u00a76.4",
+      "description": "Golden RSA PKCS#1 v1.5 signature (SHA256withRSA, the sole v0 signature algorithm, \u00a78) over the \u00a76.4 preimage pinned byte-exact by envelope/signing-preimage/unit-golden-single-small \u2014 the chain payload fields \u2192 preimage \u2192 signature is provable end-to-end. PKCS#1 v1.5 signing is deterministic, so this golden is stable across implementations.",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "SHA256withRSA",
+      "preimageHex": "1a706572736f6e612e7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e0003010203",
+      "signatureHex": "11c77d98dd19eb639457b70a04a319036d02168ef40138e9595fe8f8b81821d6a1e7c582a76cf05de825258a14b9fd3862fb0b107447985114ebf6db2c7787e1742de99b6d8084a4538286d156d8f67e35422fa0d00d549add018779abd6e0cfd303fdca41acb6ebcfce3ccc4ccfc380cd06a0bd6f13d0624c1d169888185e3fa6a9b97c63ec99f7bccdd1420d701a3437b2e0f92df898dbc4ec740dee51c6a899fdd3c686a88d3a1549d8aa572e9bd0ff6c07e5e1a54a9d72ae0751a0c4fbc2f929d7d128f9327e71940a65e7c229be81ea8d79a96a8a13d2f27de9b6b36416aa2542f622512f28a9f213ec510997287639d60ae85e2a354c0a9616201c444f",
+      "expected": true
+    },
+    {
+      "id": "crypto/signature-verify/golden-multi-small",
+      "spec": "PERSONA-PROTOCOL.md \u00a76.4",
+      "description": "Golden signature over the preimage pinned by envelope/signing-preimage/unit-golden-multi-small: identical fields under the multi-signed domain, so this golden and golden-single-small differ only in the domain prefix \u2014 the \u00a76.4 domain separation is observable in the signature bytes themselves.",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "SHA256withRSA",
+      "preimageHex": "20706572736f6e612e6d756c74692d7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e0003010203",
+      "signatureHex": "2d4276032b9ec66ba9154385e3558e80249a7ac0cc9e015d47ae241b79aabf5dc9a3a9c29d3a04c9b43f9a984670c865b82d0ed25c808f86aa8b9cf2e64fa5c356d44cefc08094b4ff678a0d437f376e79faa039bfd0253c244c84283d269eb9a0fd9a96e47d98fbbf396a1b8f77691e12e9cc126fbcefd69d222ae6714d3e13c5c07043c063d1dcd12ea15f212cc4c0c1cc37e24c2d6b9c0ba925bef19e3c4b6c95db787a832706b5281bf999d0b37b304eebefd41ba5eb17b5f14b6f0051a2c4ced207fc6337141a24580edf5ce1848709b796fa5bd0ab02a24b9298f3b24ac82a7cdf06648649cfebac19770a19d4fe8234e9ee14111c30f41f62b0467fc6",
+      "expected": true
+    },
+    {
+      "id": "crypto/signature-verify/golden-single-schema",
+      "spec": "PERSONA-PROTOCOL.md \u00a76.4",
+      "description": "Golden signature over the preimage pinned by envelope/signing-preimage/unit-golden-single-schema (present schemaId, persona-binary payload format).",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "SHA256withRSA",
+      "preimageHex": "1a706572736f6e612e7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e674076310e706572736f6e612d62696e617279283031323334353637383930313233343536373839303132333435363738393031323334353637383903010203",
+      "signatureHex": "0a223023f5271d7265abeb62f36d4fb2cd5adafb5816ee77ef12c743b2bbb8c907d85de3c72118c10e74f114f13331db72f438a80cdbf1b60383b20269f2d0ca1ec34e789e76992c7b929901df4df547d3886e08adb1f6f8d22d37cf5dcfeeb84835d0a4897ebb0951a578d6e69dfb4fb29db3f133059979302b315785d5987a09ba9e5e95fd750dc8c1bc35b1367727c68a7c3cb7be7a261801c9a07eeef6d4acaaf0290ae6888e68ed11f193f4f822700d0a8cd18d67a28572eeadf076f29ce0cd745c7a96302afadaabc8176359f27264c80c2f93393f36962bd604a7444ddd1e599ad370d2f0b874256f3a16239ab87014a290ad79033296f816bb3f84d7",
+      "expected": true
+    },
+    {
+      "id": "crypto/signature-verify/golden-single-200",
+      "spec": "PERSONA-PROTOCOL.md \u00a76.4",
+      "description": "Golden signature over the 255-byte preimage pinned by envelope/signing-preimage/unit-golden-single-200 (200-byte payload, multi-byte uvarint length c8 01).",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "SHA256withRSA",
+      "preimageHex": "1a706572736f6e612e7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e00c801000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7",
+      "signatureHex": "6654393b9676477c02d6c5c2a99804a6a0296000ef15a0180038103eca11891f37c60ce1776c33fc0a78b4e419881dcf46a345f69382207f871b9fdb8e0c333be98013b6136c106b5d2818a78f57a83b35a275a4af26eacf9af3c4c056382dc0896ba60a0d44681840a464ba364fc1639ebfa765a184490fe86836bf0650e3cb47f0c5884ff7b6f46a5061f9335a038be37f502f4aa7f7720ebd7aff93457aedb67692a30b51ede0a959612bab8131502deec8e70878fa58b9eeaf47f9f490da0fe513e34c1593b491285c37b5422c6e7c2086358f9967320205e3382ddba1b3720f2ab7842bf95750254c43bb039bdf72df74b29bfa9bdc14e3bf2ea789e16e",
+      "expected": true
+    },
+    {
+      "id": "crypto/signature-verify/golden-schema-id-absent-null",
+      "spec": "PERSONA-PROTOCOL.md \u00a76.4",
+      "description": "Golden signature over the preimage pinned by envelope/signing-preimage/schema-id-absent-null (absent schemaId = empty string in the preimage).",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "SHA256withRSA",
+      "preimageHex": "1a706572736f6e612e7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e0003010203",
+      "signatureHex": "11c77d98dd19eb639457b70a04a319036d02168ef40138e9595fe8f8b81821d6a1e7c582a76cf05de825258a14b9fd3862fb0b107447985114ebf6db2c7787e1742de99b6d8084a4538286d156d8f67e35422fa0d00d549add018779abd6e0cfd303fdca41acb6ebcfce3ccc4ccfc380cd06a0bd6f13d0624c1d169888185e3fa6a9b97c63ec99f7bccdd1420d701a3437b2e0f92df898dbc4ec740dee51c6a899fdd3c686a88d3a1549d8aa572e9bd0ff6c07e5e1a54a9d72ae0751a0c4fbc2f929d7d128f9327e71940a65e7c229be81ea8d79a96a8a13d2f27de9b6b36416aa2542f622512f28a9f213ec510997287639d60ae85e2a354c0a9616201c444f",
+      "expected": true
+    },
+    {
+      "id": "crypto/signature-verify/wrong-preimage-domain-transplant",
+      "spec": "PERSONA-PROTOCOL.md \u00a711 rule 10",
+      "description": "The valid signature of golden-single-small presented against the multi-domain preimage of golden-multi-small (identical messageType/payloadFormat/schemaId/payload, different domain): the bytes that were signed are not the bytes being verified, so verification MUST fail (\u00a711 rule 10; \u00a76.4 domain separation). A valid signature over the wrong message is a verdict of false, not an error.",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "SHA256withRSA",
+      "preimageHex": "20706572736f6e612e6d756c74692d7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e0003010203",
+      "signatureHex": "11c77d98dd19eb639457b70a04a319036d02168ef40138e9595fe8f8b81821d6a1e7c582a76cf05de825258a14b9fd3862fb0b107447985114ebf6db2c7787e1742de99b6d8084a4538286d156d8f67e35422fa0d00d549add018779abd6e0cfd303fdca41acb6ebcfce3ccc4ccfc380cd06a0bd6f13d0624c1d169888185e3fa6a9b97c63ec99f7bccdd1420d701a3437b2e0f92df898dbc4ec740dee51c6a899fdd3c686a88d3a1549d8aa572e9bd0ff6c07e5e1a54a9d72ae0751a0c4fbc2f929d7d128f9327e71940a65e7c229be81ea8d79a96a8a13d2f27de9b6b36416aa2542f622512f28a9f213ec510997287639d60ae85e2a354c0a9616201c444f",
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-verify/flipped-byte-first",
+      "spec": "PERSONA-PROTOCOL.md \u00a711 rule 10",
+      "description": "The golden-single-small signature with its first byte XORed by 0x01: any bit flip destroys the PKCS#1 v1.5 encoding, so verification MUST return false.",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "SHA256withRSA",
+      "preimageHex": "1a706572736f6e612e7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e0003010203",
+      "signatureHex": "10c77d98dd19eb639457b70a04a319036d02168ef40138e9595fe8f8b81821d6a1e7c582a76cf05de825258a14b9fd3862fb0b107447985114ebf6db2c7787e1742de99b6d8084a4538286d156d8f67e35422fa0d00d549add018779abd6e0cfd303fdca41acb6ebcfce3ccc4ccfc380cd06a0bd6f13d0624c1d169888185e3fa6a9b97c63ec99f7bccdd1420d701a3437b2e0f92df898dbc4ec740dee51c6a899fdd3c686a88d3a1549d8aa572e9bd0ff6c07e5e1a54a9d72ae0751a0c4fbc2f929d7d128f9327e71940a65e7c229be81ea8d79a96a8a13d2f27de9b6b36416aa2542f622512f28a9f213ec510997287639d60ae85e2a354c0a9616201c444f",
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-verify/flipped-byte-last",
+      "spec": "PERSONA-PROTOCOL.md \u00a711 rule 10",
+      "description": "The golden-single-small signature with its last byte XORed by 0x01 (a flip in the low-order bytes of the RSA signature integer): verification MUST return false.",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "SHA256withRSA",
+      "preimageHex": "1a706572736f6e612e7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e0003010203",
+      "signatureHex": "11c77d98dd19eb639457b70a04a319036d02168ef40138e9595fe8f8b81821d6a1e7c582a76cf05de825258a14b9fd3862fb0b107447985114ebf6db2c7787e1742de99b6d8084a4538286d156d8f67e35422fa0d00d549add018779abd6e0cfd303fdca41acb6ebcfce3ccc4ccfc380cd06a0bd6f13d0624c1d169888185e3fa6a9b97c63ec99f7bccdd1420d701a3437b2e0f92df898dbc4ec740dee51c6a899fdd3c686a88d3a1549d8aa572e9bd0ff6c07e5e1a54a9d72ae0751a0c4fbc2f929d7d128f9327e71940a65e7c229be81ea8d79a96a8a13d2f27de9b6b36416aa2542f622512f28a9f213ec510997287639d60ae85e2a354c0a9616201c444e",
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-verify/truncated-signature",
+      "spec": "PERSONA-PROTOCOL.md \u00a711 rule 10",
+      "description": "The golden-single-small signature truncated to 255 of 256 bytes: a signature whose length differs from the RSA modulus length MUST NOT verify (verdict false, not an error).",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "SHA256withRSA",
+      "preimageHex": "1a706572736f6e612e7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e0003010203",
+      "signatureHex": "11c77d98dd19eb639457b70a04a319036d02168ef40138e9595fe8f8b81821d6a1e7c582a76cf05de825258a14b9fd3862fb0b107447985114ebf6db2c7787e1742de99b6d8084a4538286d156d8f67e35422fa0d00d549add018779abd6e0cfd303fdca41acb6ebcfce3ccc4ccfc380cd06a0bd6f13d0624c1d169888185e3fa6a9b97c63ec99f7bccdd1420d701a3437b2e0f92df898dbc4ec740dee51c6a899fdd3c686a88d3a1549d8aa572e9bd0ff6c07e5e1a54a9d72ae0751a0c4fbc2f929d7d128f9327e71940a65e7c229be81ea8d79a96a8a13d2f27de9b6b36416aa2542f622512f28a9f213ec510997287639d60ae85e2a354c0a9616201c44",
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-verify/garbage-wrong-length",
+      "spec": "PERSONA-PROTOCOL.md \u00a711 rule 10",
+      "description": "64 bytes of garbage (byte i = (7i+13) mod 256) where a 256-byte RSA-2048 signature is expected: wrong length and wrong content; verification MUST return false.",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "SHA256withRSA",
+      "preimageHex": "1a706572736f6e612e7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e0003010203",
+      "signatureHex": "0d141b222930373e454c535a61686f767d848b9299a0a7aeb5bcc3cad1d8dfe6edf4fb020910171e252c333a41484f565d646b727980878e959ca3aab1b8bfc6",
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-verify/empty-signature",
+      "spec": "PERSONA-PROTOCOL.md \u00a711 rule 10",
+      "description": "An empty signature byte string: verification MUST return false.",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "SHA256withRSA",
+      "preimageHex": "1a706572736f6e612e7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e0003010203",
+      "signatureHex": "",
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-verify/different-key",
+      "spec": "PERSONA-PROTOCOL.md \u00a711 rule 10",
+      "description": "A genuine SHA256withRSA signature over the same preimage but produced by a DIFFERENT RSA-2048 key pair (generated for this vector and discarded; only the fixture public key above is shipped): presented under the fixture public key, verification MUST return false.",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "SHA256withRSA",
+      "preimageHex": "1a706572736f6e612e7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e0003010203",
+      "signatureHex": "86204c8ca3285fc86d170d6317887bd2aefce9e83644fc3aa4444a5c7effe3d92530730f8d44fb04de7ea98afcbde5e6ec6ecb73d27c2f059282c9908883e0700f541a625bff935ef7347cbb38033a7676c2c66bedd0efad9852bc927800876043a3ed67ca8e1fc961edd5b0b83b20fc1b48a705e90f9cefbc4dfabc0b0bc8636935b2bd55dc3113cc292639f4da66162e64ff164a374133d11500bb02ab465bfe65b8a8d8ebb8d11c9068ca67196c4817430e95a374f7ab7f589080d057f310c6bca97cd59fa4c5930f42faac65fe2ef02bdadaf46e8023911b3bad3db9b3ecf5587f55f58384501a34b29e160b1a9607c2c8a38e341c4044f1a7af7ca7063a",
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-verify/algorithm-sha512-verdict-false",
+      "spec": "PERSONA-PROTOCOL.md \u00a78",
+      "description": "The golden-single-small signature verified under algorithm SHA512withRSA (a real RSASSA-PKCS1-v1_5 variant with the wrong digest): the DigestInfo prefixes differ, so verification MUST return false. \u00a711 rule 3 additionally rejects the algorithm at the envelope layer because v0 sanctions exactly {SHA256withRSA}; this vector pins that the golden is SHA-256-specific even for a verifier that does not enforce the policy.",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "SHA512withRSA",
+      "preimageHex": "1a706572736f6e612e7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e0003010203",
+      "signatureHex": "11c77d98dd19eb639457b70a04a319036d02168ef40138e9595fe8f8b81821d6a1e7c582a76cf05de825258a14b9fd3862fb0b107447985114ebf6db2c7787e1742de99b6d8084a4538286d156d8f67e35422fa0d00d549add018779abd6e0cfd303fdca41acb6ebcfce3ccc4ccfc380cd06a0bd6f13d0624c1d169888185e3fa6a9b97c63ec99f7bccdd1420d701a3437b2e0f92df898dbc4ec740dee51c6a899fdd3c686a88d3a1549d8aa572e9bd0ff6c07e5e1a54a9d72ae0751a0c4fbc2f929d7d128f9327e71940a65e7c229be81ea8d79a96a8a13d2f27de9b6b36416aa2542f622512f28a9f213ec510997287639d60ae85e2a354c0a9616201c444f",
+      "expected": false
+    },
+    {
+      "id": "crypto/signature-verify/unknown-algorithm",
+      "spec": "PERSONA-PROTOCOL.md \u00a711 rule 3",
+      "description": "Algorithm 'not-a-signature-algorithm' is not a signature algorithm at all, hence not in the v0 policy set {SHA256withRSA} (\u00a78): \u00a711 rule 3 and \u00a712 (downgrade attacks) mandate rejection of any algorithm outside the sanctioned sets, so verification MUST be rejected with an error rather than a verdict.",
+      "expect": "reject",
+      "rejectionRule": "PERSONA-PROTOCOL.md \u00a78 + \u00a711 rule 3: v0 sanctions exactly {SHA256withRSA}; an unknown algorithm name must be rejected (reference: the JCA reports it as a GeneralSecurityException, NoSuchAlgorithmException)",
+      "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwh1aIfsjXnyPiTGvfoV0\nMGD0hQcYULoO32uTT0BwotDyakzdEQvAO5jAUA9hukt9kQnIYkPTqv3oHezDz03N\nfr4jeQF2R13AVVnOEgiknEWbor7UDiqnyAtE8AouKUYYjVnx83BaUpvPkW+LvheU\nLuqCJ/5pChlqwWwu8w22ulgPkGyxNsEo9TnitMeJFwvlXXz5uv7OpUr6m+yPtmnX\nWCtfrjjI3UECdi+avoM1N7idOP4A0CBnwxSdPWeOBkAhdTUQrLir42Nb7Ev/Xxhh\ncmPm46w6zzcH3y91T1TyGwBSzSBrWzaKx9aEi9rogNEKxNlHh5I2Y0OMh/Tge5x1\ndQIDAQAB\n-----END PUBLIC KEY-----\n",
+      "algorithm": "not-a-signature-algorithm",
+      "preimageHex": "1a706572736f6e612e7369676e65642d656e76656c6f7065407631136578616d706c652e4772656574696e67407631046a736f6e0003010203",
+      "signatureHex": "11c77d98dd19eb639457b70a04a319036d02168ef40138e9595fe8f8b81821d6a1e7c582a76cf05de825258a14b9fd3862fb0b107447985114ebf6db2c7787e1742de99b6d8084a4538286d156d8f67e35422fa0d00d549add018779abd6e0cfd303fdca41acb6ebcfce3ccc4ccfc380cd06a0bd6f13d0624c1d169888185e3fa6a9b97c63ec99f7bccdd1420d701a3437b2e0f92df898dbc4ec740dee51c6a899fdd3c686a88d3a1549d8aa572e9bd0ff6c07e5e1a54a9d72ae0751a0c4fbc2f929d7d128f9327e71940a65e7c229be81ea8d79a96a8a13d2f27de9b6b36416aa2542f622512f28a9f213ec510997287639d60ae85e2a354c0a9616201c444f"
+    }
+  ]
+}

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import in.yagnyam.persona.PersonaCertificate;
 import in.yagnyam.persona.PersonaId;
 import in.yagnyam.persona.Realm;
+import in.yagnyam.persona.crypto.BouncyCastleCryptographyService;
 import in.yagnyam.persona.crypto.Digests;
 import in.yagnyam.persona.crypto.PemService;
 import in.yagnyam.persona.crypto.PersonaVersion;
@@ -23,6 +24,7 @@ import in.yagnyam.persona.schema.TypeNode;
 import in.yagnyam.persona.schema.codec.BinaryPayloadCodec;
 import in.yagnyam.persona.schema.codec.JsonPayloadCodec;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.time.Instant;
@@ -73,6 +75,7 @@ final class VectorKinds {
   static final String POLICY_V0 = "crypto.policy-v0";
   static final String ALGORITHM_SET = "crypto.signature-algorithm-set";
   static final String SIGNING_PREIMAGE = "envelope.signing-preimage";
+  static final String SIGNATURE_VERIFY = "crypto.signature-verify";
 
   /** Every kind this runner understands; anything else is a hard failure. */
   static Set<String> knownKinds() {
@@ -88,7 +91,8 @@ final class VectorKinds {
         PEM,
         POLICY_V0,
         ALGORITHM_SET,
-        SIGNING_PREIMAGE);
+        SIGNING_PREIMAGE,
+        SIGNATURE_VERIFY);
   }
 
   private VectorKinds() {}
@@ -114,6 +118,7 @@ final class VectorKinds {
       case POLICY_V0 -> policy(vector);
       case ALGORITHM_SET -> signatureAlgorithmSet(vector);
       case SIGNING_PREIMAGE -> signingPreimage(vector);
+      case SIGNATURE_VERIFY -> signatureVerify(vector);
       default -> throw new VectorFormatException(
           vector.describe() + ": unknown vector kind '" + vector.kind()
               + "'; this runner must be taught the kind instead of skipping it");
@@ -373,6 +378,41 @@ final class VectorKinds {
     assertThat(hex(preimage))
         .as("%s: §6.4 signing preimage", vector.describe())
         .isEqualTo(vector.text("expectedHex"));
+  }
+
+  /**
+   * {@code crypto.signature-verify}: RSASSA-PKCS1-v1_5 verification of golden
+   * signatures over §6.4 signing preimages (protocol §8, §11 rules 3 and 10).
+   *
+   * <p>The kind is verify-only (the suite ships no private-key material, so the
+   * sign side cannot be goldenized portably — see {@code vectors/README.md}).
+   * Accept vectors assert the boolean verdict; the single negative form is the
+   * unknown-algorithm reject: an algorithm name outside the v0 policy set
+   * {@code {SHA256withRSA}} must be rejected with an error, and the declared
+   * {@link in.yagnyam.persona.crypto.CryptographyService#verifySignature(String,
+   * java.security.PublicKey, byte[], byte[])} contract throws
+   * {@link GeneralSecurityException} for it (the JCA reports an unimplemented
+   * algorithm as {@code NoSuchAlgorithmException}). All inputs are extracted —
+   * and the public key decoded — outside the asserted operation, so a malformed
+   * vector fails the suite ({@link VectorFormatException}) instead of posing as
+   * a rejection or a {@code false} verdict.
+   */
+  private static void signatureVerify(ConformanceVector vector) throws Exception {
+    String publicKeyPem = vector.text("publicKeyPem");
+    String algorithm = vector.text("algorithm");
+    byte[] preimage = bytes(vector.text("preimageHex"));
+    byte[] signature = bytes(vector.text("signatureHex"));
+    PublicKey key = PemService.instance().decodePublicKey(publicKeyPem);
+    if (vector.expectsRejection()) {
+      assertRejection(vector, GeneralSecurityException.class,
+          () -> BouncyCastleCryptographyService.instance()
+              .verifySignature(algorithm, key, preimage, signature));
+      return;
+    }
+    assertThat(BouncyCastleCryptographyService.instance()
+            .verifySignature(algorithm, key, preimage, signature))
+        .as("%s: signature verdict (PERSONA-PROTOCOL.md §6.4, §8, §11 rule 10)", vector.describe())
+        .isEqualTo(vector.booleanValue("expected"));
   }
 
   // -----------------------------------------------------------------------

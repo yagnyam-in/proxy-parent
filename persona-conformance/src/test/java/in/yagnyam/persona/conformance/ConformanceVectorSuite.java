@@ -75,7 +75,9 @@ class ConformanceVectorSuite {
       Map.entry(VectorKinds.POLICY_V0, Set.of("policy", "field", "expected")),
       Map.entry(VectorKinds.ALGORITHM_SET, Set.of("signatureAlgorithms", "expected")),
       Map.entry(VectorKinds.SIGNING_PREIMAGE, Set.of(
-          "domain", "messageType", "payloadFormat", "schemaId", "payloadHex", "expectedHex")));
+          "domain", "messageType", "payloadFormat", "schemaId", "payloadHex", "expectedHex")),
+      Map.entry(VectorKinds.SIGNATURE_VERIFY, Set.of(
+          "publicKeyPem", "algorithm", "preimageHex", "signatureHex", "expected")));
 
   /**
    * The keys a negative vector must carry beyond the common keys (its inputs);
@@ -90,7 +92,9 @@ class ConformanceVectorSuite {
       Map.entry(VectorKinds.JSON_ENCODE, Set.of("value")),
       Map.entry(VectorKinds.JSON_DECODE, Set.of("inputJson")),
       Map.entry(VectorKinds.PERSONA_ID, Set.of("input")),
-      Map.entry(VectorKinds.PEM, Set.of("objectType", "pem")));
+      Map.entry(VectorKinds.PEM, Set.of("objectType", "pem")),
+      Map.entry(VectorKinds.SIGNATURE_VERIFY, Set.of(
+          "publicKeyPem", "algorithm", "preimageHex", "signatureHex")));
 
   /**
    * The keys an accepting vector must carry beyond the common keys.
@@ -109,7 +113,9 @@ class ConformanceVectorSuite {
       Map.entry(VectorKinds.POLICY_V0, Set.of("policy", "field", "expected")),
       Map.entry(VectorKinds.ALGORITHM_SET, Set.of("signatureAlgorithms", "expected")),
       Map.entry(VectorKinds.SIGNING_PREIMAGE, Set.of(
-          "domain", "messageType", "payloadFormat", "payloadHex", "expectedHex")));
+          "domain", "messageType", "payloadFormat", "payloadHex", "expectedHex")),
+      Map.entry(VectorKinds.SIGNATURE_VERIFY, Set.of(
+          "publicKeyPem", "algorithm", "preimageHex", "signatureHex", "expected")));
 
   /**
    * The minimum number of vectors per kind. Deliberately shrinking a phase is
@@ -128,7 +134,8 @@ class ConformanceVectorSuite {
       Map.entry(VectorKinds.PEM, 14),
       Map.entry(VectorKinds.POLICY_V0, 11),
       Map.entry(VectorKinds.ALGORITHM_SET, 9),
-      Map.entry(VectorKinds.SIGNING_PREIMAGE, 20));
+      Map.entry(VectorKinds.SIGNING_PREIMAGE, 20),
+      Map.entry(VectorKinds.SIGNATURE_VERIFY, 14));
 
   /**
    * Kinds whose contract admits no negative form. For the verdict kinds a
