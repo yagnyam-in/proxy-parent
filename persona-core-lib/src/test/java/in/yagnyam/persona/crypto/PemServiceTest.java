@@ -88,10 +88,11 @@ class PemServiceTest {
   }
 
   /**
-   * {@code CertificateFactory.generateCertificate} returns {@code null} for a
-   * non-empty PEM envelope with an empty DER body rather than throwing; the
-   * decode boundary must reject it instead of letting a {@code null} escape
-   * (protocol §9.1). Found by the conformance vector
+   * A non-empty PEM envelope with an empty DER body holds no certificate: the
+   * provider either returns {@code null} (BouncyCastle before 1.86) or throws
+   * (BouncyCastle 1.86+), and the decode boundary must reject it as an
+   * {@code IOException} either way instead of letting a {@code null} escape
+   * (protocol §9.1, §10.1). Found by the conformance vector
    * {@code identity/pem-reject/certificate-header-only}.
    */
   @Test
