@@ -10,8 +10,8 @@ only:
                          §3 persona-binary payload encoding, §4 canonical JSON
                          payload encoding, §5 built-in envelope schemas,
                          §6 conformance rules;
-  * ``PERSONA-PROTOCOL.md`` §3.2 persona-id grammar, §3.5 realm, §8 Persona
-                         Version v0 crypto policy.
+  * ``PERSONA-PROTOCOL.md`` §3.2 persona-id grammar, §3.5 realm, §8 crypto
+                         policy (Persona Versions v0 and v1).
 
 It deliberately does **not** import, call, or mirror the Java implementation in
 ``persona-core-lib``: the LEB128/zigzag/LE-double logic, the canonical JSON
@@ -22,13 +22,17 @@ vectors through ``persona-core-lib``; agreement between the two is the point.
 Usage::
 
     python3 tools/reference_vectors.py check  [--vectors DIR] [--verbose]
+    python3 tools/reference_vectors.py manifest [--vectors DIR]
     python3 tools/reference_vectors.py hash   SCHEMA_JSON
     python3 tools/reference_vectors.py encode SCHEMA_JSON VALUE_JSON
     python3 tools/reference_vectors.py json   SCHEMA_JSON VALUE_JSON
     python3 tools/reference_vectors.py selftest
 
 ``check`` walks a vectors directory, recomputes every golden value and exits
-non-zero on the first mismatch (reporting all mismatches it finds).  ``encode``
+non-zero on the first mismatch (reporting all mismatches it finds).  ``manifest``
+regenerates ``manifest.json``, the file index that both the reference check and
+the Java runner enforce, after vector files are added, removed or renamed.
+``encode``
 and ``json`` print the hex / canonical JSON encoding of a value for a schema and
 are handy when adding a new vector by hand.  ``hash`` prints the canonical form
 and the schema digest.
