@@ -112,8 +112,7 @@ Bounded and documented, but with residual surface:
 ## 5. Identity and realm grammar ambiguities — open (documented in the vectors)
 
 - **What.** The conformance-vectors README
-  (`persona-conformance/vectors/README.md` on branch
-  `persona/conformance-vectors`) documents spec ambiguities the vectors pin
+  (`persona-conformance/vectors/README.md`) documents spec ambiguities the vectors pin
   by reference-implementation behavior rather than by spec text: §3.2's
   "any URL-safe string" id has no grammar (so `álice` and `a b` parse);
   §3.2's thumbprint rendering ("base64/hex") is ambiguous — v0 pins
@@ -129,28 +128,27 @@ Bounded and documented, but with residual surface:
   normative grammar, or keep the vectors as the arbiter and say so in
   §3.2/§3.5.
 
-## 6. Cross-language vectors are partially merged to `master` — partial
+## 6. Signature vectors are verify-only — open
 
 - **What.** The machine-readable vector suite (schema-digest, binary, JSON,
-  envelope, identity, crypto — 413 vectors with a Java runner and an
-  independent Python reference) was merged to `master` in PR #192. The
-  stacked `persona/preimage-vectors` branch adds
-  20 `envelope.signing-preimage` vectors and 15 `crypto.signature-verify`
-  vectors, bringing the merged suite to 470 vectors (the base suite grew to
-  435 when the v1 policy vectors landed). The preimage vectors pin §6.4 framing. The
+  envelope, identity, crypto — 470 vectors with a Java runner and an
+  independent Python reference) is fully merged to `master` (base suite in
+  PR #192, the v1 policy vectors in PR #201, and the
+  `envelope.signing-preimage` and `crypto.signature-verify` vectors in
+  PR #199). The preimage vectors pin §6.4 framing, so a foreign
+  implementation can prove its type-bound signing bytes match. The
   signature vectors verify fixed RSA signatures using public keys only;
   they are deliberately verify-only because repository policy forbids
   shipping private-key material. Consequently, the suite does not pin the
   exact output of an implementation's signing operation.
-- **Why it matters.** Without the preimage vectors, a foreign
-  implementation cannot prove that its type-bound signing bytes match.
-  Verify-only signature vectors exercise cross-language verification, but
-  implementations still need an external signing/verification exchange to
-  demonstrate signer interoperability.
-- **Severity.** Medium.
-- **Direction.** Merge the remaining preimage/signature vector branch. Keep private keys out of the
-  repository; document a cross-implementation signing/verification
-  exchange for adopters who need to prove their signer as well as verifier.
+- **Why it matters.** Verify-only signature vectors exercise cross-language
+  verification, but implementations still need an external
+  signing/verification exchange to demonstrate signer interoperability.
+- **Severity.** Low — verification and preimage framing are pinned
+  cross-language; only signer-output equality is not.
+- **Direction.** Keep private keys out of the repository; document a
+  cross-implementation signing/verification exchange for adopters who need
+  to prove their signer as well as verifier.
 
 ## 7. The remote tier is reference-only — open
 
